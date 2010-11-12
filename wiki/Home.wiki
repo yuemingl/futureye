@@ -5,7 +5,7 @@
 Future Eye
 
 
-<table style="width:auto;"><tr><td><a href="http://picasaweb.google.com/lh/photo/OBbHifZ-kmxm6yzUrSYcxA?feat=embedwebsite"><img src="http://lh3.ggpht.com/_Cil2MFH7iLM/TN19kLBtXpI/AAAAAAAAABo/9BOTVPYR1MM/s144/refine_r1.png.jpg" height="128" width="144" /></a></td></tr><tr><td style="font-family:arial,sans-serif; font-size:11px; text-align:right">发件人 <a href="http://picasaweb.google.com/116644350537454798159/FutureEye?feat=embedwebsite">FutureEye</a></td></tr></table>
+<img src="http://lh3.ggpht.com/_Cil2MFH7iLM/TN19kLBtXpI/AAAAAAAAABo/9BOTVPYR1MM/s144/refine_r1.png.jpg" height="128" width="144" />
 
 
 = Details =
