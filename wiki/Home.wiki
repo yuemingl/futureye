@@ -1,14 +1,15 @@
-#summary One-sentence summary of this page.
+#summary Start on ...
 
-= Introduction =
+==Futureye Example 1==
 
-Future Eye
+===Question===
+<img src="http://lh6.ggpht.com/_Cil2MFH7iLM/TN19jeWDEdI/AAAAAAAAABg/WI64bT_jUAY/s144/FutureEyeFirstTest2.png.jpg" height="181" width="380" />
 
+===Solution===
+Mesh, contour and 3D view:
+<img src="http://lh5.ggpht.com/_Cil2MFH7iLM/TN19jH3fdUI/AAAAAAAAABc/bjKllifWW0g/s144/FutureEyeFirstTest.png.jpg" height="400" width="400" /><img src="http://lh3.ggpht.com/_Cil2MFH7iLM/TN19j0Dy4pI/AAAAAAAAABk/OTdlyX_Paio/s144/FutureEyeFirstTest3D.png.jpg" height="400" width="400" />
 
-<img src="http://lh3.ggpht.com/_Cil2MFH7iLM/TN19kLBtXpI/AAAAAAAAABo/9BOTVPYR1MM/s144/refine_r1.png.jpg" height="128" width="144" />
-
-
-= Details =
+===Code===
 
 {{{
 package edu.uta.futureye.test;
