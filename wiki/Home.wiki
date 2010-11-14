@@ -90,12 +90,12 @@ public class Laplace {
 		
 		Solver solver = new Solver();
 		Vector u = solver.solve(stiff, load);
-	    System.out.println("u=");
-	    for(int i=1;i<=u.getDim();i++)
-	        System.out.println(String.format("%.3f", u.get(i)));	
+		System.out.println("u=");
+		for(int i=1;i<=u.getDim();i++)
+			System.out.println(String.format("%.3f", u.get(i)));	
 	    
-	    MeshWriter writer = new MeshWriter(mesh);
-	    writer.writeTechplot("tuitoral_Laplace.dat", u);
+		MeshWriter writer = new MeshWriter(mesh);
+		writer.writeTechplot("tuitoral_Laplace.dat", u);
 		
 	}
 
