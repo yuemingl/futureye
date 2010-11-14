@@ -99,6 +99,10 @@ public class Laplace {
 		
 	}
 
+	public static void main(String[] args) {
+		triangle();
+	}	
+
 }
 }}}
 
