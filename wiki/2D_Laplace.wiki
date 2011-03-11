@@ -104,5 +104,5 @@ public class Laplace {
 
 ===Grid File===
 {{{
-See Release1.0
+"triangle.grd", see Release-1.0
 }}}
