@@ -1,4 +1,4 @@
-#summary An example for solving 2D Laplace problem
+#summary An example of solving 2D Laplace problem
 
 ==Futureye Example 1==
 
