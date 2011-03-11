@@ -1,7 +1,7 @@
 #summary Start on
 = Introduction =
 
-Example of function in Futureye
+An example of functions in Futureye
 
 
 = Details =
