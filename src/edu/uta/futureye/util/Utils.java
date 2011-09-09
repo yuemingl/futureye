@@ -661,7 +661,7 @@ public class Utils {
 	 * @return [a1 a2 a3 a4]
 	 */
 	public static double[] computeBilinearFunctionCoef(
-				Point[] p, double[] ff) {
+				Point[] p, double[] fValues) {
 		int len = p.length;
 		if(len != 4) {
 			throw new FutureyeException("p.size()="+len+", should be 4.");
@@ -679,7 +679,7 @@ public class Utils {
 			y[i] = p[i-1].coord(2);
 			xx[i] = p[i-1].coord(1);
 			yy[i] = p[i-1].coord(2);
-			f[i] = ff[i-1];
+			f[i] = fValues[i-1];
 		}
 
 		int r = -1;
@@ -697,8 +697,8 @@ public class Utils {
 			x[r] = xx[2];
 			y[2] = yy[r];
 			y[r] = yy[2];
-			f[2] = ff[r-1];
-			f[r] = ff[1];
+			f[2] = fValues[r-1];
+			f[r] = fValues[1];
 		}
 		
 		

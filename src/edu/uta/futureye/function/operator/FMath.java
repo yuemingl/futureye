@@ -229,6 +229,14 @@ public class FMath {
 		return max;
 	}
 	
+	public static double max(double[] a) {
+		double rlt = Double.MIN_VALUE;
+		for(int i=0;i<a.length;i++) {
+			if(a[i] > rlt) rlt = a[i];
+		}
+		return rlt;
+	}
+	
 	public static double min(Vector v) {
 		double min = Double.MAX_VALUE;
 		for(int i=1;i<=v.getDim();i++) {
@@ -237,6 +245,14 @@ public class FMath {
 				min = val; 
 		}
 		return min;
+	}
+	
+	public static double min(double[] a) {
+		double rlt = Double.MAX_VALUE;
+		for(int i=0;i<a.length;i++) {
+			if(a[i] < rlt) rlt = a[i];
+		}
+		return rlt;
 	}
 	
 	/**

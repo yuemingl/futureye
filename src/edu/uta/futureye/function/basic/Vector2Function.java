@@ -4,11 +4,14 @@ import java.util.List;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.application.Tools;
+import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
+import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.util.FutureyeException;
+import edu.uta.futureye.util.Utils;
 
 /**
  * Vector to Function
@@ -48,6 +51,23 @@ public class Vector2Function extends AbstractFunction {
 	public double value(Variable v) {
 		int index = v.getIndex();
 		if(index <= 0) {
+			double[] coord = new double[varNames.size()];
+			for(int i=0;i<varNames.size();i++) {
+				coord[i] = v.get(varNames.get(i));
+			}
+			Element e = mesh.getElementByCoord(coord);
+			double[] f = new double[e.nodes.size()];
+			for(int i=1;i<=e.nodes.size();i++) {
+				f[i-1] = u.get(e.nodes.at(i).globalIndex);
+			}
+			//二维四边形单元
+			if(e.vertices().size() == 4 && coord.length==2) {
+				double[] coef = Utils.computeBilinearFunctionCoef(e.nodes.toArray(new Point[0]), f);
+				//f(x,y) = a1 + a2*x + a3*y + a4*x*y
+				double x = v.get(varNames.get(0));
+				double y = v.get(varNames.get(1));
+				return coef[0] + coef[1]*x + coef[2]*y + coef[3]*x*y;
+			}
 			throw new FutureyeException("Error: Vector2Function index="+index);
 		} else {
 			return u.get(index);//注：下标错位会造成结果出现随机混乱

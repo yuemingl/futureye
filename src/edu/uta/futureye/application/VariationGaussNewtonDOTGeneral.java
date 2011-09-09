@@ -1,18 +1,18 @@
 package edu.uta.futureye.application;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
 import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
@@ -31,32 +31,24 @@ import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
 import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.DuDn;
 import edu.uta.futureye.function.basic.DuDx;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
-import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.element.FEBilinearRectangleRegular;
 import edu.uta.futureye.lib.element.FELinearTriangle;
-import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
-import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
-import edu.uta.futureye.lib.weakform.WeakFormL22D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
-import edu.uta.futureye.util.FutureyeException;
-import edu.uta.futureye.util.PairDoubleInteger;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
+import edu.uta.futureye.util.container.ObjIndex;
 
 /**
  * Implementation of the paper: 
@@ -70,78 +62,149 @@ import edu.uta.futureye.util.container.NodeList;
  *   k = 3*mu_s'
  *   a = a(x) = mu_a(x)
  * 
- * Measurements take place on the whole domain of \Omega
- * 
+ * Measurements take place in the whole domain of \Omega or on the boundary of \Gamma,
+ * where \Gamma = \partial\Omega 
+ *
  * @author liuyueming
  *
  */
-public class VariationGaussNewtonDOTMult {
+public class VariationGaussNewtonDOTGeneral {
+	public boolean debug = false;
+	
+	protected String outputFolderBase;
+	protected int outputFolderIndex = 0;
+	
 	public Mesh mesh;
 	public Mesh meshBig;
+	String gridFileBig;
+	String gridFileSmall;
 	
-	
-	protected static String outputFolder = "Lagrangian_SuLiu_Mult_2LS";
-	public boolean debug = false;
-
-	//Back ground model
-	ModelDOTMult modelBk = new ModelDOTMult();
-	
-	//Real inclusion model
-	ModelDOTMult modelReal = new ModelDOTMult();
-
-	//Real inclusion model
-	ModelDOTMult modelGuess = new ModelDOTMult();
-	ModelDOTMult modelInit = new ModelDOTMult();
-
 	//k = 3*mu_s'
 	Function model_k = FC.c(50.0);
 	//Background of a(x) = mu_a(x) = 0.1
 	double aBackground = 0.1;
-	
-    Function diri = null;
+
+	ModelDOTMult modelBk = new ModelDOTMult();   //Background model
+	ModelDOTMult modelReal = new ModelDOTMult(); //Real inclusion model
+	ModelDOTMult modelGuess = new ModelDOTMult();//Guess model from GCM of inclusion 
+	ModelDOTMult modelInit = new ModelDOTMult(); //Initial model of inclusion
+
+    //Function diri = null;
     
+	//Test: u_g在整个区域上都已知
+	public boolean bTestWholdDomain = false;
+	public boolean bTestWholeDomainDirichletBoundary = false;
+	public boolean bTestBoundaryAsWholdDomain = false;
+    
+    //mu_a from GCM
+	protected Vector aGlob = null;//GCM方法得到的a_glob(x)
+    
+    //正则化参数
+    //double beta = 1.0; //bTestWholdDomain = true;
+    protected double beta = 0.03; //bTestWholdDomain = true;
+    //整个区域
+    //double beta = 100000; //bTestWholdDomain = false;
+    
+    protected int iterNum = 0;
+    protected int refineNum = 0;
+    protected int totalRefineNum = 3;
+    double[] refineFactors = null;
+	
+    //光源x坐标位置数组
+    protected double[] LSx;
+    protected double[] LSy;
+
+    protected FileOutputStream out = null;
+    protected PrintWriter br = null;
+	
+	protected double errorNorm = 0.0;
+	protected double lastStepLength = 1.0;
+
     //对应每个光源s_i的参数，包括测量数据
     public static class ParamOfLightSource {
     	int s_i;
     	Vector g; //= u|_\Gamma
     }
-	//Test: u_g在整个区域上都已知
-	boolean bTestWholdDomain = false;
-	boolean bTestWholeDomainDirichletBoundary = false;
-	boolean bTestBoundaryAsWholdDomain = false;
     
-    //mu_a
-    Vector aGlob = null;//GCM方法得到的a_glob(x)
-    
-    //正则化参数
-    //double beta = 1.0; //bTestWholdDomain = true;
-    double beta = 0.1; //bTestWholdDomain = true;
-    //整个区域
-    //double beta = 100000; //bTestWholdDomain = false;
-    
-    int iterNum = 0;
-    int refineNum = 0;
-    
-    //光源x坐标位置数组
-	double[] LSx;
-	double[] LSy;
-
-	FileOutputStream out = null;
-	PrintWriter br = null;
+	/**
+	 * Initialization configuration parameters
+	 * 
+	 */
+	public void init() {
+		debug = true;
+		
+		outputFolderBase = "Lagrangian_SuLiu_Mult_test14_2LS";
+		outputFolderIndex = 0;
+		
+		//------------Triangle Mesh--------
+		gridFileBig = "prostate_test3_ex.grd";
+		gridFileSmall = "prostate_test3.grd";
+		
+		//------------Rectangle Mesh----------
+//		gridFileBig = "prostate_test7_ex.grd";//粗
+//		gridFileSmall = "prostate_test7.grd";
+//		gridFileBig = "prostate_test8_ex.grd";//细
+//		gridFileSmall = "prostate_test8.grd";
+//		gridFileBig = "prostate_test9_ex.grd";//细2
+//		gridFileSmall = "prostate_test9.grd";
+//		gridFileBig = "prostate_test10_ex.grd";//细
+//		gridFileSmall = "prostate_test10.grd";
+//		gridFileBig = "prostate_test11_ex.grd";//粗
+//		gridFileSmall = "prostate_test11.grd";
+//		gridFileBig = "prostate_test12_ex.grd"; //细2
+//		gridFileSmall = "prostate_test12.grd";
+//		gridFileBig = "prostate_test13_ex.grd"; //细2 区域对称
+//		gridFileSmall = "prostate_test13.grd";
+		gridFileBig = "prostate_test14_ex.grd"; //细2 区域对称
+		gridFileSmall = "prostate_test14.grd";
+		
+		totalRefineNum = 5;
+		double[] _refineFactors={0.15,0.60,0.15,0.15,0.15,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1};
+		refineFactors = _refineFactors;
+		
+	}
 	
-	double errorNorm = 0.0;
-	double stepLength = 3.0;
-
+    public String getOutputFolder() {
+    	return String.format(outputFolderBase+"%02d", outputFolderIndex);
+    }
+    
+	public void setOutputFolderIndex(int index) {
+		outputFolderIndex = index;
+	}	
 	
     /**
      * 构造函数，设定包含物位置
      */
-    public VariationGaussNewtonDOTMult() {
+    public VariationGaussNewtonDOTGeneral() {
 		//Number of moving light sources
-		double[] xx = {4.8};
-		double[] yy = {2.0};
+//		double[] xx = {4.8};
+//		double[] yy = {2.0};
 //		double[] xx = {0.2};
 //		double[] yy = {2.0};
+//		double[] xx = {2.3,2.5};
+//		double[] yy = {3.8,3.8};
+		
+//prostate_test11 12    	
+//		double[] xx = {2.5};
+//		double[] yy = {3.8};
+//		double[] xx = {2.5};
+//		double[] yy = {0.2};
+//		double[] xx = {2.5,2.5};
+//		double[] yy = {3.6,0.2};		
+//for prostate_test13	
+    	//上光源
+//		double[] xx = {2.5};
+//		double[] yy = {3.8};    	
+    	//上下光源
+		double[] xx = {2.5,2.5};
+		double[] yy = {3.8,0.2};
+    	//左右光源
+//		double[] xx = {0.2,4.8};
+//		double[] yy = {2.0,2.0};
+    	//4光源
+//		double[] xx = {2.5,2.5,0.2,4.8};
+//		double[] yy = {3.8,0.2,2.0,2.0};
+		
 //		double[] xx = {0.2,4.8};
 //		double[] yy = {2.0,2.0};
 //		double[] xx = {2.5,0.5,4.5};
@@ -176,18 +239,18 @@ public class VariationGaussNewtonDOTMult {
 //				1); //Number of inclusions
 
 //test9_1
-		//有包含物mu_a，真实模型
-		modelReal.setMu_a(2.20, 2.60, 0.6,
-				0.4, //peak value of mu_a
-				1); //Number of inclusions
-		//有包含物mu_a，猜测模型
-		modelGuess.setMu_a(2.40, 2.60, 0.6,
-				0.4, //peak value of mu_a
-				1); //Number of inclusions
-		//有包含物mu_a，迭代初始值
-		modelInit.setMu_a(2.40, 2.60, 0.6,//0.8
-				0.4, //peak value of mu_a
-				1); //Number of inclusions
+//		//有包含物mu_a，真实模型
+//		modelReal.setMu_a(2.20, 2.60, 0.6,
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
+//		//有包含物mu_a，猜测模型
+//		modelGuess.setMu_a(2.40, 2.60, 0.6,
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
+//		//有包含物mu_a，迭代初始值
+//		modelInit.setMu_a(2.40, 2.60, 0.6,//0.8
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
 
 //test9_2
 //		//有包含物mu_a，真实模型
@@ -207,11 +270,38 @@ public class VariationGaussNewtonDOTMult {
 //		//有包含物mu_a，猜测模型
 //		modelGuess.setMu_a(2.40, 2.40, 0.6,
 //				0.4, //peak value of mu_a
-//				1); //Number of inclusions				
+//				1); //Number of inclusions		
+		
+		
+//		//有包含物mu_a，真实模型
+//		modelReal.setMu_a(2.20, 2.0, 0.6,
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
+//		//有包含物mu_a，猜测模型
+//		modelGuess.setMu_a(2.40, 2.0, 0.6,
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
+//		//有包含物mu_a，迭代初始值
+//		modelInit.setMu_a(2.40, 2.0, 0.6,//0.8
+//				0.4, //peak value of mu_a
+//				1); //Number of inclusions
+		
+		//有包含物mu_a，真实模型
+		modelReal.setMu_a(2.50, 2.0, 0.6,
+				0.4, //peak value of mu_a
+				1); //Number of inclusions
+		//有包含物mu_a，猜测模型
+		modelGuess.setMu_a(2.45, 2.0, 0.6,
+				0.36, //peak value of mu_a
+				1); //Number of inclusions
+		//有包含物mu_a，迭代初始值
+		modelInit.setMu_a(2.45, 2.0, 0.6,//0.8
+				0.36, //peak value of mu_a
+				1); //Number of inclusions
     }
     
     /**
-     * 
+     * 初始化模型“光源位置”
      * @param s_i：Light source No. (0,1,2...)
      */
     public void reinitModelLight(int s_i) {
@@ -225,36 +315,26 @@ public class VariationGaussNewtonDOTMult {
 		modelInit.lightNum = s_i;
     }
     
-	public static void plotVector(Mesh mesh, Vector v, String fileName) {
-	    MeshWriter writer = new MeshWriter(mesh);
-	    if(!outputFolder.isEmpty()) {
-		    File file = new File("./"+outputFolder);
-			if(!file.exists()) {
-				file.mkdirs();
-			}
-	    }
-	    writer.writeTechplot("./"+outputFolder+"/"+fileName, v);
+
+	public void plotVector(Mesh mesh, Vector v, String fileName) {
+		String folder = getOutputFolder();
+		Tools.plotVector(mesh, folder, fileName, v);
 	}
 
-	public static void plotFunction(Mesh mesh, Function fun, String fileName) {
-	    NodeList list = mesh.getNodeList();
-	    int nNode = list.size();
-		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
-	    for(int i=1;i<=nNode;i++) {
-	    	Node node = list.at(i);
-	    	var.setIndex(node.globalIndex);
-	    	var.set("x", node.coord(1));
-	    	var.set("y", node.coord(2));
-	    	v.set(i, fun.value(var));
-	    }
-	    plotVector(mesh,v,fileName);
+	public void plotFunction(Mesh mesh, Function fun, String fileName) {
+		String folder = getOutputFolder();
+		Tools.plotFunction(mesh, folder, fileName, fun);
 	}	
 	
 
+	/**
+	 * Log information in the file output_log.txt in every different folder
+	 * 
+	 */
 	public void beginLog() {
+		String folder = getOutputFolder();
 		try {
-			File file = new File(".\\"+outputFolder+"\\output_log.txt");
+			File file = new File(".\\"+folder+"\\output_log.txt");
 			out = new FileOutputStream(file);
 			OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
 			br = new PrintWriter(writer);
@@ -262,6 +342,7 @@ public class VariationGaussNewtonDOTMult {
 			e.printStackTrace();
 		}
 	}
+	
 	public void endLog() {
 		try {
 			if(br != null)
@@ -273,56 +354,17 @@ public class VariationGaussNewtonDOTMult {
 		}
 	}
 	
-	public void readMeshTriangle(){
-		String gridFileBig = "prostate_test3_ex.grd";
-		String gridFileSmall = "prostate_test3.grd";
-
-        MeshReader readerBig = new MeshReader(gridFileBig);
-        MeshReader readerSmall = new MeshReader(gridFileSmall);
-        meshBig = readerBig.read2DMesh();
-        mesh = readerSmall.read2DMesh();
-        meshBig.computeNodeBelongsToElements();
-        mesh.computeNodeBelongsToElements();
-        mesh.computeNeighborNodes();
-
-        //2.Mark border types
-        HashMap<NodeType, Function> mapNTF =
-                new HashMap<NodeType, Function>();
-        mapNTF.put(NodeType.Dirichlet, null);
-        mesh.markBorderNode(mapNTF);
-        
-        //3.Use element library to assign degrees of
-        //  freedom (DOF) to element
-        ElementList eList = mesh.getElementList();
-//        for(int i=1;i<=eList.size();i++) {
-//        	System.out.println(eList.at(i));
-//        }
-        FELinearTriangle feLT = new FELinearTriangle();
-        for(int i=1;i<=eList.size();i++)
-            feLT.assignTo(eList.at(i));
-  
-        ElementList eListBig = meshBig.getElementList();
-		for(int i=1;i<=eListBig.size();i++)
-			feLT.assignTo(eListBig.at(i));
-
-	}
-	
-	public void readMeshRectangle(){
-//		String gridFileBig = "prostate_test7_ex.grd";//粗
-//		String gridFileSmall = "prostate_test7.grd";
-//		String gridFileBig = "prostate_test8_ex.grd";//细
-//		String gridFileSmall = "prostate_test8.grd";
-//		String gridFileBig = "prostate_test9_ex.grd";//细2
-//		String gridFileSmall = "prostate_test9.grd";
-//		String gridFileBig = "prostate_test10_ex.grd";//细
-//		String gridFileSmall = "prostate_test10.grd";
-//		String gridFileBig = "prostate_test11_ex.grd";//粗
-//		String gridFileSmall = "prostate_test11.grd";
-		String gridFileBig = "prostate_test12_ex.grd"; //细2
-		String gridFileSmall = "prostate_test12.grd";
-
-        MeshReader readerBig = new MeshReader(gridFileBig);
-        MeshReader readerSmall = new MeshReader(gridFileSmall);
+	/**
+	 * Read mesh and assign DOF to elements
+	 * 
+	 * Supports:
+	 * 	triangle elements
+	 *  rectangle elements
+	 *  
+	 */
+	public void readMesh(String folder){
+        MeshReader readerBig = new MeshReader(folder+"\\"+gridFileBig);
+        MeshReader readerSmall = new MeshReader(folder+"\\"+gridFileSmall);
         meshBig = readerBig.read2DMesh();
         mesh = readerSmall.read2DMesh();
         meshBig.computeNodeBelongsToElements();
@@ -335,18 +377,28 @@ public class VariationGaussNewtonDOTMult {
         mapNTF.put(NodeType.Dirichlet, null);
         mesh.markBorderNode(mapNTF);
         
-        //3.Use element library to assign degrees of
-        //  freedom (DOF) to element
+        
+        //3.Use element library to assign degrees of freedom (DOF) to element
         ElementList eList = mesh.getElementList();
-//        FEBilinearRectangle feLT = new FEBilinearRectangle();
-        FEBilinearRectangleRegular feLT = new FEBilinearRectangleRegular();
-        for(int i=1;i<=eList.size();i++)
-            feLT.assignTo(eList.at(i));
+        FELinearTriangle feLT = new FELinearTriangle();
+//        FEBilinearRectangle feBR = new FEBilinearRectangle();
+        FEBilinearRectangleRegular feBRR = new FEBilinearRectangleRegular();
+        for(int i=1;i<=eList.size();i++) {
+        	Element e = eList.at(i);
+        	if(e.nodes.size()%3 == 0)
+        		feLT.assignTo(eList.at(i));
+        	else if(e.nodes.size()%4 == 0)
+        		feBRR.assignTo(eList.at(i));
+        }
   
         ElementList eListBig = meshBig.getElementList();
-		for(int i=1;i<=eListBig.size();i++)
-			feLT.assignTo(eListBig.at(i));
-
+		for(int i=1;i<=eListBig.size();i++) {
+	        Element e = eListBig.at(i);
+	    	if(e.nodes.size()%3 == 0)
+	    		feLT.assignTo(eListBig.at(i));
+	    	else if(e.nodes.size()%4 == 0)
+	    		feBRR.assignTo(eListBig.at(i));
+		}
 	}	
 	
 	public void refineMesh(ElementList eToRefine) {
@@ -516,7 +568,10 @@ public class VariationGaussNewtonDOTMult {
 	 *     g!=null, 以g为Dirichlet边界条件在小区域上计算u
 	 * @return
 	 */
-	public Equation getEqnU(Mesh _mesh, Vector a, Vector g, Vector u0_x, Vector u0_y) {
+	public void getOrSolveEqnU(
+			Mesh _mesh, Vector a, Vector g, Vector u0_x, Vector u0_y, //In
+			Equation eqn, Vector u) { //Out
+			 
 		
 		WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
 		Function fa = new Vector2Function(a);
@@ -558,36 +613,43 @@ public class VariationGaussNewtonDOTMult {
 			assembler.imposeDirichletCondition(new Vector2Function(g));
 		System.out.println("Assemble done!");
 
-		Equation eqn = new Equation();
-		eqn.A = stiff;
-		eqn.f = load;
-		
-		return eqn;
-	}	
+		if(eqn != null) {
+			eqn.A = stiff;
+			eqn.f = load;
+		}
+		if(u != null) {
+	        SolverJBLAS sol = new SolverJBLAS();
+			Vector uSol = sol.solveDGESV(stiff, load);
+			u.set(uSol);
+		}
+	}
 	
 	public Equation getEqnU(Vector a, Vector g, Vector u0_x, Vector u0_y) {
 		if(g == null) {
 			//Robin条件，由于光源在区域外面，在小区域上直接求解会得到0解，因此
-			//先在大区域上求解，然后截取解到小区域，作为Dirichlet边界在小区域上求解
+			//先在大区域上求解uBig，然后截取解到小区域uSmall，
+			//最后将uSmall在边界上的值作为Dirichlet边界在小区域上求解
 			Vector aBig = Tools.extendData(mesh, meshBig, a, this.aBackground);
-	        plotVector(meshBig,aBig,String.format("aBig%02d.dat",this.iterNum));
+			if(debug)
+				plotVector(meshBig,aBig,String.format("aBig_ext%02d.dat",this.iterNum));
 			
-			Equation eq = getEqnU(meshBig,aBig,null, null, null);
+	        Vector uBig = new SparseVector();
+			getOrSolveEqnU(meshBig, aBig, null, null, null, null, uBig);
 			
-	        //Solver sol = new Solver();
-	        //Vector uBig = sol.solveCGS(eq.A, eq.f);
-	        
-	        SolverJBLAS sol = new SolverJBLAS();
-			Vector uBig = sol.solveDGESV(eq.A, eq.f);
-			
-	        plotVector(meshBig,uBig,String.format("uBig%02d.dat",this.iterNum));
+			if(debug)
+				plotVector(meshBig,uBig,String.format("uBig_ext%02d.dat",this.iterNum));
 	        Vector uSmall = Tools.extractData(meshBig, mesh, uBig);
-	        return getEqnU(mesh,a,uSmall, null, null);
-	        //return getEqnU(mesh,a,null, u0_x, u0_y);
+	        
+	        Equation eq = new Equation();
+	        getOrSolveEqnU(mesh,a,uSmall, null, null, eq, null);
+	        //getEqnU(mesh,a,null, u0_x, u0_y, eq, null);
+	        return eq;
 		}
 		else {
 			//在小区域求解Dirichlet问题（得到系数矩阵和右端向量）
-			return getEqnU(mesh,a,g, null, null);
+	        Equation eq = new Equation();
+			getOrSolveEqnU(mesh,a,g, null, null, eq, null);
+			return eq;
 		}
 	}
 	
@@ -1275,6 +1337,11 @@ public class VariationGaussNewtonDOTMult {
 	 * @return
 	 */
 	public Vector solveRealU(int s_i) {
+		
+//		modelReal.mu_a = new Vector2Function(
+//				DataReader.readVector(this.outputFolder+"\\aBig00.dat")
+//				);
+		
 		Vector uRealBig = modelReal.solveNeumann(meshBig);
 		plotVector(meshBig, uRealBig, String.format("M%02d_uRealBig.dat",s_i));
 		
@@ -1340,14 +1407,23 @@ public class VariationGaussNewtonDOTMult {
 	 * @return
 	 */
 	public Vector solveStateEquation(Vector a, Vector g, Vector u0_x, Vector u0_y) {
-		Equation eq = this.getEqnU(a, g, u0_x, u0_y);
-        //Solver solver = new Solver();
-        //Vector u = solver.solveCGS(eq.A, eq.f);
-        
-        SolverJBLAS sol = new SolverJBLAS();
-		Vector u = sol.solveDGESV(eq.A, eq.f);
-
-        return u;
+		Vector u = new SparseVector();
+		if(g == null) {
+			//Robin条件，由于光源在区域外面，在小区域上直接求解会得到0解，因此
+			//先在大区域上求解，然后截取解到小区域
+			Vector aBig = Tools.extendData(mesh, meshBig, a, this.aBackground);
+			if(debug)
+				plotVector(meshBig,aBig,String.format("aBig_ext%02d.dat",this.iterNum));
+			
+	        Vector uBig = new SparseVector();
+			getOrSolveEqnU(meshBig,aBig,null, null, null, null, uBig);
+			if(debug)
+				plotVector(meshBig,uBig,String.format("uBig_ext%02d.dat",this.iterNum));
+	        u = Tools.extractData(meshBig, mesh, uBig);
+		} else {
+			getOrSolveEqnU(mesh, a, g, u0_x, u0_y, null, u);
+		}
+		return u;
 	}
 	
 	/**
@@ -1647,12 +1723,152 @@ public class VariationGaussNewtonDOTMult {
 	}
 
 	
-	public void refine(Vector ak, double factor) {
+	/**
+	 * 加密网格，会改变mesh和meshBig
+	 * @param ak
+	 * @param factor
+	 */
+	public void refineAllMesh(Vector ak, double factor) {
 		ElementList eToRefine = Tools.computeRefineElement(mesh, ak, factor);
+		writeElementIndex("eToRefine.txt",eToRefine);
 		this.refineMesh(eToRefine);
+		
+	}
+	
+	public void writeElementIndex(String fileName, ElementList eList) {
+	    FileOutputStream out = null;
+	    PrintWriter br = null;
+	    try {
+			File file = new File(".\\"+this.getOutputFolder()+"\\"+fileName);
+			out = new FileOutputStream(file);
+			OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
+			br = new PrintWriter(writer);
+			for(int i=1;i<=eList.size();i++) {
+				br.println(eList.at(i).globalIndex);
+			}
+			if(br != null)
+				br.close();
+			if(out != null)
+				out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public ObjIndex readElementIndex(String fileName) {
+		FileInputStream in;
+		ObjIndex rlt = new ObjIndex();
+		try {
+			File file = new File(".\\"+this.getOutputFolder()+"\\"+fileName);
+			in = new FileInputStream(file);
+
+			InputStreamReader reader = new InputStreamReader(in,"UTF-8");
+			BufferedReader br = new BufferedReader(reader);
+	
+			String str = null;
+
+			while((str = br.readLine()) != null){
+				rlt.add(Integer.parseInt(str.trim()));
+			}
+			br.close();
+			in.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return rlt;
 	}	
 	
+	
+	/**
+	 * Get measurement data of light source s_i
+	 * 
+	 * @param s_i
+	 * @return
+	 */
+	public Vector getMeasurementData(int s_i) {
+		return null;
+	}
+	
+	/**
+	 * 先标记网格边界，再置零内部结点值，该方法不会影响原有边界标记
+	 * @param mesh
+	 * @param v
+	 * @return
+	 */
+	public Vector clearInnerValues(Mesh mesh, Vector v) {
+		HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
+		mapNTF.put(NodeType.Robin, null);
+		Map<NodeType, Function> mapNTFOld = mesh.getMarkBorderMap(); 
+		
+		mesh.clearBorderNodeMark();
+		mesh.markBorderNode(mapNTF);
+		NodeList nodes = mesh.getNodeList();
+		for(int j=1;j<=nodes.size();j++) {
+			//System.out.println(nodes.at(j)+"   "+nodes.at(j).getNodeType());
+			Node node = nodes.at(j);
+			//if(node.coord(1))
+			if(nodes.at(j).getNodeType()==NodeType.Inner)
+				v.set(j,0.0);
+			
+			
+		}
+		mesh.clearBorderNodeMark();
+		mesh.markBorderNode(mapNTFOld);
+		
+		return v;
+	}
+	
+	public Vector getAFromGCM(Mesh oldMesh, Mesh newMesh) {
+		if(newMesh == null) {
+			return Tools.function2vector(oldMesh, modelGuess.mu_a);
+		} else if(oldMesh != null && newMesh != null){
+			//当网格加密后，aGlob采用插值计算出来，而不采用modelGuess.mu_a，
+			//否则会导致重构结果在加密单元的中间结点产生小突起（整个看起来有很多小突起）
+			return Tools.interplateFrom(oldMesh, newMesh, aGlob);
+		}
+		return null;
+	}
 
+	public List<ParamOfLightSource> generateSimulateData() {
+		List<ParamOfLightSource> paramList = new ArrayList<ParamOfLightSource>();
+		for(int i=0; i<LSx.length; i++) {
+			reinitModelLight(i);
+			ParamOfLightSource para = new ParamOfLightSource();
+			para.s_i = i;
+			para.g = solveRealU(i);
+			if(debug) {
+				meshBig.writeNodesInfo(String.format("%s\\meshBig%02d.dat",this.getOutputFolder(),iterNum));
+				Function gx = new DuDx(mesh,new Vector2Function(para.g,mesh,"x","y"),"x");
+				Function gy = new DuDx(mesh,new Vector2Function(para.g,mesh,"x","y"),"y");
+				Tools.plotFunction(mesh, this.getOutputFolder(), 
+						String.format("testM%02d_g_grad.dat",i), gx, gy);
+			}
+			if(!bTestWholdDomain) {
+				clearInnerValues(mesh, para.g);
+			}
+			plotVector(mesh, para.g, String.format("M%02d_g.dat",i));
+			paramList.add(para);
+		}
+		
+		//以边界上的测量结果作为边界条件，再以aGlob为系数，求解状态方程，作为“测量”解，
+		//在整个区域上计算u-z,而不是只在边界上计算u-g
+		//其中 g=z|_\Gamma
+		if(bTestBoundaryAsWholdDomain) {
+			for(int i=0; i<LSx.length; i++) {
+				reinitModelLight(i);
+				ParamOfLightSource para = paramList.get(i);
+				//重新更新para.g
+				Vector tmp = para.g;
+				para.g = solveStateEquation(aGlob, para.g, null, null);
+				plotVector(mesh, para.g, String.format("M%02d_gApproximate.dat",i));
+				plotVector(mesh, FMath.axpy(-1.0, tmp, para.g), String.format("M%02d_g_gApproximate_diff.dat",i));
+			}
+		}
+		return paramList;
+	}
+	
+	public List<ParamOfLightSource> getMeasurementData() {
+		return null;
+	}
 	
 	
 	public Vector gaussNewtonIterateMulti(List<ParamOfLightSource> paramList, Vector a0) {
@@ -1667,15 +1883,12 @@ public class VariationGaussNewtonDOTMult {
 		Vector[] lambda0 = new SparseVector[nDataBlock];
 		
 		for(int i=0;i<nDataBlock;i++) {
-			//!!!
 			this.reinitModelLight(i);
-			
 			ParamOfLightSource param =  paramList.get(i);
 			
 			//在大区域上求解状态方程，然后计算导数，最后截取到小区域上
 			Vector uBig = this.modelGuess.solveNeumann(meshBig);
 			plotVector(meshBig, uBig, String.format("M%02d_u0Big.dat",i));
-			//param.g在small区域上  plotVector(meshBig, FMath.axpy(-1.0, uBig, param.g), String.format("M%02d_u0Big_uRealBig_diff.dat",i));
 			Vector uBig_x = Tools.computeDerivativeFast(meshBig, uBig, "x");
 			Vector uBig_y = Tools.computeDerivativeFast(meshBig, uBig, "y");
 			u0_x[i] = Tools.extractData(meshBig, mesh, uBig_x);
@@ -1691,6 +1904,8 @@ public class VariationGaussNewtonDOTMult {
 			
 			
 			lambda0[i] = this.solveAdjointEquation(param.s_i, a0, u0[i], param.g);
+			mesh.writeNodesInfo(String.format("%s\\meshLambda%02d.dat",this.getOutputFolder(),iterNum));
+
 			plotVector(mesh, lambda0[i], String.format("M%02d_lambda0.dat",i));
 		}
 		//************************************************************
@@ -1718,16 +1933,16 @@ public class VariationGaussNewtonDOTMult {
 		for(int iter=0;iter<maxIter;iter++) {
 			
 			this.iterNum = iter;
+			br.println(">>>>iter="+iter);
 			
 			//步长矩阵
 			BlockMatrix BM = this.getSearchDirectionMatrix(a0, u0, u0_x, u0_y, paramList);
 			
 			//步长右端向量
 			for(int i=1;i<=nDataBlock;i++) {
-				//!!!
 				this.reinitModelLight(i-1);
-
 				ParamOfLightSource param =  paramList.get(i-1);
+				
 				//状态方程余量
 				Vector resLlmd = null;
 				if(bTestWholeDomainDirichletBoundary)
@@ -1752,16 +1967,18 @@ public class VariationGaussNewtonDOTMult {
 					FC.c(this.aBackground) //a(x)的边界条件: back ground of a(x)
 					).scale(-1.0));
 
-			
+/*			
 			//设置边界条件并求解
 			//需要交换矩阵BM的第1, 2列，然后设置边界条件，这样使得矩阵A, A'可逆
 			//BlockMatrix newBM = this.changeBlockColumn(BM, nDataBlock);
 	        //if(this.bTestWholeDomainDirichletBoundary)
 			//	this.imposeDirichletCondition(newBM, f, nDataBlock, FC.c0);
-			//SchurComplementLagrangianSolver solver = 
-			//	new SchurComplementLagrangianSolver(BM, f,mesh);
-			//BlockVector x = solver.solveMulti();
-
+			SchurComplementLagrangianSolver solver = 
+				new SchurComplementLagrangianSolver(BM, f,mesh);
+			BlockVector x = solver.solveMulti();
+			//BlockVector x = solver.solve();//Test for one light source
+			
+*/
 			//this.imposeDirichletCondition(BM, f, FC.c0);
 	        if(this.bTestWholeDomainDirichletBoundary)
 	        	this.imposeDirichletCondition(BM, f, nDataBlock,FC.c0);
@@ -1781,25 +1998,32 @@ public class VariationGaussNewtonDOTMult {
 	        //BlockMatrix newBM = this.changeBlockColumn(BM, nDataBlock);
 			SolverJBLAS sol = new SolverJBLAS();
 			BlockVector x = (BlockVector)sol.solveDGESV(BM, f);
-			
+
 			for(int i=1;i<=nDataBlock;i++) {
 				plotVector(mesh, x.getBlock(i), String.format("M%02d_delta_v%02d.dat",i-1,iter));
 				plotVector(mesh, x.getBlock(nDataBlock+i), String.format("M%02d_delta_lambda%02d.dat",i-1,iter));
 			}
-			
 			Vector delta_a = x.getBlock(nDataBlock*2+1);
-			//截取一定范围的结果，其他地方都置零
-			//!!!只截取delta_a还不够，还需要重新计算v和lambda
-//			for(int j=1;j<=nodes.size();j++) {
-//				Node node = nodes.at(j);
-//				if(node.coord(1)<2 || node.coord(1)>4)
-//					delta_a.set(j, 0.0);
-//				else if(node.coord(2)<1.5)
-//					delta_a.set(j, 0.0);
-//					
-//			}
 			plotVector(mesh, delta_a, String.format("delta_a%02d.dat",iter));
 			
+			//截取一定范围的结果，其他地方都置零
+			//!!!只截取delta_a还不够，还需要重新计算v和lambda
+			NodeList nodes = this.mesh.getNodeList();
+			for(int j=1;j<=nodes.size();j++) {
+				Node node = nodes.at(j);
+				if(node.coord(1)<2.1 || node.coord(1)>2.9)
+					delta_a.set(j, 0.0);
+				else if(node.coord(2)<1.6 || node.coord(2)>2.4)
+					delta_a.set(j, 0.0);
+			}
+			plotVector(mesh, delta_a, String.format("delta_cut_a%02d.dat",iter));
+			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
+			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
+			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
+			plotVector(mesh, delta_a, String.format("delta_cut_smooth_a%02d.dat",iter));
+			
+
+//得到delta_a后，显示求解delta_v
 //			for(int i=0;i<nDataBlock;i++) {
 //				//!!!
 //				this.reinitModelLight(i);
@@ -1810,37 +2034,124 @@ public class VariationGaussNewtonDOTMult {
 //				plotVector(mesh, dvs, String.format("M%02d_rlt_delta_v_solve%02d.dat",i,iterNum));
 //			}
 			
-			//自动选取步长
-			stepLength = 1;
-			for(int i=1;i<=nDataBlock;i++) {
-				ParamOfLightSource param =  paramList.get(i-1);
-				Vector v_z = FMath.axpy(-1.0, param.g, u0[i-1]);
-				errorNorm = v_z.norm2();
-				br.format("Error norm2(u-g)=%f \n", errorNorm);
-				Vector delta_v = x.getBlock(i);
-				//stepLength*||delta_v|| < ||v_z||
-				double tmp = errorNorm/delta_v.norm2();
-				if(stepLength > tmp)
-					stepLength = tmp;
+			//-----------------------二分法搜索步长---------------------------
+			double stepBase = 0.0;
+			double stepDelta = 1.0;
+			int maxSearchNum = 25;
+			
+			//计算当前light intensity误差范数：uk-z (边界： uk|_\Gamma-g)
+			double[] v_gNorm = new double[nDataBlock];
+			for(int i=0;i<nDataBlock;i++) {
+				ParamOfLightSource param =  paramList.get(i);
+				Vector u0Tmp = u0[i];
+				if(!bTestWholdDomain) {
+					u0Tmp = u0[i].copy();
+					clearInnerValues(mesh, u0Tmp);
+				}
+				v_gNorm[i] = FMath.axpy(-1.0, param.g, u0Tmp).norm2();
 			}
-			if(stepLength * delta_a.normInf() > a0.normInf()) {
-				stepLength = (0.5/Math.pow(2, iter))*a0.normInf()/delta_a.normInf();
-				//stepLength = (0.1/(iter+1))*a0.normInf()/delta_a.normInf();
-				System.out.println("Iter"+iter+"++++++++++++++++++++++++++++++++=>stepLength="+stepLength);
-				br.println("stepLength_m2="+stepLength);
-			} else {
-				System.out.println("Iter"+iter+"=================================>stepLength="+stepLength);
-				br.println("stepLength_m1="+stepLength);
+			//ak+da后，计算light intensity误差，判断是否减小，以下过程寻找“近似最小”：
+			//如果一直减少就往下寻找，直到变大，取上一个步长
+			double lastFindStepLen = -1.0;
+			double lastNormSearch = 0.0;
+			for(int searchNum=0;searchNum<maxSearchNum;searchNum++) {
+				Vector a0Search = a0.copy();
+				a0Search.add(stepBase+stepDelta, delta_a);
+			
+				boolean bFind = true;
+				br.println(String.format("Search %02d, stepLength=%f",searchNum,stepBase+stepDelta));
+				System.out.println(String.format("Search %02d, stepLength=%f",searchNum,stepBase+stepDelta));
+				double[] v_gNormSearch = new double[nDataBlock];
+				for(int i=0;i<nDataBlock;i++) {
+					this.reinitModelLight(i);
+					ParamOfLightSource param =  paramList.get(i);
+					Vector vsol = null;
+					if(bTestWholeDomainDirichletBoundary)
+						vsol = this.solveStateEquation(a0Search,param.g,null,null);
+					else
+						vsol = this.solveStateEquation(a0Search,null,u0_x[i],u0_y[i]);
+					plotVector(mesh, vsol, String.format("M%02d_rlt_search_v_solve%02d.dat",i,iterNum));
+
+					Vector vsolTmp = vsol;
+					if(!bTestWholdDomain) {
+						vsolTmp = vsol.copy();
+						clearInnerValues(mesh, vsolTmp);
+					}
+					v_gNormSearch[i] = FMath.axpy(-1.0, param.g, vsolTmp).norm2();
+					br.println("NormSearch="+v_gNormSearch[i]+"  NormLast="+v_gNorm[i]);
+					System.out.println("NormSearch="+v_gNormSearch[i]+"  NormLast="+v_gNorm[i]);
+					//大于当前的500%
+					double factor = 1.0;
+					if(iter == 0) factor = 1.0;
+					else if(iter == 1) factor = 1.0;
+					else if(iter <=10) factor = 1.0;
+					else factor = 1.00;
+					if(v_gNormSearch[i] > factor*v_gNorm[i]) {
+						br.println("go to next search...");
+						bFind = false;
+						break;
+					}
+				}
+
+				if(bFind){ // && lastFindStepLen > 0.0 && FMath.max(v_gNormSearch) > lastNormSearch) {
+					br.println("found!");
+					break;
+				}
+
+				lastNormSearch = FMath.max(v_gNormSearch);
+				lastFindStepLen = stepDelta;
+				stepDelta = stepDelta*0.75;
+				
 			}
+			stepBase = stepDelta;
+			br.println(String.format("stepLength=%f",stepBase));
+			System.out.println(String.format("Iter=%02d==========================>stepLength=%f",iter,stepBase));
+			
+			
+//			for(int i=1;i<=nDataBlock;i++) {
+//				ParamOfLightSource param =  paramList.get(i-1);
+//				Vector uk = u0[i-1];
+//				if(!bTestWholdDomain) {
+//					uk = u0[i-1].copy();
+//					clearInnerValues(mesh, uk);
+//				}
+//				Vector v_z = FMath.axpy(-1.0, param.g, uk);
+//				errorNorm = v_z.norm2();
+//				br.format("M%02d Error norm2(u-g)=%f \n", i, errorNorm);
+//				Vector delta_v = x.getBlock(i);
+//				if(!bTestWholdDomain) {
+//					delta_v = x.getBlock(i).copy();
+//					clearInnerValues(mesh,delta_v);
+//				}
+//				//stepLength*||delta_v|| < ||v_z||
+//				double tmp = errorNorm/delta_v.norm2();
+//				if(stepLength > tmp)
+//					stepLength = tmp;
+//			}
+//			if(stepLength * delta_a.normInf() > a0.normInf()*0.2) {
+//				stepLength = (0.5/Math.pow(2, iter))*a0.normInf()/delta_a.normInf();
+//				//stepLength = (0.1/(iter+1))*a0.normInf()/delta_a.normInf();
+//				System.out.println("Iter"+iter+"++++++++++++++++++++++++++++++++=>stepLength="+stepLength);
+//				br.println("stepLength_m2="+stepLength);
+//			} else {
+//				System.out.println("Iter"+iter+"=================================>stepLength="+stepLength);
+//				br.println("stepLength_m1="+stepLength);
+//			}
+//			br.println();
+//			if(stepLength > lastStepLength) {
+//				stepLength = 0.1*lastStepLength;
+//			}
+//			lastStepLength = stepLength;
+//			errorNorm = 2.0;
 			
 			
 			//这一步更新u0,lambda0实际没有使用，后面是根据更新的a0计算新的u0,lambda0
 			for(int i=1;i<=nDataBlock;i++) {
-				u0[i-1].add(stepLength, x.getBlock(i));
+				u0[i-1].add(stepDelta*beta, x.getBlock(i));
 				//注意：-stepLength应该是正的
-				lambda0[i-1].add(stepLength, x.getBlock(nDataBlock+i));
+				lambda0[i-1].add(stepDelta*beta, x.getBlock(nDataBlock+i));
 			}
-			a0.add(stepLength, x.getBlock(nDataBlock*2+1));
+			a0.add(stepDelta, delta_a);
 			
 			for(int i=1;i<=nDataBlock;i++) {
 				plotVector(mesh, u0[i-1], String.format("M%02d_rlt_v%02d.dat",i-1,iter));
@@ -1848,135 +2159,174 @@ public class VariationGaussNewtonDOTMult {
 			}
 			plotVector(mesh, a0, String.format("rlt_a%02d_refine%02d.dat",iter,refineNum));
 			
-//			//计算新a0对应的v，再计算lmd，用来验证
-//			for(int i=0;i<nDataBlock;i++) {
-//				//!!!
-//				this.reinitModelLight(i);
-//				
-//				ParamOfLightSource param =  paramList.get(i);
-//				Vector vsol = null;
-//				if(bTestWholeDomainDirichletBoundary)
-//					vsol = this.solveStateEquation(a0,param.g,null,null);
-//				else
-//					vsol = this.solveStateEquation(a0,null,u0_x[i],u0_y[i]);
-//				plotVector(mesh, vsol, String.format("M%02d_rlt_v_solve%02d.dat",i,iterNum));
-//				plotVector(mesh, FMath.axpy(-1.0, vsol, u0[i]), String.format("M%02d_rlt_v_diff%02d.dat",i,iterNum));
-//				//直接计算u0+du
-//				u0[i] = vsol;
-//				
-//				Vector lamsol = this.solveAdjointEquation(param.s_i, a0, vsol, param.g);
-//				plotVector(mesh, lamsol, String.format("M%02d_rlt_lambda_solve%02d.dat",i,iterNum));
-//				plotVector(mesh, FMath.axpy(-1.0, lamsol, lambda0[i]), String.format("M%02d_rlt_lambda_diff%02d.dat",i,iterNum));
-//				//直接计算lambda0+dl
-//				lambda0[i] = lamsol;
-//				
-//			}
+			//计算新a0对应的v，再计算lmd，用来验证
+			for(int i=0;i<nDataBlock;i++) {
+				this.reinitModelLight(i);
+				ParamOfLightSource param =  paramList.get(i);
+				
+				Vector vsol = null;
+				if(bTestWholeDomainDirichletBoundary)
+					vsol = this.solveStateEquation(a0,param.g,null,null);
+				else
+					vsol = this.solveStateEquation(a0,null,u0_x[i],u0_y[i]);
+				plotVector(mesh, vsol, String.format("M%02d_rlt_v_solve%02d.dat",i,iterNum));
+				plotVector(mesh, FMath.axpy(-1.0, vsol, u0[i]), String.format("M%02d_rlt_v_diff%02d.dat",i,iterNum));
+				//直接计算u0+du
+				u0[i] = vsol;
+				
+				Vector lamsol = this.solveAdjointEquation(param.s_i, a0, vsol, param.g);
+				plotVector(mesh, lamsol, String.format("M%02d_rlt_lambda_solve%02d.dat",i,iterNum));
+				plotVector(mesh, FMath.axpy(-1.0, lamsol, lambda0[i]), String.format("M%02d_rlt_lambda_diff%02d.dat",i,iterNum));
+				//直接计算lambda0+dl
+				lambda0[i] = lamsol;
+				
+			}
 			
 			br.flush();
-			if(errorNorm < 1.0) break;
+			
+			//if(errorNorm < 1.0) break;
 			
 		}
 		return a0;
 
 		
-	}
+	}	
 	
-	public static void main(String[] args) {
-		String tmpOutputFolder = outputFolder;
-		VariationGaussNewtonDOTMult vgn = new VariationGaussNewtonDOTMult();
-		vgn.debug = true;
-//		vgn.readMeshTriangle();
-		vgn.readMeshRectangle();
-		
-		//vgn.testRefine();
-		//vgn.testRefine2();
-		//vgn.mesh.printMeshInfo();
-		
-		
-		plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aRealBig.dat"));
-		plotFunction(vgn.mesh, vgn.modelReal.mu_a, String.format("aReal.dat"));
-		//a(x)参考值（GCM方法得到的结果）
-		vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.mu_a);
-		plotVector(vgn.mesh, vgn.aGlob, "aGlob.dat");
-		//Vector a0 = vgn.aGlob.copy();
-		Vector a0 = Tools.function2vector(vgn.mesh, vgn.modelInit.mu_a);
-		plotVector(vgn.mesh, a0, "a0.dat");
-		plotVector(vgn.mesh, FMath.axpy(-1.0, a0, 
-				Tools.function2vector(vgn.mesh, vgn.modelReal.mu_a)),"aReal_diff.dat");
-		
-		vgn.beginLog();
-		int totalRefineNum = 1;
-		double[] factors={0.15,0.15,0.15,0.15};
-		for(int k=0; k<totalRefineNum; k++) {
-			vgn.refineNum = k;
-			
-			List<ParamOfLightSource> paramList = 
-							new ArrayList<ParamOfLightSource>();
-			NodeList nodes = vgn.mesh.getNodeList();
-			
-			for(int i=0; i<vgn.LSx.length; i++) {
-				//初始化模型“光源位置” 和 “包含物位置”
-				vgn.reinitModelLight(i);
+	protected void work(Vector a0, int beginRefineNum, boolean simulate) {
+		beginLog();
+		//Begin refinement iteration
+		Vector ak = a0;
+		if(simulate) {
+			for(int i=beginRefineNum; i<totalRefineNum; i++) {
+				refineNum = i;
 				
-				ParamOfLightSource para = new ParamOfLightSource();
-				para.s_i = i;
-				para.g = vgn.solveRealU(i);
-				Function gx = new DuDx(vgn.mesh,new Vector2Function(para.g,vgn.mesh,"x","y"),"x");
-				Function gy = new DuDx(vgn.mesh,new Vector2Function(para.g,vgn.mesh,"x","y"),"y");
-				Tools.plotFunction(vgn.mesh, VariationGaussNewtonDOTMult.outputFolder, 
-						String.format("M%02d_g_grad.dat",i), gx, gy);
-
-				if(!vgn.bTestWholdDomain) {
-					HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
-					mapNTF.put(NodeType.Robin, null);
-					vgn.mesh.clearBorderNodeMark();
-					vgn.mesh.markBorderNode(mapNTF);
-					for(int j=1;j<=nodes.size();j++) {
-						//System.out.println(nodes.at(j)+"   "+nodes.at(j).getNodeType());
-						if(nodes.at(j).getNodeType()==NodeType.Inner)
-							para.g.set(j,0.0);
-					}
-				}
-				plotVector(vgn.mesh, para.g, String.format("M%02d_g.dat",i));
-				paramList.add(para);
+				//Write mesh file in local folder for later use in 'reStart()' function if possible
+				MeshWriter.write2DMesh(mesh, String.format(".\\%s\\%s",getOutputFolder(),gridFileSmall));
+				MeshWriter.write2DMesh(meshBig, String.format(".\\%s\\%s",getOutputFolder(),gridFileBig));
+				
+				List<ParamOfLightSource> paramList = generateSimulateData();
+				
+				//Gauss-Newtom Iteration
+				Vector aNew = gaussNewtonIterateMulti(paramList,ak);
+				
+				//Refine all meshes (mesh and meshBig)
+				Mesh oldMesh = mesh.copy();
+				refineAllMesh(aNew,refineFactors[i]);
+				//mesh.printMeshInfo();
+				
+				//Interplate ak from old mesh to new refined mesh
+				ak = Tools.interplateFrom(oldMesh,mesh,aNew);
+				//Interplate aGlob from old mesh to new refined mesh
+				//or
+				//Read a(x) from GCM (Global Convergence Method) based on new mesh
+				aGlob = getAFromGCM(oldMesh, this.mesh);
+				
+				//Set new output folder index
+				setOutputFolderIndex(i+1);
+				
+				//Plot parameters: a0, aReal, aGlob (After refinement)
+				plotVector(mesh, ak, "a0.dat");
+				plotFunction(mesh, modelReal.mu_a, String.format("aReal_refine%02d.dat",i));
+				plotFunction(meshBig, modelReal.mu_a, String.format("aRealBig_refine%02d.dat",i));
+				plotVector(mesh, aGlob, "aGlob.dat");
+				plotVector(mesh, FMath.axpy(-1.0, ak, 
+						Tools.function2vector(mesh, modelReal.mu_a)),"aReal_diff.dat");			
 			}
-			
-			//边界测量结果作为边界条件，aGlob为系数，求解状态方程，作为“测量”解，在整个区域上计算
-			//而不是只在边界上计算u-g
-			if(vgn.bTestBoundaryAsWholdDomain) {
-				for(int i=0; i<vgn.LSx.length; i++) {
-					//初始化模型“光源位置” 和 “包含物位置”
-					vgn.reinitModelLight(i);
-					ParamOfLightSource para = paramList.get(i);
-					
-					//重新更新para.g
-					Vector tmp = para.g;
-					para.g = vgn.solveStateEquation(vgn.aGlob, para.g, null, null);
-					plotVector(vgn.mesh, para.g, String.format("M%02d_gApproximate.dat",i));
-					plotVector(vgn.mesh, FMath.axpy(-1.0, tmp, para.g), String.format("M%02d_g_gApproximate_diff.dat",i));
-				}
-			}
-			
-			
-			Vector ak = vgn.gaussNewtonIterateMulti(paramList,a0);
-			plotVector(vgn.mesh, ak, String.format("rlt_a_smooth_refine%02d.dat",k));
-			
-			//加密网格，会改变mesh和meshBig
-			Mesh oldMesh = vgn.mesh.copy();
-			vgn.refine(ak,factors[k]);
-			//vgn.mesh.printMeshInfo();
-			
-			outputFolder = String.format(tmpOutputFolder+"%02d", k);
-			//将结果插值到加密后的网格上
-			a0 = Tools.interplateFrom(oldMesh,vgn.mesh,ak);
-			plotVector(vgn.mesh, a0, "a0.dat");
-			vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.mu_a);
-			plotVector(vgn.mesh, vgn.aGlob, "aGlob.dat");
-			plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aRealBig_refine%02d.dat",k));
-			plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aReal_refine%02d.dat",k));
+		} else {
+			//TODO
 		}
-		vgn.endLog();
+		endLog();
 		
 	}
 	
+	/**
+	 * 从中间结果回复计算，以上次加密编号和上次计算迭代次数的重构结果开始新的一轮加密计算
+	 * 
+	 * @param lastRefineNum 上次加密编号
+	 * @param lastIterationNum 上次计算迭代次数
+	 * @param simulate
+	 */
+	public void reStart(int lastRefineNum, int lastIterationNum, boolean simulate) {
+		setOutputFolderIndex(lastRefineNum);
+		
+		//Update grid files to refined files
+		readMesh(".\\"+getOutputFolder());
+		
+		//Read initial guess of a0
+		Vector a0 = DataReader.readVector(String.format(".\\%s\\rlt_a%02d_refine%02d.dat",
+				getOutputFolder(),lastIterationNum,lastRefineNum));
+		
+		
+		//Refine all meshes (mesh and meshBig)
+		Mesh oldMesh = mesh.copy();
+		refineAllMesh(a0,refineFactors[lastRefineNum]);
+		//mesh.printMeshInfo();
+        HashMap<NodeType, Function> mapNTF =
+            new HashMap<NodeType, Function>();
+	    mapNTF.put(NodeType.Dirichlet, null);
+	    mesh.markBorderNode(mapNTF);
+        //mesh.writeNodesInfo(String.format("mesh%02d.dat",iterNum));
+
+		//Interplate ak from old mesh to new refined mesh
+		a0 = Tools.interplateFrom(oldMesh,mesh,a0);
+		//Interplate aGlob from old mesh to new refined mesh
+		//or
+		//Read a(x) from GCM (Global Convergence Method) based on new mesh
+		if(simulate) {
+			aGlob = getAFromGCM(oldMesh,this.mesh);
+		} else {
+			//TODO
+		}
+		
+		//Set new output folder index
+		setOutputFolderIndex(lastRefineNum+1);
+		
+		//Plot parameters: a0, aReal, aGlob (After refinement)
+		plotVector(mesh, a0, "a0.dat");
+		plotFunction(mesh, modelReal.mu_a, String.format("aReal_refine%02d.dat",lastRefineNum+1));
+		plotFunction(meshBig, modelReal.mu_a, String.format("aRealBig_refine%02d.dat",lastRefineNum+1));
+		plotVector(mesh, aGlob, "aGlob.dat");
+		plotVector(mesh, FMath.axpy(-1.0, a0, 
+				Tools.function2vector(mesh, modelReal.mu_a)),"aReal_diff.dat");
+		
+		work(a0,lastRefineNum+1,simulate);
+	}
+	
+	public void start(boolean simulate) {
+		readMesh("."); //Read mesh in current path
+		//testRefine();
+		//testRefine2();
+		//mesh.printMeshInfo();
+		
+		//Read a(x) from GCM (Global Convergence Method)
+		aGlob = this.getAFromGCM(this.mesh, null);
+		//Choose initial guess of a0
+		////Vector a0 = aGlob.copy();
+		Vector a0 = Tools.function2vector(mesh, modelInit.mu_a);
+		
+		//Plot parameters: a0, aReal, aGlob
+		plotVector(mesh, a0, "a0.dat");
+		plotFunction(mesh,   modelReal.mu_a,  String.format("aReal.dat"));
+		plotFunction(meshBig, modelReal.mu_a, String.format("aRealBig.dat"));
+		plotVector(mesh, aGlob, "aGlob.dat");
+		plotVector(mesh, FMath.axpy(-1.0, a0, 
+				Tools.function2vector(mesh, modelReal.mu_a)),"aReal_diff.dat");
+		
+		work(a0,0,simulate);
+	}
+	
+	/**
+	 * 输出结果到子文件夹中，子文件可以有多个，按照加密层次编号，从初始网格00开始编号
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		VariationGaussNewtonDOTGeneral vgn = 
+			new VariationGaussNewtonDOTGeneral();
+		vgn.init();
+		
+		vgn.start(true);
+		
+		//vgn.reStart(1,3,true);
+	}
 }
