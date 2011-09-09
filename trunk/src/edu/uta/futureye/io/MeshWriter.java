@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.util.Calendar;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.Element;
@@ -221,7 +223,13 @@ public class MeshWriter {
 		}
 	}
 	
-	
+	/**
+	 * 输出一维函数
+	 * 
+	 * @param fileName
+	 * @param x
+	 * @param y
+	 */
 	public void writeTechplotLine(String fileName, Vector x, Vector y) {
 		FileOutputStream out;
 		try {
@@ -239,5 +247,58 @@ public class MeshWriter {
 			e.printStackTrace();
 		}
 	}
-
+	
+	/**
+	 * 输出二维网格（用于网格加密后，将网格写为文件，可以下次读取使用）
+	 * @param fileName
+	 */
+	public static void write2DMesh(Mesh mesh, String fileName) {
+		FileOutputStream out;
+		try {
+			File file = new File(fileName);
+			out = new FileOutputStream(file);
+			OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
+			PrintWriter br = new PrintWriter(writer);
+			
+			DateFormat fmt = DateFormat.getDateTimeInstance();
+			br.println("#   UCD geometry file from Futureye");
+			br.println("#   "+fmt.format(Calendar.getInstance().getTime()));
+			br.println("#   ");
+			
+			NodeList nList = mesh.getNodeList();
+			int nN = nList.size();
+			ElementList eList = mesh.getElementList();
+			int nE = eList.size();
+			br.format("%d %d 0 0 0", nN,nE);
+			br.println();
+			
+			for(int i=1;i<=nN;i++) {
+				Node node = nList.at(i);
+				br.format("%d %f %f", i, node.coord(1),node.coord(2));
+				br.println();
+			}
+			
+			for(int i=1;i<=nE;i++) {
+				Element e = eList.at(i);
+				if(e.nodes.size() == 3) {
+					br.format("%d 0 tri %d %d %d", i,
+							e.nodes.at(1).globalIndex,
+							e.nodes.at(2).globalIndex,
+							e.nodes.at(3).globalIndex);
+				} else {
+					br.format("%d 0 quad %d %d %d %d", i,
+							e.nodes.at(1).globalIndex,
+							e.nodes.at(2).globalIndex,
+							e.nodes.at(3).globalIndex,				
+							e.nodes.at(4).globalIndex);					
+				}
+				br.println();
+			}
+			
+			br.close();
+			out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

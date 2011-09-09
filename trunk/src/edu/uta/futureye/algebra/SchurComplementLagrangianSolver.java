@@ -112,14 +112,14 @@ public class SchurComplementLagrangianSolver {
 		
 		S2.axpy(1.0,RR);
 		
-		Solver sov = new Solver();
-		FullVector p = new FullVector(rhs.getDim(),1.0);
-		sov.solveCGS(S2, rhs, p);
-		//SolverJBLAS sov = new SolverJBLAS();
-		//SparseMatrix SS2 = S2.getSparseMatrix();
-		//SparseVector Srhs = rhs.getSparseVector();
+//		Solver sov = new Solver();
+//		FullVector p = new FullVector(rhs.getDim(),1.0);
+//		sov.solveCGS(S2, rhs, p);
+		SolverJBLAS sov = new SolverJBLAS();
+		SparseMatrix SS2 = S2.getSparseMatrix();
+		SparseVector Srhs = rhs.getSparseVector();
 		//this.imposeDirichletCondition(SS2, Srhs, FC.c0);
-		//FullVector p = new FullVector(sov.solveDGESV(SS2, Srhs));
+		FullVector p = new FullVector(sov.solveDGESV(SS2, Srhs));
 		
 		
 		//A*u    = Fl - C*p
@@ -249,9 +249,14 @@ public class SchurComplementLagrangianSolver {
 		S.axpy(1.0,RR);
 		//S = RR
 		
-		Solver sov = new Solver();
-		FullVector p = new FullVector(rhs.getDim(),1.0);
-		sov.solveCGS(S, rhs, p);
+		//Solver sov = new Solver();
+		//FullVector p = new FullVector(rhs.getDim(),1.0);
+		//sov.solveCGS(S, rhs, p);
+		SolverJBLAS sov = new SolverJBLAS();
+		SparseMatrix SS2 = S.getSparseMatrix();
+		SparseVector Srhs = rhs.getSparseVector();
+		FullVector p = new FullVector(sov.solveDGESV(SS2, Srhs));
+		
 		
 		////////////////////////////////////////
 		//\Delta(\Delta(sum)) 数值不稳定
@@ -295,11 +300,11 @@ public class SchurComplementLagrangianSolver {
 	 */
 	public FullVector invB_v(CompressedRowMatrix B, FullVector v) {
 		FullVector x = new FullVector(v.getDim(),0.1);
-		x.setRandom(1.0, -0.5);
+		x.setRandom(1.0, 0.05);
 		//SolverJBLAS sov = new SolverJBLAS();
 		//x = new FullVector(sov.solveDGESV(B.getSparseMatrix(), v.getSparseVector()));
 		Solver sov = new Solver();
-		sov.epsRelIter = 1e-5;
+		sov.epsRelIter = 1e-7;
 		sov.solveCGS(B, v, x);
 		return x;
 	}
@@ -314,7 +319,7 @@ public class SchurComplementLagrangianSolver {
 		CompressedColMatrix BC = new CompressedColMatrix(B.rowDim,C.colDim);
 		FullVector v = new FullVector(C.getRowDim());
 		FullVector x = new FullVector(C.getRowDim());
-		x.setRandom(1.0, -0.5);
+		x.setRandom(1.0, 0.05);
 		
 //		SolverJBLAS sov = new SolverJBLAS();
 //		int colDim = C.getColDim();
@@ -326,14 +331,14 @@ public class SchurComplementLagrangianSolver {
 //		}
 		
 		Solver sov = new Solver();
-		sov.epsRelIter = 1e-5;
+		sov.epsRelIter = 1e-7;
 		int colDim = C.getColDim();
 		for(int c=1; c<=colDim; c++) {
 			C.getColVector(c, v);
 			sov.solveCGS(B, v, x);
 			FullVector.SparseData sd = x.getSparseData();
 			BC.setCol(c, sd.index, sd.data);
-		}		
+		}
 		return BC;
 	}
 

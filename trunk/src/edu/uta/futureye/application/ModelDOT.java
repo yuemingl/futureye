@@ -157,7 +157,7 @@ public class ModelDOT {
 		assembler.assemble();
 		Matrix stiff = assembler.getStiffnessMatrix();
 		Vector load = assembler.getLoadVector();
-		System.out.println(load.get(55));
+		//System.out.println(load.get(55));
 		//Dirichlet condition
 		if(diri != null)
 			assembler.imposeDirichletCondition(diri);
@@ -242,6 +242,8 @@ public class ModelDOT {
 		meshSmall.computeNodeBelongsToElements();
 		meshSmall.computeNeighborNodes();		
 		
+		Tools.plotFunction(meshSmall, outputFolder, "a_real.dat", model.mu_a);
+		
 		//TEST 1.
 		Vector uBig = model.solveNeumann(meshBig);
 		Tools.plotVector(meshBig, outputFolder, "u_big.dat", uBig);
@@ -308,7 +310,18 @@ public class ModelDOT {
 		//Adaptive
 		ElementList eToRefine = Tools.computeRefineElement(meshBig, aBig, 0.03);
 		Refiner.refineOnce(meshBig, eToRefine);
+		eToRefine.clear();
+		eToRefine.add(meshBig.getElementList().at(meshBig.getElementList().size()-1));
+		eToRefine.add(meshBig.getElementList().at(meshBig.getElementList().size()-2));
+		Refiner.refineOnce(meshBig, eToRefine);
 		Tools.assignLinearShapFunction(meshBig);
+		
+		Tools.plotFunction(meshBig, outputFolder, "a_real_big_refine.dat", model.mu_a);
+		Vector v_mu_a = Tools.function2vector(meshBig, model.mu_a);
+		Tools.constrainHangingNodes(meshBig, v_mu_a);
+		model.mu_a = new Vector2Function(v_mu_a);
+		Tools.plotFunction(meshBig, outputFolder, "a_real_big_refine_hanging_node.dat", model.mu_a);
+		
 		Vector uBigRefine = model.solveNeumann(meshBig);
 		Tools.plotVector(meshBig, outputFolder, "u_big_refine.dat", uBigRefine);
 		

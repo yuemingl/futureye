@@ -13,6 +13,8 @@ import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
+import edu.uta.futureye.function.AbstractFunction;
+import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FAxpb;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
@@ -257,6 +259,16 @@ public class TestAdaptive {
 	
 		Mesh mesh = reader.read2DMesh();
 		HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
+//验证边界结点加密后是自由的，而不是hanging node		
+//		mapNTF.put(NodeType.Robin, new AbstractFunction("x","y"){
+//			@Override
+//			public double value(Variable v) {
+//				if(Math.abs(v.get("x"))<0.01)
+//					return 1.0;
+//				else
+//					return -1.0;
+//			}
+//		});	
 		mapNTF.put(NodeType.Dirichlet, null);	
 
 		mesh.computeNodeBelongsToElements();

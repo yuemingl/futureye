@@ -1153,13 +1153,17 @@ public class Element {
 	}
 	
 	/**
-	 * 判断一个坐标点是否在单元内部（包括单元边界），适用于任意维度
+	 * 判断一个坐标点是否在单元内部（包括单元边界和单元结点），适用于任意维度
 	 * 
 	 * @param coord
 	 * @return
 	 */
 	public boolean isCoordInElement(double[] coord) {
 		Vertex v = new Vertex().set(0, coord);
+		for(int i=1;i<=nodes.size();i++) {
+			if(nodes.at(i).coordEquals(v))
+				return true;
+		}
 		if(this.eleDim == 1) {
 			return Utils.isPointOnLine(
 						this.vertices().at(1), 
@@ -1167,6 +1171,11 @@ public class Element {
 						new Vertex().set(0,coord)
 					);
 		} else if(this.eleDim == 2) {
+			for(int i=2;i<=nodes.size();i++) {
+				boolean b = Utils.isPointOnLineSegmentNoEndingPoint(nodes.at(i-1), nodes.at(i), v);
+				if(b) 
+					return true;
+			}
 			//计算以 coord 为顶点，分别以单元顶点为方向的夹角，如果总和为360度，则是内点。
 			double angle = 0.0;
 			ObjList<EdgeLocal> edges = this.edges();

@@ -44,8 +44,8 @@ import edu.uta.futureye.util.container.NodeList;
 
 public class Tools {
 	public static Vector computeDerivative(Mesh mesh, Vector U, String varName) {
-		//return computeDerivative(mesh, U, varName, 0.0);
-		return computeDerivativeFast(mesh, U, varName);
+		return computeDerivative(mesh, U, varName, 0.0);
+		//return computeDerivativeFast(mesh, U, varName);
 		
 	}
 	
@@ -108,6 +108,9 @@ public class Tools {
 			Double[] aa = new Double[N];
 			for(int j=0;j<N;j++) 
 				aa[j] = a[j];
+			if(map.get(e.globalIndex) != null) {
+				throw new FutureyeException("Duplicate element in mesh: i="+i+", e.globalIndex="+e.globalIndex);
+			}
 			map.put(e.globalIndex, aa);
 		}
 		
@@ -122,7 +125,7 @@ public class Tools {
 			double dv = 0.0;
 			int nE = list.size();
 			
-			//判断周围单元不包含Hanging Node的单元总数：
+			//判断一个结点周围单元不包含Hanging Node的单元总数：
 			//  如果大于零则利用这些单元计算导数
 			//  如果等于零，则令包含1个Handing Node单元也参与导数计算
 			//这样处理的结果会使导数更加光滑
@@ -133,6 +136,7 @@ public class Tools {
 				if(e.getHangingNode().size()==0) nTotal++;
 			}
 			if(nTotal==0) threthHode = 1;
+			//threthHode = 4;//效果要好一些？
 			nTotal = 0;
 			for(int j=1;j<=nE;j++) {
 				Element e = list.at(j);
@@ -193,21 +197,30 @@ public class Tools {
 	}
 
 	public static void plotFunction(Mesh mesh, String outputFolder, String fileName, Function fun, Function ...funs) {
-	    NodeList list = mesh.getNodeList();
-	    int nNode = list.size();
-		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
-	    for(int i=1;i<=nNode;i++) {
-	    	Node node = list.at(i);
-	    	var.setIndex(node.globalIndex);
-	    	for(int j=1;j<=node.dim();j++) {
-	    		if(fun.varNames().size()==node.dim())
-	    			var.set(fun.varNames().get(j-1), node.coord(j));
-	    	}
-	    	v.set(i, fun.value(var));
-	    }
-	    //TODO funs
-	    plotVector(mesh,outputFolder,fileName,v);
+//	    NodeList list = mesh.getNodeList();
+//	    int nNode = list.size();
+//		Variable var = new Variable();
+//		Vector v = new SparseVector(nNode);
+//	    for(int i=1;i<=nNode;i++) {
+//	    	Node node = list.at(i);
+//	    	var.setIndex(node.globalIndex);
+//	    	for(int j=1;j<=node.dim();j++) {
+//	    		if(fun.varNames().size()==node.dim())
+//	    			var.set(fun.varNames().get(j-1), node.coord(j));
+//	    	}
+//	    	v.set(i, fun.value(var));
+//	    }
+		Vector v = Tools.function2vector(mesh, fun);
+		if(funs.length > 0) {
+			Vector[] vs = new SparseVector[funs.length];
+			for(int i=0;i<funs.length;i++) {
+				vs[i] = Tools.function2vector(mesh, funs[i]);
+			}
+		    plotVector(mesh,outputFolder,fileName,v,vs);
+			
+		} else {
+			plotVector(mesh,outputFolder,fileName,v);
+		}
 	}
 	
 	public static Vector extendData(Mesh meshFrom, Mesh meshTo, Vector u, double deaultValue) {
@@ -266,19 +279,23 @@ public class Tools {
 		
 		
 		//Parameters
-//		weakFormL2.setParam(
-//				k, new Vector2Function(U)
-//			);
-		
+//利用弱形式内部定义的单元上的分片导数计算Ux,Uy		
+		weakFormL2.setParam(
+				k, new Vector2Function(U)
+			);
+
+//求解方程计算导数
 //		Vector Ux = Tools.computeDerivative(mesh, U, "x",0.0);
 //		Vector Uy = Tools.computeDerivative(mesh, U, "y",0.0);
-		Vector Ux = Tools.computeDerivativeFast(mesh, U, "x");
-		Vector Uy = Tools.computeDerivativeFast(mesh, U, "y");
-		weakFormL2.setParam(
-				k, new Vector2Function(U), 
-				new Vector2Function(Ux),
-				new Vector2Function(Uy)
-			);		
+		
+//快速计算导数		
+//		Vector Ux = Tools.computeDerivativeFast(mesh, U, "x");
+//		Vector Uy = Tools.computeDerivativeFast(mesh, U, "y");
+//		weakFormL2.setParam(
+//				k, new Vector2Function(U), 
+//				new Vector2Function(Ux),
+//				new Vector2Function(Uy)
+//			);		
 		
 		Assembler assembler = new AssemblerScalar(mesh, weakFormL2);
 		System.out.println("Begin Assemble...solveParamInverse");
@@ -442,4 +459,33 @@ public class Tools {
 		}
 	}
 
+	public static Vector interplateFrom(Mesh oldMesh, Mesh newMesh, Vector ak) {
+		Function fun = new Vector2Function(ak,oldMesh,"x","y");
+		int nNode = newMesh.getNodeList().size();
+		NodeList nodes = newMesh.getNodeList();
+		Vector rlt = new SparseVector(nNode);
+		for(int i=1;i<=nNode;i++) {
+			Variable v = new Variable();
+			v.set("x",nodes.at(i).coord(1));
+			v.set("y",nodes.at(i).coord(2));
+			double val = fun.value(v);
+			rlt.set(i,val);
+		}
+		return rlt;
+	}
+	
+	public static void constrainHangingNodes(Mesh mesh, Vector v) {
+		NodeList nodes = mesh.getNodeList();
+		for(int i=1;i<=nodes.size();i++) {
+			Node node = nodes.at(i);
+			if(node instanceof NodeRefined) {
+				NodeRefined nRefined = (NodeRefined)node;
+				if(nRefined.isHangingNode()) {
+					v.set(node.globalIndex,
+							v.get(nRefined.constrainNodes.at(1).globalIndex)*0.5+
+							v.get(nRefined.constrainNodes.at(2).globalIndex)*0.5);
+				}
+			}
+		}
+	}
 }

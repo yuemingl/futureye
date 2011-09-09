@@ -14,7 +14,7 @@ public class Solver {
 	public double epsAbsIterMax = 1e-6;
 	
 	//迭代最大次数
-	public double maxIter = 10000;
+	public double maxIter = 20000;
 	
 	/**
 	 * Conjugate Gradients iterative method, solves 

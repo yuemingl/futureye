@@ -51,15 +51,18 @@ public class Refiner {
 		return findNeighbors;
 	}
 	
-	public static void directRefine(Mesh mesh, ElementList eToRefine) {
+	public static boolean directRefine(Mesh mesh, ElementList eToRefine) {
 		ElementList meList = mesh.getElementList();
 		NodeList mnList = mesh.getNodeList();
+		int refinedNum = 0;
 		
 		for(int i=1;i<=eToRefine.size();i++) {
 			Element e = eToRefine.at(i);
 			//防止重复refine
-			if(e.isRefined())
+			if(e.isRefined()) {
+				refinedNum++;
 				continue;
+			}
 			
 			ElementList eList = new ElementList();
 			VertexList vList = e.vertices();
@@ -241,24 +244,44 @@ public class Refiner {
 				ex.printStackTrace();
 			}
 			
-			for(int j=1;j<=eList.size();j++) {
-				Element eNew = eList.at(j);
-				if(eNew.globalIndex == 0) {
-					eNew.globalIndex = meList.size()+1;
-					meList.add(eNew);
-					for(int k=1;k<=eNew.nodes.size();k++) {
-						Node nNew = eNew.nodes.at(k);
+			//单元编号有问题，如果两次加密，会产生重复的单元编号
+			//解决方案：整个单元列表重新编号
+			//结点列表由于只有增加结点，因此保持原方案
+//			for(int j=1;j<=eList.size();j++) {
+//				Element eNew = eList.at(j);
+//				if(eNew.globalIndex == 0) {
+//					eNew.globalIndex = meList.size()+1;
+//					meList.add(eNew);
+//					for(int k=1;k<=eNew.nodes.size();k++) {
+//						Node nNew = eNew.nodes.at(k);
+//						if(nNew.globalIndex == 0) {
+//							nNew.globalIndex = mnList.size()+1;
+//							mnList.add(nNew);
+//						}
+//					}
+//				}	
+//			}
+			
+			meList.addAll(eList);
+			for(int j=1;j<=meList.size();j++) {
+				Element e2 = meList.at(j);
+				if(e2.globalIndex == 0) {
+					e2.globalIndex = j;
+					for(int k=1;k<=e2.nodes.size();k++) {
+						Node nNew = e2.nodes.at(k);
 						if(nNew.globalIndex == 0) {
 							nNew.globalIndex = mnList.size()+1;
 							mnList.add(nNew);
 						}
 					}
-				}	
-			}
-			
+				}  else {
+					e2.globalIndex = j;
+				}
+			}			
 			e.childs = eList;
 		}
 
+		return refinedNum==eToRefine.size();
 	}
 
 	
@@ -267,7 +290,7 @@ public class Refiner {
 		while(true) {
 			ElementList eNeighbors = checkNeighborRefinement(eToRefine);
 			if(eNeighbors.size()>0) {
-				directRefine(mesh,eNeighbors);
+				boolean stop = directRefine(mesh,eNeighbors);
 				computeHangingNode(eNeighbors);
 				for(int iToRe=1;iToRe<=eNeighbors.size();iToRe++) {
 					eList.remove(eNeighbors.at(iToRe));
@@ -276,6 +299,7 @@ public class Refiner {
 				mesh.computeNeighborNodes();
 				mesh.computeGlobalEdge();
 				mesh.computeNeighborElements();
+				if(stop) break;
 			} else {
 				directRefine(mesh,eToRefine);
 				computeHangingNode(eToRefine);

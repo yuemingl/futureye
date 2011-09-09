@@ -57,6 +57,7 @@ public class SparseVector implements Vector {
 	
 	@Override
 	public Vector set(Vector v) {
+		this.dim = v.getDim();
 		if(v instanceof SparseVector) {
 			SparseVector tmp = (SparseVector)v;
 			this.data.clear();
@@ -74,6 +75,7 @@ public class SparseVector implements Vector {
 	
 	@Override
 	public Vector set(double a, Vector v) {
+		this.dim = v.getDim();
 		if(v instanceof SparseVector) {
 			SparseVector tmp = (SparseVector)v;
 			this.data.clear();

@@ -105,7 +105,7 @@ public class VariationGaussNewtonDOTPlus {
 	//Test: u_g在整个区域上都已知
 	boolean bTestWholdDomain = true;
 	boolean bTestWholeDomainDirichletBoundary = false;
-	boolean bTestBoundaryAsWholdDomain = true;
+	boolean bTestBoundaryAsWholdDomain = false;
     
     //mu_a
     Vector aGlob = null;//GCM方法得到的a_glob(x)

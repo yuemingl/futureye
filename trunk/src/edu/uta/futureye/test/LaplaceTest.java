@@ -24,6 +24,7 @@ import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.assembler.AssemblerScalarFast;
 import edu.uta.futureye.lib.element.FEBilinearRectangle;
+import edu.uta.futureye.lib.element.FEBilinearRectangleRegular;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
@@ -165,7 +166,8 @@ public class LaplaceTest {
 */
 		//Use element library
 		ElementList eList = mesh.getElementList();
-		FEBilinearRectangle bilinearRectangle = new FEBilinearRectangle();
+		FEBilinearRectangleRegular bilinearRectangle = new FEBilinearRectangleRegular();
+//		FEBilinearRectangle bilinearRectangle = new FEBilinearRectangle();
 		for(int i=1;i<=eList.size();i++)
 			bilinearRectangle.assignTo(eList.at(i));
 		

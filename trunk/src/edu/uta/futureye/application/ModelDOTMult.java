@@ -202,10 +202,12 @@ public class ModelDOTMult {
 		String outputFolder = "ModelDOTMult";
 //		String gridFileBig = "prostate_test3_ex.grd";
 //		String gridFileSmall = "prostate_test3.grd";
-		String gridFileBig = "prostate_test7_ex.grd";
-		String gridFileSmall = "prostate_test7.grd";
+//		String gridFileBig = "prostate_test7_ex.grd";
+//		String gridFileSmall = "prostate_test7.grd";
 //		String gridFileBig = "prostate_test8_ex.grd";
 //		String gridFileSmall = "prostate_test8.grd";
+		String gridFileBig = "prostate_test10_ex.grd";
+		String gridFileSmall = "prostate_test10.grd";
 
 
 		ModelDOTMult model = new ModelDOTMult();

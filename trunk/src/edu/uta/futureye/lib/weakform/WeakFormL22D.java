@@ -54,6 +54,7 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 			
 			Function integrand = null;
 			if(g_Ux == null) {
+//新方法1：计算导数				
 				int N = e.nodes.size();
 				double[] f = new double[N];
 				for(int i=1;i<=N;i++) {
@@ -75,7 +76,12 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 						fk.M(
 							fUx.M(v._d("x")).A(fUy.M(v._d("y")))
 						)
-					);				
+					);	
+//新方法2：计算导数
+				//利用类DuDx
+				
+				
+//旧方法：计算导数				
 //				Function rlt_dx = new FC(0.0);
 //				Function rlt_dy = new FC(0.0);
 //				int nNode = e.nodes.size();

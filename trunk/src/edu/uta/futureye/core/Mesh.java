@@ -6,8 +6,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
+import edu.uta.futureye.tutorial.Tools;
 import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.MultiKey;
@@ -33,6 +36,8 @@ public class Mesh {
 	protected FaceList faceList = null;
 	
 	public int nVertex = 0;
+	
+	protected Map<NodeType, Function> mapNTF;
 	
 	public EdgeList getEdgeList() {
 		return edgeList;
@@ -138,6 +143,8 @@ public class Mesh {
 	 */
 	public void markBorderNode(int vvfIndex, Map<NodeType,Function> mapNTF) {
 		System.out.println("markBorderNode...");
+		this.mapNTF = mapNTF;
+		if(mapNTF == null) return;
 		for(int i=1;i<=nodeList.size();i++) {
 			Node node = nodeList.at(i);
 			if(node.belongToElements.size()==0) {
@@ -174,6 +181,9 @@ public class Mesh {
 		for(int i:vvfIndexSet)
 			markBorderNode(i,mapNTF);
 	}
+	public Map<NodeType, Function> getMarkBorderMap() {
+		return this.mapNTF;
+	}
 	
 	public void clearBorderNodeMark() {
 		clearBorderNodeMark(1);
@@ -190,6 +200,8 @@ public class Mesh {
 		for(int i:set)
 			clearBorderNodeMark(i);
 	}
+	
+	
 	
 	/**
 	 * 判断网格是否包含结点node
@@ -448,11 +460,21 @@ public class Mesh {
 	}
 	
 	/**
-	 * 
+	 * Copy a mesh
 	 */
-	Mesh copy() {
-		//TODO
-		return null;
+	public Mesh copy() {
+		Mesh newMesh = new Mesh();
+		newMesh.nodeList.addAll(nodeList);
+		if(edgeList != null) {
+			newMesh.edgeList = new EdgeList();
+			newMesh.edgeList.addAll(edgeList);
+		}
+		if(faceList != null) {
+			newMesh.faceList = new FaceList();
+			newMesh.faceList.addAll(faceList);
+		}
+		newMesh.eleList.addAll(eleList);
+		return newMesh;
 	}
 	
 	public void printMeshInfo() {
@@ -476,6 +498,40 @@ public class Mesh {
 		for(int i=1;i<=this.nodeList.size();i++) {
 			System.out.println("GNI"+i+" "+this.nodeList.at(i).globalIndex);
 		}
+	}
+	
+	/**
+	 * Note:
+	 * Inner Node  =5
+	 * Dirichlet   =1
+	 * Neumann     =2
+	 * Robin       =3
+	 * Hanging Node=10
+	 * Unknown     =15
+	 * 
+	 * 
+	 * @param fileName
+	 */
+	public void writeNodesInfo(String fileName) {
+		int N = nodeList.size();
+		Vector v = new SparseVector(N,20);
+		for(int i=1;i<=N;i++) {
+			Node node = nodeList.at(i);
+			if(node.getNodeType() == NodeType.Inner) 
+				v.set(i, 5.0);
+			else if(node.getNodeType() == NodeType.Dirichlet)
+				v.set(i, 1);
+			else if(node.getNodeType() == NodeType.Neumann)
+				v.set(i,2);
+			else if(node.getNodeType() == NodeType.Robin)
+				v.set(i, 3);
+			if(node instanceof NodeRefined) {
+				NodeRefined nr = (NodeRefined)node;
+				if(nr.isHangingNode())
+					v.set(i, 10.0);
+			}
+		}
+		Tools.plotVector(this, "", fileName, v);
 	}
 	
 }
