@@ -5,7 +5,7 @@ import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.util.Utils;
 
-public class WeakFormElasticIsoPlaneStrain2D extends AbstractVectorWeakform {
+public class WeakFormElasticIsoPlaneStrain2D extends AbstractVectorWeakForm {
 	double E = 1000; //Young's modulus
 	double gamma = 0.25; //Poisson ratio
 	VectorFunction g_b; //Body force

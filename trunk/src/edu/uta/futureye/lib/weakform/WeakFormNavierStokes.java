@@ -45,7 +45,7 @@ import edu.uta.futureye.util.Utils;
  * @author liuyueming
  *
  */
-public class WeakFormNavierStokes extends AbstractVectorWeakform {
+public class WeakFormNavierStokes extends AbstractVectorWeakForm {
 	protected VectorFunction g_f = null;
 	protected Function g_k = null;
 	protected VectorFunction g_U = null;

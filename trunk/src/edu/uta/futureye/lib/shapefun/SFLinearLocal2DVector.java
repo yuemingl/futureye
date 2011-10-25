@@ -147,11 +147,6 @@ public class SFLinearLocal2DVector extends AbstractVectorFunction
 	}
 	
 	@Override
-	public void print() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public Vector value(Variable v) {
 		return (Vector) this.sf.value(v);
 	}

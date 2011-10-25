@@ -58,8 +58,7 @@ public class Laplace {
         //Right hand side(RHS): f = -2*(x^2+y^2)+36
         Function fx = FX.fx;
         Function fy = FX.fy;
-        weakForm.setF(FC.c(-2.0).M( fx.M(fx).A(fy.M(fy)) )
-                .A(FC.c(36.0)));
+        weakForm.setF(fx.M(fx).A(fy.M(fy)).M(-2.0).A(36.0));
 
         //5.Assembly process
         AssemblerScalar assembler =

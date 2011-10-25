@@ -159,11 +159,6 @@ public class RaviartThomas2D0 extends AbstractVectorFunction implements VectorSh
 	}
 
 	@Override
-	public void print() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
 	public Vector value(Variable v) {
 		return this.funCompose.value(v);
 	}

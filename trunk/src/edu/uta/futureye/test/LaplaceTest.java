@@ -78,10 +78,11 @@ public class LaplaceTest {
 			linearTriangle.assignTo(eList.at(i));
 		
 		//User defined weak form of PDE (including bounder conditions)
-		//-\Delta{u} = f
-		//u(x,y)=0, (x,y)\in\partial{\Omega}
-		//u=(x^2-9)*(y^2-9)
-		//f=-2*(x^2+y^2)+36
+		// -\Delta{u} = f
+		// u(x,y)=0, (x,y)\in\partial{\Omega}
+		// f=-2*(x^2+y^2)+36
+		//Real solution
+		// u=(x^2-9)*(y^2-9)
 		WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
 		weakForm.setF(FC.c(-2.0).M(
 						FX.fx.M(FX.fx).A(FX.fy.M(FX.fy))
@@ -533,10 +534,11 @@ public class LaplaceTest {
 		}
 		
 		//User defined weak form of PDE (including bounder conditions)
-		//-\Delta{u} = f
-		//u(x,y)=0, (x,y)\in\partial{\Omega}
-		//u=(x^2-9)*(y^2-9)
-		//f=-2*(x^2+y^2)+36
+		// -\Delta{u} = f
+		// u(x,y)=0, (x,y)\in\partial{\Omega}
+		// f=-2*(x^2+y^2)+36
+		//Real solution
+		// u=(x^2-9)*(y^2-9)
 		WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
 		weakForm.setF(FC.c(-2.0).M(
 				FX.fx.M(FX.fx).A(FX.fy.M(FX.fy))

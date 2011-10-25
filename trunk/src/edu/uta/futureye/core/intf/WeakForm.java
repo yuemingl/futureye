@@ -10,16 +10,17 @@ import edu.uta.futureye.function.intf.ShapeFunction;
 public interface WeakForm {
 	static enum ItemType {Domain, Border};
 	
-	//////////////////////Common Approach/////////////////////////
+	//--- Common approach to provide weak form to assembler-----
 	void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
 			ShapeFunction test, int testDofLocalIndex);
 	
 	Function leftHandSide(Element e, ItemType itemType);
 	Function rightHandSide(Element e, ItemType itemType);
+	//----------------------------------------------------------
 	
-	//////////////////////Fast Approach//////////////////////////
+	//--- Fast approach to provide weak form to assembler-----
 	/**
-	 * Assemble element e here, instead of providing left hand side
+	 * Assemble element <code>e</code> here, instead of providing left hand side
 	 * and right hand side.
 	 * 
 	 * @param e
@@ -29,11 +30,10 @@ public interface WeakForm {
 	 */
 	void assembleElement(Element e, 
 			Matrix globalStiff, Vector globalLoad);
-	
-	///////////////////////////////////////////////////////////////
+	//--------------------------------------------------------
 	
 	/**
-	 * Integrate on element
+	 * Integrate on element <code>e</code>
 	 * 
 	 * @param e
 	 * @param fun: LHS or RHS

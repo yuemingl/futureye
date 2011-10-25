@@ -101,6 +101,8 @@ public class Node implements Point {
 	
 	@Override
 	public boolean coordEquals(Point p) {
+		if(this.dim != p.dim())
+			return false;
 		for(int i=1;i<=this.dim;i++) {
 			if(Math.abs(this.coord(i)-p.coord(i)) > Constant.meshEps)
 				return false;

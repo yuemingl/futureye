@@ -32,7 +32,7 @@ import edu.uta.futureye.util.Utils;
  * @author liuyueming
  *
  */
-public class WeakFormStokes extends AbstractVectorWeakform {
+public class WeakFormStokes extends AbstractVectorWeakForm {
 	protected VectorFunction g_f = null;
 	protected Function g_k = null;
 	protected Function g_c = null;

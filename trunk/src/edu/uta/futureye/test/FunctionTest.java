@@ -9,6 +9,7 @@ import edu.uta.futureye.application.Tools;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
+import edu.uta.futureye.function.AbstractVectorFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.DuDx;
 import edu.uta.futureye.function.basic.FAx;
@@ -19,6 +20,7 @@ import edu.uta.futureye.function.basic.FPolynomial1D;
 import edu.uta.futureye.function.basic.FX;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
+import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.util.container.ElementList;
@@ -209,13 +211,37 @@ public class FunctionTest {
 	    
 	}
 	
+	public static void testFunctionExpression() {
+		List<String> varNames = new ArrayList<String>();
+		varNames.add("x");
+		varNames.add("y");
+		
+		VectorFunction f = new AbstractVectorFunction(3,"x","y") {
+			protected Function[] data = new Function[dim];
+			@Override
+			public void set(int index, Function value) {
+				data[index] = value;
+			}
+			@Override
+			public Function get(int index) {
+				return data[index];
+			}
+		};
+		System.out.println(f);
+		System.out.println(f.getExpression());
+		f.setFName("phi(x,y)");
+		System.out.println(f);
+		System.out.println(f.getExpression());
+	}
+	
 	public static void main(String[] args) {
 //		test();
 //		constantTest();
 //		testOperation();
 //		
 //		severalVariableFunctions();
-		testDuDx();
+		//testDuDx();
+		testFunctionExpression();
 	}
 
 		

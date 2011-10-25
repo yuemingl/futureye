@@ -14,6 +14,7 @@ import edu.uta.futureye.function.Variable;
 public interface Function {
 	/**
 	 * Return function value at variable v
+	 * <p>
 	 * 返回自变量v对应的函数值
 	 * 
 	 * @param v
@@ -23,7 +24,9 @@ public interface Function {
 	
 	/**
 	 * Set function variable names
+	 * <p>
 	 * 设置函数自变量名称，对于复合函数，只设置外层自变量名称
+	 * <p>
 	 * 关于复合函数的构造 @see compose()
 	 * 
 	 * @param varNames
@@ -33,6 +36,7 @@ public interface Function {
 	
 	/**
 	 * Return all variable names of the function
+	 * <p>
 	 * 返回所有自变量名称
 	 * 
 	 * @return
@@ -46,6 +50,13 @@ public interface Function {
 	 * @return f+g, f==this
 	 */
 	Function A(Function g);
+	
+	/**
+	 * Add
+	 * 
+	 * @param g
+	 * @return f+g, f==this
+	 */
 	Function A(double g);
 	
 	/**
@@ -55,6 +66,13 @@ public interface Function {
 	 * @return f-g, f==this
 	 */
 	Function S(Function g);
+	
+	/**
+	 * Subtract
+	 * 
+	 * @param g
+	 * @return f-g, f==this
+	 */
 	Function S(double g);
 	
 	/**
@@ -64,6 +82,13 @@ public interface Function {
 	 * @return f*g, f==this
 	 */
 	Function M(Function g);
+	
+	/**
+	 * Multiply
+	 * 
+	 * @param g
+	 * @return f*g, f==this
+	 */
 	Function M(double g);
 	
 	/**
@@ -73,31 +98,41 @@ public interface Function {
 	 * @return f/g, f==this
 	 */
 	Function D(Function g);
+	
+	/**
+	 * Divide
+	 * 
+	 * @param g
+	 * @return f/g, f==this
+	 */	
 	Function D(double g);
 	
 	/**
-	 * Composition function
-	 * 复合函数
+	 * Composition function (复合函数)
+	 * <p><blockquote><pre>
 	 * e.g.
-	 *  Function fx = FX.fx;
-	 *	Function fr = new FX("r");
-	 *	Function fOut = fx.M(fx).S(FC.c1);
-	 *	System.out.println(fOut); //x*x - 1.0
-	 *	Function fIn = fr.M(fr).A(FC.c1);
-	 *  System.out.println(fIn); //r*r + 1.0
-	 *	//Construct a map to define variable mapping
-	 *	Map<String,Function> map = new HashMap<String,Function>();
-	 *	map.put("x", fIn); //x=r*r + 1.0
-	 *	Function fComp = fOut.compose(map);
-	 *	System.out.println(fComp); //x(r)*x(r) - 1.0, where x=r*r + 1.0
-	 *
-	 * @param e.g. fInners: Variable map[ x = x(r,s), y = y(r,s) ]
-	 * @return e.g. f = f(x,y) = f( x(r,s),y(r,s) )
+	 * Function fx = FX.fx;
+	 * Function fr = new FX("r");
+	 * Function fOut = fx.M(fx).S(FC.c1);
+	 * System.out.println(fOut); //x*x - 1.0
+	 * Function fIn = fr.M(fr).A(FC.c1);
+	 * System.out.println(fIn); //r*r + 1.0
+	 * //Construct a map to define variable mapping
+	 * Map<String,Function> map = new HashMap<String,Function>();
+	 * map.put("x", fIn); //x=r*r + 1.0
+	 * Function fComp = fOut.compose(map);
+	 * System.out.println(fComp); //x(r)*x(r) - 1.0, where x=r*r + 1.0
+	 * </pre></blockquote>
+	 * @param fInners: Variable map e.g.[ x = x(r,s), y = y(r,s) ]
+	 * @return composed function e.g. f = f(x,y) = f( x(r,s),y(r,s) )
 	 */
 	Function compose(Map<String,Function> fInners);
 	
 	/**
-	 * 关于varName的一阶导数：
+	 * First derivative with respect to <code>varName</code> 
+	 * <p>
+	 * 关于<code>varName</code>的一阶导数：
+	 * <p>
 	 * f(x)._d(x) := \frac{ \partial{this} }{ \partial{varName} }
 	 * 
 	 * @param varName
@@ -107,7 +142,9 @@ public interface Function {
 
 	
 	/**
-	 * Return function (for constant function only)
+	 * Return value of constant function only
+	 * <p>
+	 * 返回常值函数的函数值，仅用于常值函数
 	 * 
 	 * @return
 	 */
@@ -115,28 +152,64 @@ public interface Function {
 	
 	/**
 	 * Deep copy
+	 * 
 	 * @return
 	 */
 	Function copy();
 	
-	//////////////////For printing expression only///////////////////////////
 	/**
-	 * If function name is not null, the name is printed instead of the expression
+	 * Return the expression of function
+	 * 
+	 * @return
 	 */
-	String getFName();
-	void setFName(String name);
+	String getExpression();
 	
 	/**
-	 * Order of Operations (Priority Rules for Arithmetic)
-	 *   0 Brackets first
-	 *   1 Exponents next
-	 *   2 Multiply and Divide next
-	 *   3 Add and Subtract last of all.
+	 * Get function name
+	 * <p>
+	 * If function name is not null, the name instead of the expression of
+	 * function is returned by <code>toString()</code> method
+	 * 
+	 * @return
 	 */
+	String getFName();
+	
+	/**
+	 * Set function name
+	 * <p>
+	 * If function name is not null, the name instead of the expression of
+	 * function is returned by <code>toString()</code> method
+	 * 
+	 * @param name
+	 * @return
+	 */
+	Function setFName(String name);
+	
 	static int OP_ORDER0 = 0;
 	static int OP_ORDER1 = 1;
 	static int OP_ORDER2 = 2;
 	static int OP_ORDER3 = 3;
+	
+	/**
+	 * Get order of operations (Priority Rules for Arithmetic)
+	 * <blockquote><pre>
+	 * 0 Brackets first
+	 * 1 Exponents next
+	 * 2 Multiply and Divide next
+	 * 3 Add and Subtract last of all.
+	 * </blockquote></pre>  
+	 */	
 	int getOpOrder();
+	
+	/**
+	 * Set order of operations (Priority Rules for Arithmetic)
+	 * <blockquote><pre>
+	 * 0 Brackets first
+	 * 1 Exponents next
+	 * 2 Multiply and Divide next
+	 * 3 Add and Subtract last of all.
+	 * </blockquote></pre>  
+	 * @param order
+	 */
 	void setOpOrder(int order);
 }

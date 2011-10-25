@@ -10,7 +10,7 @@ import edu.uta.futureye.function.intf.VectorShapeFunction;
 import edu.uta.futureye.function.operator.FOIntegrate;
 import edu.uta.futureye.util.FutureyeException;
 
-public abstract class AbstractVectorWeakform implements WeakForm {
+public abstract class AbstractVectorWeakForm implements WeakForm {
 	protected VectorShapeFunction u = null;
 	protected VectorShapeFunction v = null;
 	protected int uDOFLocalIndex;

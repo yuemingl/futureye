@@ -15,8 +15,9 @@ import edu.uta.futureye.util.Utils;
 
 /**
  * Abstract vector function implementation.
- * Notice: Some member functions return an instance of SpaceVectorFunction
- *         which extends from AbstractVectorFunction
+ * <p>
+ * Notice: Some member functions such as algebra operations will return 
+ * an instance of SpaceVectorFunction which extends from AbstractVectorFunction
  * 
  * @author liuyueming
  *
@@ -24,12 +25,25 @@ import edu.uta.futureye.util.Utils;
 public abstract class AbstractVectorFunction implements VectorFunction {
 	protected int dim = 0;
 	protected List<String> varNames = new LinkedList<String>();
+	protected String fName = null;
 	
 	public AbstractVectorFunction() {
 	}
 	
 	public AbstractVectorFunction(int dim) {
 		this.dim = dim;
+	}
+	
+	public AbstractVectorFunction(int dim, List<String> varNames) {
+		this.dim = dim;
+		this.varNames = varNames;
+	}
+	
+	public AbstractVectorFunction(int dim, String varName, String ...aryVarNames) {
+		this.dim = dim;
+		varNames.add(varName);
+		for(String s : aryVarNames)
+			varNames.add(s);
 	}
 	
 	@Override
@@ -233,7 +247,34 @@ public abstract class AbstractVectorFunction implements VectorFunction {
 	}
 
 	@Override
-	public void print() {
-		throw new UnsupportedOperationException();
+	public String getExpression() {
+		String s = varNames.toString();
+		String rlt = "[";
+		for(int i=0;i<dim;i++) {
+			rlt += "F("+s.substring(1, s.length()-1)+")";
+			if(i<dim-1)
+				rlt += ", ";
+		}
+		return rlt+"]";
 	}
+	
+	@Override
+	public String getFName() {
+		return this.fName;
+	}
+	
+	@Override
+	public VectorFunction setFName(String name) {
+		this.fName = name;
+		return this;
+	}
+	
+	@Override
+	public String toString() {
+		if(getFName() == null) {
+			return getExpression();
+		} else 
+			return getFName();
+	}
+	
 }

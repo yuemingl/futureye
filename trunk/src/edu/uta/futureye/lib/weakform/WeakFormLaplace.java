@@ -6,12 +6,15 @@ import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.util.Utils;
 
 /**
- * Solve (2D or 3D):
+ * <blockquote><pre>
+ * Solve the following problem(2D or 3D):
  *   -k*Laplace(u) + c*u = f, in \Omega
  *   u = u0,                  on \Gamma1
  *   d*u + k*u_n = g,         on \Gamma2
+ *   
  *=>Weak formulation:
  *   A(u, v) = (f, v)
+ *   
  * where
  *   A(u, v) = (k*Grad{u}, Grad{v}) - (g-d*u,v)_\Gamma2 + (c*u, v)
  *   \Gamma1: Dirichlet boundary of \Omega
@@ -24,12 +27,11 @@ import edu.uta.futureye.util.Utils;
  *   g = g(\vec{x})
  *
  * Remark:
- * *Nature bounary condition
- * *自然边界条件：
- *   k*u_n + ku = 0
+ * *For nature boundary condition (自然边界条件)
+ *   k*u_n + d*u = 0, set d=k
  * =>
  *   u_n + u = 0 
- *   
+ * </blockquote></pre>  
  *   
  * @author liuyueming
  *
