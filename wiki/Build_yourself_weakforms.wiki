@@ -1,6 +1,9 @@
 #summary An example of solving 2D Laplace problem
 
-==Futureye Example 1==
+==Futureye Example: How to use WeakFormBuilder ==
+
+Although we have defined many weak forms of different types of PDE, sometimes we may need to define ourself weak forms.
+Here, we provide a new method (since version2.1) to define weak forms directly in you current code file. It is easier than the old method (extend AbstractXXXWeakForm or implement interface WeakForm). Let's see the example below.
 
 ===Question===
 <img src="https://lh6.googleusercontent.com/_Cil2MFH7iLM/TN19jeWDEdI/AAAAAAAAABg/WI64bT_jUAY/s800/FutureEyeFirstTest2.png.jpg"/>
@@ -241,6 +244,6 @@ public class UseWeakFormBuilder {
 ===Grid File===
 {{{
 "triangle.grd"
-"triangle.grd"
+"rectangle.grd"
 }}}
 see in source code.
