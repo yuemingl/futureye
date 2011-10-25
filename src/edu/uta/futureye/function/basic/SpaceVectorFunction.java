@@ -129,12 +129,7 @@ public class SpaceVectorFunction extends AbstractVectorFunction {
 	}
 
 	@Override
-	public void print() {
-		System.out.println(this.toString());
-	}
-	
-	@Override
-	public String toString() {
+	public String getExpression() {
 		String rlt = "[";
 		for(int i=0;i<dim;i++) {
 			rlt += data[i].toString();

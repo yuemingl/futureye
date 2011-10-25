@@ -36,7 +36,7 @@ import edu.uta.futureye.util.container.DOFList;
  * @author liuyueming
  *
  */
-public class WeakFormMixedLaplace extends AbstractVectorWeakform {
+public class WeakFormMixedLaplace extends AbstractVectorWeakForm {
 	protected Function g_f = null;
 	protected Function g_k = null;
 	//protected Function g_c = null;

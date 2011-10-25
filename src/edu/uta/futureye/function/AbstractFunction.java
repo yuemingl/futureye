@@ -13,32 +13,19 @@ import edu.uta.futureye.util.Utils;
 
 public abstract class AbstractFunction implements Function {
 	protected List<String> varNames = new LinkedList<String>();
+	protected String fName = null;
 
-	/**
-	 * Construct n Dim function
-	 * 
-	 * @param varName
-	 * @param aryVarNames
-	 */
-	public AbstractFunction(String varName, String ...aryVarNames) {
-		varNames.add(varName);
-		for(String s : aryVarNames)
-			varNames.add(s);
+	public AbstractFunction() {
 	}
 	
-	/**
-	 * Construct n Dim function
-	 * 
-	 * @param varNames
-	 */
 	public AbstractFunction(List<String> varNames) {
 		this.varNames = varNames;
 	}
 	
-	/**
-	 * Construct 1 Dim function
-	 */
-	public AbstractFunction() {
+	public AbstractFunction(String varName, String ...aryVarNames) {
+		varNames.add(varName);
+		for(String s : aryVarNames)
+			varNames.add(s);
 	}
 	
 	@Override
@@ -337,16 +324,16 @@ public abstract class AbstractFunction implements Function {
 	public Function copy() {
 		throw new UnsupportedOperationException();
 	}
-	////////////////////////For printing expression////////////////////////////
 	
 	@Override
 	public String getFName() {
-		return null;
+		return this.fName;
 	}
 	
 	@Override
-	public void setFName(String name) {
-		throw new UnsupportedOperationException();
+	public Function setFName(String name) {
+		this.fName = name;
+		return this;
 	}
 
 	@Override
@@ -360,8 +347,16 @@ public abstract class AbstractFunction implements Function {
 	}
 	
 	@Override
-	public String toString() {
+	public String getExpression() {
 		String s = varNames.toString();
 		return "F("+s.substring(1, s.length()-1)+")";
+	}
+	
+	@Override
+	public String toString() {
+		if(getFName() == null) {
+			return getExpression();
+		} else 
+			return getFName();
 	}
 }

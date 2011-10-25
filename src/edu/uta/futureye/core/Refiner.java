@@ -52,8 +52,7 @@ public class Refiner {
 	}
 	
 	public static boolean directRefine(Mesh mesh, ElementList eToRefine) {
-		ElementList meList = mesh.getElementList();
-		NodeList mnList = mesh.getNodeList();
+		ElementList oldEleList = mesh.getElementList();
 		int refinedNum = 0;
 		
 		for(int i=1;i<=eToRefine.size();i++) {
@@ -64,7 +63,7 @@ public class Refiner {
 				continue;
 			}
 			
-			ElementList eList = new ElementList();
+			ElementList newEleList = new ElementList();
 			VertexList vList = e.vertices();
 			
 			if(vList.size() == 3) {
@@ -140,10 +139,10 @@ public class Refiner {
 				e4.parent = e;
 				e4.setLevel(e.getLevel()+1);
 
-				eList.add(e1);
-				eList.add(e2);
-				eList.add(e3);
-				eList.add(e4);
+				newEleList.add(e1);
+				newEleList.add(e2);
+				newEleList.add(e3);
+				newEleList.add(e4);
 			} else if(vList.size() == 4) {
 				/*
 				 * 	4--7--3
@@ -235,55 +234,68 @@ public class Refiner {
 				e4.parent = e;
 				e4.setLevel(e.getLevel()+1);
 
-				eList.add(e1);
-				eList.add(e2);
-				eList.add(e3);
-				eList.add(e4);
+				newEleList.add(e1);
+				newEleList.add(e2);
+				newEleList.add(e3);
+				newEleList.add(e4);
 			} else {
 				FutureyeException ex = new FutureyeException("Unsupported element type for refinement!");
 				ex.printStackTrace();
 			}
 			
+			NodeList oldNodeList = mesh.getNodeList();
+			
 			//单元编号有问题，如果两次加密，会产生重复的单元编号
-			//解决方案：整个单元列表重新编号
+			//解决方案：每细化一个单元，整个单元列表都重新编号
 			//结点列表由于只有增加结点，因此保持原方案
 //			for(int j=1;j<=eList.size();j++) {
 //				Element eNew = eList.at(j);
 //				if(eNew.globalIndex == 0) {
-//					eNew.globalIndex = meList.size()+1;
-//					meList.add(eNew);
+//					eNew.globalIndex = oldEleList.size()+1;
+//					oldEleList.add(eNew);
 //					for(int k=1;k<=eNew.nodes.size();k++) {
 //						Node nNew = eNew.nodes.at(k);
 //						if(nNew.globalIndex == 0) {
-//							nNew.globalIndex = mnList.size()+1;
-//							mnList.add(nNew);
+//							nNew.globalIndex = oldNodeList.size()+1;
+//							oldNodeList.add(nNew);
 //						}
 //					}
-//				}	
+//				}
 //			}
 			
-			meList.addAll(eList);
-			for(int j=1;j<=meList.size();j++) {
-				Element e2 = meList.at(j);
-				if(e2.globalIndex == 0) {
-					e2.globalIndex = j;
-					for(int k=1;k<=e2.nodes.size();k++) {
-						Node nNew = e2.nodes.at(k);
-						if(nNew.globalIndex == 0) {
-							nNew.globalIndex = mnList.size()+1;
-							mnList.add(nNew);
+			//细化新增的单元与老单元放入同一个list，按照在列表中存储索引，统一重新编号
+			//注意：此时被细化的父单元还没有删除
+			//此时将新结点加入老结点列表，细化后，不需要删除多余结点
+			oldEleList.addAll(newEleList);
+			for(int j=1;j<=oldEleList.size();j++) {
+				Element ele = oldEleList.at(j);
+				if(ele.globalIndex == 0) {
+					ele.globalIndex = j;
+					for(int k=1;k<=ele.nodes.size();k++) {
+						Node newNode = ele.nodes.at(k);
+						if(newNode.globalIndex == 0) {
+							newNode.globalIndex = oldNodeList.size()+1;
+							oldNodeList.add(newNode);
 						}
 					}
 				}  else {
-					e2.globalIndex = j;
+					ele.globalIndex = j;
 				}
-			}			
-			e.childs = eList;
+			}
+			e.childs = newEleList;
 		}
 
 		return refinedNum==eToRefine.size();
 	}
 
+	
+	public static void reNumberElements(Mesh mesh) {
+		ElementList eList = mesh.getElementList();
+		for(int j=1;j<=eList.size();j++) {
+			Element ele = eList.at(j);
+			ele.globalIndex = j;
+		}
+	}
 	
 	public static void refineOnce(Mesh mesh, ElementList eToRefine) {
 		ElementList eList = mesh.getElementList();
@@ -295,6 +307,7 @@ public class Refiner {
 				for(int iToRe=1;iToRe<=eNeighbors.size();iToRe++) {
 					eList.remove(eNeighbors.at(iToRe));
 				}
+				reNumberElements(mesh);
 				mesh.computeNodeBelongsToElements();
 				mesh.computeNeighborNodes();
 				mesh.computeGlobalEdge();
@@ -306,6 +319,7 @@ public class Refiner {
 				for(int iToRe=1;iToRe<=eToRefine.size();iToRe++) {
 					eList.remove(eToRefine.at(iToRe));
 				}
+				reNumberElements(mesh);
 				mesh.computeNodeBelongsToElements();
 				mesh.computeNeighborNodes();
 				mesh.computeGlobalEdge();

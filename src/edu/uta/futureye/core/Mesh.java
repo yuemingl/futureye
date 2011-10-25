@@ -39,6 +39,8 @@ public class Mesh {
 	
 	protected Map<NodeType, Function> mapNTF;
 	
+	public boolean debug = false;
+	
 	public EdgeList getEdgeList() {
 		return edgeList;
 	}
@@ -78,7 +80,8 @@ public class Mesh {
 	 * 计算结点所属的单元，在计算其他网格关系时，该步骤必须先计算
 	 */
 	public void computeNodeBelongsToElements() {
-		System.out.println("computeNodesBelongToElement...");
+		if(debug)
+			System.out.println("computeNodesBelongToElement...");
 		
 //		for(int i=1;i<=nodeList.size();i++) {
 //			for(int j=1;j<=eleList.size();j++) {
@@ -101,8 +104,8 @@ public class Mesh {
 				e.nodes.at(j).addBelongToElements(e);
 			}
 		}
-		
-		System.out.println("computeNodesBelongToElement done!");
+		if(debug)
+			System.out.println("computeNodesBelongToElement done!");
 	}
 	
 	/**
@@ -142,7 +145,8 @@ public class Mesh {
 	 * @param mapNTF
 	 */
 	public void markBorderNode(int vvfIndex, Map<NodeType,Function> mapNTF) {
-		System.out.println("markBorderNode...");
+		if(debug)
+			System.out.println("markBorderNode...");
 		this.mapNTF = mapNTF;
 		if(mapNTF == null) return;
 		for(int i=1;i<=nodeList.size();i++) {
@@ -175,7 +179,8 @@ public class Mesh {
 				}
 			}
 		}
-		System.out.println("markBorderNode done!");
+		if(debug)
+			System.out.println("markBorderNode done!");
 	}	
 	public void markBorderNode(ObjIndex vvfIndexSet, Map<NodeType,Function> mapNTF) {
 		for(int i:vvfIndexSet)

@@ -15,7 +15,8 @@ import edu.uta.futureye.util.container.ObjList;
 
 public class FMath {
 	
-	////////////////////////////Basic////////////////////////
+	//--- Basic operations ------------------------
+	
 	public static Function sqrt(final Function f) {
 		return new AbstractFunction(f.varNames()) {
 			@Override
@@ -147,6 +148,12 @@ public class FMath {
 		return rlt;
 	}
 	
+	/**
+	 * Compute gradient of <code>fun</code>
+	 * 
+	 * @param fun
+	 * @return
+	 */
 	public static VectorFunction grad(Function fun) {
 		List<String> names = fun.varNames();
 		VectorFunction rlt = new SpaceVectorFunction(names.size());
@@ -155,6 +162,14 @@ public class FMath {
 		return rlt;
 	}
 	
+	/**
+	 * Compute gradient of <code>fun</code> with respect to variables <code>varNames</code>
+	 * in case of composition of functions.
+	 * 
+	 * @param fun
+	 * @param varNames
+	 * @return
+	 */
 	public static VectorFunction grad(Function fun,ObjList<String> varNames) {
 		VectorFunction rlt = new SpaceVectorFunction(varNames.size());
 		for(int i=1;i<=varNames.size();i++)
@@ -162,6 +177,12 @@ public class FMath {
 		return rlt;
 	}
 	
+	/**
+	 * Compute divergence of <code>vFun</code>
+	 * 
+	 * @param fun
+	 * @return
+	 */
 	public static Function div(VectorFunction vFun) {
 		int dim = vFun.getDim();
 		Function rlt = FC.c0;
@@ -171,7 +192,15 @@ public class FMath {
 		}
 		return rlt;
 	}
-	
+
+	/**
+	 * Compute divergence of <code>vFun</code> with respect to variables <code>varNames</code>
+	 * in case of composition of functions.
+	 * 
+	 * @param fun
+	 * @param varNames
+	 * @return
+	 */
 	public static Function div(VectorFunction vFun,ObjList<String> varNames) {
 		Function rlt = new FC(0.0);
 		for(int i=1;i<=varNames.size();i++) {
@@ -190,7 +219,8 @@ public class FMath {
 		return null;
 	}
 	
-	/////////////////////Vectors///////////////////////
+	
+	//--- Vectors operations----------------------------------
 	
 	public static Vector sum(Vector ...vi) {
 		if(vi==null || vi.length==0) {
@@ -199,6 +229,18 @@ public class FMath {
 		Vector rlt = vi[0].copy();
 		for(int i=1;i<vi.length;i++) {
 			rlt = rlt.add(vi[i]);
+		}
+		return rlt;
+	}
+	
+	public static double sum(Vector v) {
+		if(v==null) {
+			throw new FutureyeException("Check parameter v="+v);
+		}
+		double rlt = 0.0;
+		int dim = v.getDim();
+		for(int i=1;i<=dim;i++) {
+			rlt += v.get(i);
 		}
 		return rlt;
 	}

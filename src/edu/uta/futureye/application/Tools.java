@@ -44,8 +44,8 @@ import edu.uta.futureye.util.container.NodeList;
 
 public class Tools {
 	public static Vector computeDerivative(Mesh mesh, Vector U, String varName) {
-		return computeDerivative(mesh, U, varName, 0.0);
-		//return computeDerivativeFast(mesh, U, varName);
+		//return computeDerivative(mesh, U, varName, 0.0);
+		return computeDerivativeFast(mesh, U, varName);
 		
 	}
 	
@@ -334,12 +334,74 @@ public class Tools {
 		List<PairDoubleInteger> list = new ArrayList<PairDoubleInteger>();
 		for(int i=1;i<=eList.size();i++) {
 			Element e = eList.at(i);
+			//L2Norm(v-v_smooth) on element e
 			Vector v1 = new SparseVector(e.nodes.size());
 			for(int j=1;j<=e.nodes.size();j++) {
 				Node node = e.nodes.at(j);
 				v1.set(j, v.get(node.globalIndex)-v_smooth.get(node.globalIndex));
 			}
 			list.add(new PairDoubleInteger(v1.norm2(),i));
+		}
+		Collections.sort(list, new Comparator<PairDoubleInteger>() {
+			@Override
+			public int compare(PairDoubleInteger o1, PairDoubleInteger o2) {
+				return o1.d < o2.d ? 1 : -1;
+			}
+		});
+		int nThreshold = (int) Math.floor(persent*eList.size());
+		for(int i=1;i<=nThreshold;i++) {
+			eToRefine.add(eList.at(list.get(i).i));
+		}
+		
+		//如果一个单元相邻单元都细化了，该单元自动细化
+		for(int i=1;i<=eList.size();i++) {
+			Element e = eList.at(i);
+			ElementList eNeighbors = e.neighbors;
+			int findTimes = 0;
+			for(int k=1;k<=eNeighbors.size();k++) {
+				Element en = eNeighbors.at(k);
+				for(int j=1;j<=eToRefine.size();j++) {
+					if(eToRefine.at(j).globalIndex == en.globalIndex) {
+						findTimes++;
+						break;
+					}
+				}
+			}
+			if(findTimes == eNeighbors.size()) {
+				boolean find = false;
+				for(int j=1;j<=eToRefine.size();j++) {
+					if(eToRefine.at(j).globalIndex == e.globalIndex) {
+						find = true;
+						break;
+					}
+				}
+				if(!find)
+					eToRefine.add(e);
+			}
+		}
+		
+		return eToRefine;
+	}	
+	
+	public static ElementList computeRefineElementMax(Mesh mesh, 
+			Vector indicator, double persent) {
+
+	    mesh.computeNodeBelongsToElements();
+	    mesh.computeGlobalEdge();
+	    mesh.computeNeighborElements();
+	    
+		ElementList eList = mesh.getElementList();
+		ElementList eToRefine = new ElementList();
+
+		List<PairDoubleInteger> list = new ArrayList<PairDoubleInteger>();
+		for(int i=1;i<=eList.size();i++) {
+			Element e = eList.at(i);
+			//sum(indicator) on element e
+			Vector v1 = new SparseVector(e.nodes.size());
+			for(int j=1;j<=e.nodes.size();j++) {
+				v1.set(j, indicator.get(e.nodes.at(j).globalIndex));
+			}
+			list.add(new PairDoubleInteger(FMath.sum(v1),i));
 		}
 		Collections.sort(list, new Comparator<PairDoubleInteger>() {
 			@Override
@@ -459,8 +521,7 @@ public class Tools {
 		}
 	}
 
-	public static Vector interplateFrom(Mesh oldMesh, Mesh newMesh, Vector ak) {
-		Function fun = new Vector2Function(ak,oldMesh,"x","y");
+	public static Vector interplateFrom(Mesh oldMesh, Mesh newMesh, Vector2Function vecFun) {
 		int nNode = newMesh.getNodeList().size();
 		NodeList nodes = newMesh.getNodeList();
 		Vector rlt = new SparseVector(nNode);
@@ -468,7 +529,7 @@ public class Tools {
 			Variable v = new Variable();
 			v.set("x",nodes.at(i).coord(1));
 			v.set("y",nodes.at(i).coord(2));
-			double val = fun.value(v);
+			double val = vecFun.value(v);
 			rlt.set(i,val);
 		}
 		return rlt;

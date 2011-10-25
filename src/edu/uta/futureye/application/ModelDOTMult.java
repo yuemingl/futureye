@@ -43,17 +43,46 @@ import edu.uta.futureye.util.container.NodeList;
  */
 public class ModelDOTMult {
 	//Light source
-	public Function delta = null;
+	private Function delta = null;
 	public Variable lightPosition = null; //light source position
-	public int lightNum = -1;
+	//public int lightNum = -1;
 	
-	//Inclusion mu_a
-	public Function mu_a = null;
-	
-	//mu_s'
+	//Absorption coefficient mu_a
+	private Function mu_a = null;
+	//Reduced scattering coefficient mu_s'
 	public Function mu_s = new FC(50.0/3.0);
 	
+	
+	public void setMu_a(Function fMu_a) {
+		this.mu_a = fMu_a;
+		
+		//update delta which depends on mu_a
+		delta = getRawDelta();
+		delta = delta.D(this.mu_a);
+	}
+	public Function getMu_a() {
+		return this.mu_a;
+	}
+	
+	public void setLightPosition(double x,double y) {
+		this.lightPosition = new Variable();
+		this.lightPosition.set("x", x);
+		this.lightPosition.set("y", y);
+		if(mu_a != null) {
+			delta = getRawDelta();
+			delta = delta.D(mu_a);
+		}
+	}
+	public Function getDelta() {
+		return this.delta;
+	}
+	private Function getRawDelta() {
+		return new FDelta(this.lightPosition,0.01,2e5);
+	}
+	
 	/**
+	 * Generate mu_a for testing
+	 * 
 	 * type=1: one inclusion
 	 * type=2: two inclusion
 	 * @param incX
@@ -62,15 +91,16 @@ public class ModelDOTMult {
 	 * @param maxMu_a
 	 * @param type
 	 */
-	public void setMu_a(double incX, double incY, double incR, double maxMu_a,
+	public static Function getMu_a(double incX, double incY, double incR, double maxMu_a,
 			int type) {
 		final double fcx = incX;
 		final double fcy = incY;
 		final double fcr = incR;
 		final double fmu_a = maxMu_a;
 		final double distance = 0.8;
+		Function rltMu_a = null;
 		if(type == 1) {
-			mu_a = new AbstractFunction("x","y"){
+			rltMu_a = new AbstractFunction("x","y"){
 				@Override
 				public double value(Variable v) {
 					double bk = 0.1;
@@ -85,7 +115,7 @@ public class ModelDOTMult {
 				}
 			};
 		} else if(type == 2) {
-			mu_a = new AbstractFunction("x","y"){
+			rltMu_a = new AbstractFunction("x","y"){
 				@Override
 				public double value(Variable v) {
 					double bk = 0.1;
@@ -106,15 +136,9 @@ public class ModelDOTMult {
 				}
 			};			
 		}
+		return rltMu_a;
 	}
 	
-	public void setDelta(double x,double y) {
-		this.lightPosition = new Variable();
-		this.lightPosition.set("x", x);
-		this.lightPosition.set("y", y);
-		delta = new FDelta(this.lightPosition,0.01,2e5);
-		delta = delta.D(this.mu_a);
-	}
 
 	/**
 	 * 求解混合问题，需要提供函数diriBoundaryMark来标记Dirichlet边界类型，
@@ -154,8 +178,7 @@ public class ModelDOTMult {
 		
 		//Right hand side
 		weakForm.setF(this.delta);
-
-
+		
 		//Model: \nabla{1/(3*mu_s'*mu_a)*\nabla{u}} + u = \delta/mu_a
 		weakForm.setParam(
 				FC.c1.D(mu_s.M(mu_a).M(3.0)), 
@@ -178,15 +201,17 @@ public class ModelDOTMult {
 
 		//Solver solver = new Solver();
 		//Vector u = solver.solveCGS(stiff, load);
-		
         SolverJBLAS sol = new SolverJBLAS();
 		Vector u = sol.solveDGESV(stiff, load);
-		//Tools.plotVector(mesh,"",String.format("x.dat"),x);
 		
 		return u;
 	}
 	
 	public Vector solveNeumann(Mesh mesh) {
+		/**
+		 * 2011/10/18
+		 * mu_a 如果是Vector2Function，注意这里
+		 */
 		return solveMixedBorder(mesh,null,null,null,FC.c1.D(mu_s.M(mu_a).M(3.0)));
 	}
 
@@ -214,10 +239,10 @@ public class ModelDOTMult {
 //		model.setMu_a(2.0, 2.5, 0.5, //(x,y;r)
 //				0.4, //maxMu_a
 //				1); //type
-		model.setMu_a(3.0, 2.30, 0.6,
+		model.setMu_a(getMu_a(3.0, 2.30, 0.6,
 				0.8, //peak value of mu_a
-				1); //Number of inclusions
-		model.setDelta(2.5, 3.5);
+				1)); //Number of inclusions
+		model.setLightPosition(2.5, 3.5);
 	
 		MeshReader readerForward = new MeshReader(gridFileBig);
 		Mesh meshBig = readerForward.read2DMesh();
@@ -297,9 +322,9 @@ public class ModelDOTMult {
 //		model.setMu_a(2.2, 2.5, 0.5, //(x,y;r)
 //				0.4, //maxMu_a
 //				1); //type
-		model.setMu_a(3.2, 2.10, 0.6,
+		model.setMu_a(getMu_a(3.2, 2.10, 0.6,
 				0.8, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 		
 		Tools.plotFunction(meshBig, outputFolder, "aRealGuess.dat", model.mu_a);
 		Vector uBigGuess = model.solveNeumann(meshBig);

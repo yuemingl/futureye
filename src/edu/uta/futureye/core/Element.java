@@ -1186,7 +1186,7 @@ public class Element {
 									edge.endNode(),v
 									);
 			}
-			if(Math.abs(angle-Math.PI*2) < Constant.eps)
+			if(Math.abs(angle-Math.PI*2) < Constant.angleEps)
 				return true;
 		} else if(this.eleDim == 3) {
 			ObjList<FaceLocal> faces = this.faces();
@@ -1201,7 +1201,7 @@ public class Element {
 							vs.at(1), vs.at(j-1), vs.at(j));
 				}
 			}
-			if(Math.abs(angle-4*Math.PI) <= Constant.eps)
+			if(Math.abs(angle-4*Math.PI) <= Constant.angleEps)
 				return true;
 		} else {
 			FutureyeException ex = new FutureyeException("Error: isCoordInElement");

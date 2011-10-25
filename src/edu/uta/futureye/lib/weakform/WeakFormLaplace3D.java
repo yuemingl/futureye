@@ -18,6 +18,7 @@ import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 
 /**
+ * <blockquote><pre>
  * Solve
  *   -k*Laplace(u) + c*u = f, in \Omega
  *   u = u0,                  on \Gamma1
@@ -38,7 +39,8 @@ import edu.uta.futureye.util.container.ElementList;
  *   c = c(x,y)
  *   d = d(x,y)
  *   q = q(x,y)
- *   
+ * </blockquote></pre>  
+ * 
  * @author liuyueming
  *
  */
