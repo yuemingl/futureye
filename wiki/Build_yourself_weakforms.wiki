@@ -2,7 +2,7 @@
 
 ==Futureye Example: How to use WeakFormBuilder ==
 
-Although we have defined many weak forms of different types of PDEs, sometimes we may need to define ourself weak forms.
+Although we have defined many weak forms of different types of PDEs, sometimes we may need to define ourself's weak forms.
 Here, we provide a new method (since version2.1) to define weak forms directly in you current code file. It is easier than the old method (extends AbstractXXXWeakForm or implements interface WeakForm). Let's see the example below.
 
 ===Question===
