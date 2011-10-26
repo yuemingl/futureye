@@ -111,7 +111,7 @@ public class ModelPoissonEx {
 		return solveMixedBorder(null,diri,null,null);
 	}	
 	
-	public static void gen1() {
+	public static void gen1(int type) {
 		String outputFolder = "ModelPoissonEx";
 		//String gridFileSmall = "prostate_test13.grd";
 		String gridFileSmall = "prostate_test14.grd";
@@ -120,8 +120,10 @@ public class ModelPoissonEx {
 		Mesh meshSmall = readerGCM.read2DMesh();
 		
 		ModelPoissonEx model = new ModelPoissonEx(meshSmall);
-		//model.f = VariationGaussNewtonDOTGeneral.generateTestRealMu_a(0.4, 0.1).M(15);
-		model.f = VariationGaussNewtonDOTGeneral.generateTestGuessMu_a(0.4, 0.1).M(15);
+		if(type==1)
+			model.f = VariationGaussNewtonDOTGeneral.generateTestRealMu_a(0.4, 0.1).M(15);
+		else if(type==2)
+			model.f = VariationGaussNewtonDOTGeneral.generateTestGuessMu_a(0.4, 0.1).M(15);
 		model.c = FC.c(10.0);
 		
 		
@@ -134,33 +136,40 @@ public class ModelPoissonEx {
 		meshSmall.computeNeighborNodes();		
 		
 		Vector u = model.solveDirichlet(FC.c(0.1));
-		//Tools.plotVector(meshSmall, outputFolder, "uReal.dat", u);
-		Tools.plotVector(meshSmall, outputFolder, "uGuess.dat", u);
+		if(type==1)
+			Tools.plotVector(meshSmall, outputFolder, "uReal.dat", u);
+		else if(type==2)
+			Tools.plotVector(meshSmall, outputFolder, "uGuess.dat", u);
 	}
-		public static void gen2() {
-			String outputFolder = "ModelPoissonEx";
-			//String gridFileSmall = "prostate_test13.grd";
-			String gridFileSmall = "prostate_test14.grd";
+	
+	public static void gen2(int type) {
+		String outputFolder = "ModelPoissonEx";
+		//String gridFileSmall = "prostate_test13.grd";
+		String gridFileSmall = "prostate_test14.grd";
 
-			MeshReader readerGCM = new MeshReader(gridFileSmall);
-			Mesh meshSmall = readerGCM.read2DMesh();
-			
-			ModelPoissonEx model = new ModelPoissonEx(meshSmall);
-			model.k = FC.c(0.07);
-			//model.f = VariationGaussNewtonDOTGeneral.generateTestRealMu_a2(meshSmall, 0.1).M(10);
+		MeshReader readerGCM = new MeshReader(gridFileSmall);
+		Mesh meshSmall = readerGCM.read2DMesh();
+		
+		ModelPoissonEx model = new ModelPoissonEx(meshSmall);
+		model.k = FC.c(0.07);
+		if(type==1)
+			model.f = VariationGaussNewtonDOTGeneral.generateTestRealMu_a2(meshSmall, 0.1).M(10);
+		else if(type==2)
 			model.f = VariationGaussNewtonDOTGeneral.generateTestGuessMu_a2(meshSmall, 0.1).M(10);
-			model.c = FC.c(10.0);
-			
-			//Use element library to assign degree of freedom (DOF) to element
-			FEBilinearRectangle fe = new FEBilinearRectangle();
-			ElementList eList = meshSmall.getElementList();
-			for(int i=1;i<=eList.size();i++)
-				fe.assignTo(eList.at(i));
-			meshSmall.computeNodeBelongsToElements();
-			meshSmall.computeNeighborNodes();		
-			
-			Vector u = model.solveDirichlet(FC.c(0.1));
-			//Tools.plotVector(meshSmall, outputFolder, "uReal2.dat", u);
+		model.c = FC.c(10.0);
+		
+		//Use element library to assign degree of freedom (DOF) to element
+		FEBilinearRectangle fe = new FEBilinearRectangle();
+		ElementList eList = meshSmall.getElementList();
+		for(int i=1;i<=eList.size();i++)
+			fe.assignTo(eList.at(i));
+		meshSmall.computeNodeBelongsToElements();
+		meshSmall.computeNeighborNodes();		
+		
+		Vector u = model.solveDirichlet(FC.c(0.1));
+		if(type==1)
+			Tools.plotVector(meshSmall, outputFolder, "uReal2.dat", u);
+		else if(type==2)
 			Tools.plotVector(meshSmall, outputFolder, "uGuess2.dat", u);
 	}
 	
@@ -168,7 +177,7 @@ public class ModelPoissonEx {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//gen1();
-		gen2();
+		//gen1(1);
+		gen2(2);
 	}		
 }
