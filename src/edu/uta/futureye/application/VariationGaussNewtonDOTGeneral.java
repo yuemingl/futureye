@@ -45,6 +45,8 @@ import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FEBilinearRectangleRegular;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
+import edu.uta.futureye.util.FutureyeException;
+import edu.uta.futureye.util.PropertiesReader;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
@@ -79,8 +81,8 @@ public class VariationGaussNewtonDOTGeneral {
 	//网格
 	public Mesh mesh;
 	public Mesh meshBig;
-	String gridFileBig;
-	String gridFileSmall;
+	public String gridFileBig;
+	public String gridFileSmall;
 	
 	//是否使用向量 mu_a，由于向量与网格有关，因此在不同网格上求解问题需要对mu_a插值 
 	boolean useVectorMu_a = false;
@@ -130,13 +132,18 @@ public class VariationGaussNewtonDOTGeneral {
 	
 	//利用以下因子控制计算结果
 	public double stepReduceFactor = 0.75; //搜索时步长减小因子
-	public double maxTargetNormIncFactor = 1.5; //迭代一步后，目标范数增加因子
-	public double maxInfNormIncFactor = 1.3; //迭代一步后，最大范数增加因子
+	public double maxTargetNormIncFactor = 3.0; //迭代一步后，目标范数增加因子
+	public double maxInfNormIncFactor = 1.2; //迭代一步后，最大范数增加因子
 	
+	//For every delta_a
+	public double[] cutX = {-100,100}; //big enough = no cut in X direction
+	public double[] cutY = {-100,100}; //big enough = no cut in Y direction
+	public double cutThreshold = 0.5; //[0.0,1.0]
+	public int smoothNum = 4;// >=0
 	
-    //光源x坐标位置数组
-    protected double[] LSx;
-    protected double[] LSy;
+    //光源\vec{x}坐标位置数组
+    protected double[] LSx = null;
+    protected double[] LSy = null;
 
     protected FileOutputStream out = null;
     protected PrintWriter br = null;
@@ -147,111 +154,11 @@ public class VariationGaussNewtonDOTGeneral {
     	Vector g; //= u|_\Gamma
     }
     
-    /**
-     * 构造函数
-     * 
-     * @param outputFolder 结果输出目录前缀（每次加密网格后创建一个新目录，结尾数字编号自动增加）
-     * @param gridFileBig
-     * @param gridFileSmall
-     */
-    public VariationGaussNewtonDOTGeneral(String outputFolder,
-    		String gridFileBig, String gridFileSmall) {
-		outputFolderBase = outputFolder;
-		outputFolderIndex = 0;
-		String oFolder = getOutputFolder();
-	    if(!oFolder.isEmpty()) {
-		    File file = new File(oFolder);
-			if(!file.exists()) {
-				file.mkdirs();
-			}
-	    }
-		
-		this.gridFileBig = gridFileBig;
-		this.gridFileSmall = gridFileSmall;    	
-   }
-       
-    
 	/**
 	 * Initialization of configuration parameters
 	 * 
 	 */
-	public void initConfigParameter() {
-	
-		totalRefineNum = 3;
-		int[] _maxIterNumPerRefinement = {1,1,2,1,1,1,1};
-		maxIterNumPerRefinement = _maxIterNumPerRefinement;
-		
-		//DWR_refine_Test1
-		//double[] _refineFactors={0.45,0.40,0.30,0.15,0.15,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1};
-		//DWR_refine_Test2
-		double[] _refineFactorsForMesh={0.8,0.3,0.30,0.15,0.15,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1};
-		
-		refineFactorsForMesh = _refineFactorsForMesh;
-		
-		//测定前两次refine步长为很小，目的是忽略前两次refine的计算，直接用第三次refine的网格计算
-		double[] _initStepLengthPerRefinement = {0.001,0.001};
-		initStepLengthPerRefinement = _initStepLengthPerRefinement;
-		
-		//DWR_Test1
-		//maxInfNormIncFactor = 1.3;
-		//DWR_Test2
-		maxInfNormIncFactor = 1.4;
-		
-		
-		//Number of moving light sources
-//		double[] xx = {4.8};
-//		double[] yy = {2.0};
-//		double[] xx = {0.2};
-//		double[] yy = {2.0};
-//		double[] xx = {2.3,2.5};
-//		double[] yy = {3.8,3.8};
-		
-//prostate_test11 12    	
-//		double[] xx = {2.5};
-//		double[] yy = {3.8};
-//		double[] xx = {2.5};
-//		double[] yy = {0.2};
-//		double[] xx = {2.5,2.5};
-//		double[] yy = {3.6,0.2};		
-//for prostate_test13	
-    	//上光源
-//		double[] xx = {2.5};
-//		double[] yy = {3.8};   
-		
-		
-    	//上下光源 DWR_Test1
-		//double[] xx = {2.5,2.5};
-		//double[] yy = {3.83,0.2};
-    	//上下光源 DWR_Test2
-		double[] xx = {2.0,2.0};
-		//double[] yy = {3.833344,0.166654};
-		double[] yy = {3.95,0.05};
-		
-		
-    	//左右光源
-//		double[] xx = {0.2,4.8};
-//		double[] yy = {2.0,2.0};
-    	//4光源
-//		double[] xx = {2.5,2.5,0.2,4.8};
-//		double[] yy = {3.8,0.2,2.0,2.0};
-		
-//		double[] xx = {0.2,4.8};
-//		double[] yy = {2.0,2.0};
-//		double[] xx = {2.5,0.5,4.5};
-//		double[] yy = {3.8,2.0,2.0};
-
-		//2011-10-10
-//		double[] xx = {2.0,2.0};
-//		double[] yy = {3.8,0.2};
-		
-		LSx = xx;
-		LSy = yy;
-		
-//		int N=2; 
-//		double h = 0.2;
-//		LSx[0] = 2.5;
-//		for(int i=1; i<N; i++)
-//			LSx[i] = LSx[0] + i*h;
+	public void init() {
 		
 //test9		
 //		//有包含物mu_a，真实模型
@@ -336,14 +243,13 @@ public class VariationGaussNewtonDOTGeneral {
 //		modelInit.mu_a = generateTestGuessMu_a(0.4,0.1);
 		
 		
-		
 		useVectorMu_a = true;
 		
 //		//自己构造的mu_a（通过class ModelPoissonEx.gen1()），更光滑，在整个区域都有值
-//		aMesh = mesh.copy();
-//		aReal = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_real_mu_a.dat"));
-//		aGuess = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_guess_mu_a.dat"));
-//		aInit = aGuess.copy();
+		aMesh = mesh.copy();
+		aReal = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_real_mu_a.dat"));
+		aGuess = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_guess_mu_a.dat"));
+		aInit = aGuess.copy();
 //		//test
 //		//Function faReal = generateTestRealMu_a(0.4, 0.1);
 //		//Function faGuess = generateTestGuessMu_a(0.4,0.1);
@@ -352,10 +258,10 @@ public class VariationGaussNewtonDOTGeneral {
 //		//aInit = aGuess.copy();
 		
 		//自己构造的mu_a（通过class ModelPoissonEx.gen2()），两个inclusion
-		aMesh = mesh.copy();
-		aReal = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_real_mu_a_test2.dat"));
-		aGuess = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_guess_mu_a_test2.dat"));
-		aInit = aGuess.copy();
+//		aMesh = mesh.copy();
+//		aReal = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_real_mu_a_test2v2.dat"));
+//		aGuess = DataReader.readVector(String.format("./"+this.getOutputFolder()+"/Input/input_guess_mu_a_test2.dat"));
+//		aInit = aGuess.copy();
 
 	}
 	
@@ -409,7 +315,7 @@ public class VariationGaussNewtonDOTGeneral {
 		int[] nodes = {134,135,136,151,152,153,168,169,170,185,186,187};
 		double[] values = {0.25,0.3,0.22,0.23,0.4,0.2,0.3,0.4,0.22,0.23,0.25,0.24};
 		int[] nodes2 = {137,138,154,155,171,172};
-		double[] values2 = {0.21,0.24,0.35,0.45,0.28,0.3};
+		double[] values2 = {0.21,0.24,0.4,0.35,0.4,0.22};
 		NodeList nodeList = mesh.getNodeList();
 		int dim = nodeList.size();
 		SparseVector v = new SparseVector(dim);
@@ -2145,7 +2051,6 @@ public class VariationGaussNewtonDOTGeneral {
 				new SchurComplementLagrangianSolver(BM, f,mesh);
 			BlockVector x = solver.solveMulti();
 			//BlockVector x = solver.solve();//Test for one light source
-			
 */
 			//this.imposeDirichletCondition(BM, f, FC.c0);
 	        if(this.bTestWholeDomainDirichletBoundary)
@@ -2174,36 +2079,31 @@ public class VariationGaussNewtonDOTGeneral {
 			Vector delta_a = x.getBlock(nDataBlock*2+1);
 			plotVector(mesh, delta_a, String.format("delta_a%02d.dat",iter));
 			
-			//截取一定范围的结果，其他地方都置零
-			//!!!只截取delta_a还不够，还需要重新计算v和lambda
+			//cutX cutY
+			//截取一定范围的结果，其他地方都置零（只截取delta_a还不够，还需要重新计算v和lambda!!!)
 			NodeList nodes = this.mesh.getNodeList();
 			for(int j=1;j<=nodes.size();j++) {
 				Node node = nodes.at(j);
-				//cut for DWR_refine_Test1
-				//if(node.coord(1)<1.5 || node.coord(1)>2.3)
-				//cut for DWR_refine_Test2
-				if(node.coord(1)<1.7 || node.coord(1)>2.9)
+				if(node.coord(1)<this.cutX[0] || node.coord(1)>this.cutX[1])
 					delta_a.set(j, 0.0);
-				else if(node.coord(2)<1.3 || node.coord(2)>2.4)
+				else if(node.coord(2)<this.cutY[0] || node.coord(2)>this.cutY[1])
 					delta_a.set(j, 0.0);
 			}
 			plotVector(mesh, delta_a, String.format("delta_cut_a%02d.dat",iter));
-			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
-			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
-			delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
-			//delta_a = Utils.gaussSmooth(mesh, delta_a, 1, 0.5);
+			
+			//Smooth
+			for(int nsm=0;nsm<this.smoothNum;nsm++)
+				delta_a = Utils.gaussSmooth(mesh, delta_a, 2, 0.5);
 			plotVector(mesh, delta_a, String.format("delta_cut_smooth_a%02d.dat",iter));
-			//DWR_Test1
-			//double cutThreshold = 0.4;
-			//DWR_Test2
-			double cutThreshold = 0.2;
+			
+			//Cut value of delta_a
 			double max = FMath.max(delta_a);
 			double min = FMath.min(delta_a);
 			for(int j=1;j<=nodes.size();j++) {
 				double val = delta_a.get(j);
-				if(val>=0 && val<cutThreshold*max)
+				if(val>=0 && val<this.cutThreshold*max)
 					delta_a.set(j, 0.0);
-				else if(val<=0 && val>cutThreshold*min)
+				else if(val<=0 && val>this.cutThreshold*min)
 					delta_a.set(j, 0.0);
 			}
 			plotVector(mesh, delta_a, String.format("delta_cut_smooth_cut_a%02d.dat",iter));
@@ -2265,19 +2165,26 @@ public class VariationGaussNewtonDOTGeneral {
 						clearInnerValues(mesh, vsolTmp);
 					}
 					v_gNormSearch[i] = FMath.axpy(-1.0, param.g, vsolTmp).norm2();
-					br.println("NormSearch="+v_gNormSearch[i]+"  NormLast="+v_gNorm[i]);
+					br.println("\tLS"+i+" NormSearch="+v_gNormSearch[i]+"  NormLast="+v_gNorm[i]);
 					System.out.println("LS"+i+" NormSearch="+v_gNormSearch[i]+"  NormLast="+v_gNorm[i]);
 					
 					
 					Vector tmpA0 = FMath.axpy(stepDelta, delta_a, a0);
-					if(v_gNormSearch[i] > this.maxTargetNormIncFactor*v_gNorm[i] || stepDelta*delta_a.normInf()>a0.normInf() ||
-							tmpA0.normInf() > this.maxInfNormIncFactor*a0.normInf()) {
+					double delta_aNormInf = delta_a.normInf();
+					double a0NormInf = a0.normInf();
+					double tmpA0NormInf = tmpA0.normInf();
+					if( v_gNormSearch[i] > this.maxTargetNormIncFactor*v_gNorm[i] || 
+						stepDelta*delta_aNormInf>a0NormInf ||
+						tmpA0NormInf > this.maxInfNormIncFactor*a0NormInf) {
 						
-						if(v_gNormSearch[i] > this.maxTargetNormIncFactor*v_gNorm[i]) br.println("\tv_gNormSearch[i] > maxTargetNormIncFactor*v_gNorm[i]");
-						if(stepDelta*delta_a.normInf()>a0.normInf()) br.println("\tstepDelta*delta_a.normInf()>a0.normInf()");
-						if(tmpA0.normInf() > this.maxInfNormIncFactor*a0.normInf()) br.println("\ttmpA0.normInf() > maxInfNormIncFactor*a0.normInf()");
+						if(v_gNormSearch[i] > this.maxTargetNormIncFactor*v_gNorm[i]) 
+							br.println(String.format("\tv_gNormSearch[i] > maxTargetNormIncFactor*v_gNorm[i] (%.5f>%.5f)",v_gNormSearch[i],this.maxTargetNormIncFactor*v_gNorm[i]));
+						if(stepDelta*delta_aNormInf>a0NormInf) 
+							br.println(String.format("\tstepDelta*delta_aNormInf>a0NormInf (%.5f>%.5f)",stepDelta*delta_aNormInf,a0NormInf));
+						if(tmpA0NormInf > this.maxInfNormIncFactor*a0NormInf) 
+							br.println(String.format("\ttmpA0NormInf > this.maxInfNormIncFactor*a0NormInf (%.5f>%.5f)",tmpA0NormInf,this.maxInfNormIncFactor*a0NormInf));
 							
-						br.println("go to next search...\n");
+						br.println("\tgo to next search...\n");
 						bFind = false;
 						break;
 					}
@@ -2295,6 +2202,7 @@ public class VariationGaussNewtonDOTGeneral {
 			}
 			stepBase = stepDelta;
 			br.println(String.format("stepLength=%f",stepBase));
+			br.flush();
 			System.out.println(String.format("Iter=%02d==========================>stepLength=%f",iter,stepBase));
 			
 //--------------按比例搜索步长---------------------------			
@@ -2386,8 +2294,6 @@ public class VariationGaussNewtonDOTGeneral {
 			Vector ind = FMath.sum(multLU);
 			plotVector(mesh,ind,String.format("DWR_indicator_%02d.dat",iterNum));
 			refineIndicator.set(FMath.abs(ind));
-			
-			br.flush();
 			
 			//if(errorNorm < 1.0) break;
 			
@@ -2509,7 +2415,8 @@ public class VariationGaussNewtonDOTGeneral {
 			setOutputFolderIndex(i+1);
 		}
 		
-		initConfigParameter();
+		//读取配置有问题：如果系数是向量，需要读入一个网格，这个网格何时读取是问题
+		init();
 
 		setOutputFolderIndex(lastRefineNum);
 		//Read initial guess of a0 （上次的计算结果）
@@ -2578,7 +2485,7 @@ public class VariationGaussNewtonDOTGeneral {
 		//testRefine2();
 		//mesh.printMeshInfo();
 		
-		initConfigParameter();
+		init();
 		
 		//Read a(x) from GCM (Global Convergence Method)
 		this.aGlob = this.getAFromGCM(this.mesh, null);
@@ -2614,60 +2521,179 @@ public class VariationGaussNewtonDOTGeneral {
 		work(a0,0,simulate);
 	}
 	
+	public void readParameters(String configFileName) {
+		PropertiesReader pReader = new PropertiesReader(configFileName);
+		Boolean debug = pReader.getBoolean("debug");
+		if(debug != null) this.debug = debug;
+
+		//结果输出目录前缀（每次加密网格后创建一个新目录，结尾数字编号自动增加）
+		String outputFolder = pReader.getString("outputFolder");
+		if(outputFolder == null || outputFolder.isEmpty()) throw new FutureyeException("Please specify 'outputFolder' parameter in config file!");
+		this.outputFolderBase = outputFolder;
+		String oFolder = getOutputFolder();
+	    if(!oFolder.isEmpty()) {
+		    File file = new File(oFolder);
+			if(!file.exists()) {
+				file.mkdirs();
+			}
+	    }
+		
+		String gridFileBig = pReader.getString("gridFileBig");
+		if(gridFileBig == null || gridFileBig.isEmpty()) throw new FutureyeException("Please specify 'gridFileBig' parameter in config file!");
+		this.gridFileBig = gridFileBig;
+		String gridFileSmall = pReader.getString("gridFileSmall");
+		if(gridFileSmall == null || gridFileSmall.isEmpty()) throw new FutureyeException("Please specify 'gridFileSmall' parameter in config file!");
+		this.gridFileSmall = gridFileSmall;    	
+		
+		//Light sources (positions)
+		double[] LSx = pReader.getDoubleArray("LSx");
+		if(LSx != null) this.LSx = LSx;
+		double[] LSy = pReader.getDoubleArray("LSy");
+		if(LSy != null) this.LSy = LSy;
+		
+		//Mesh refinement control
+		Integer totalRefineNum = pReader.getInteger("totalRefineNum");
+		if(totalRefineNum != null) this.totalRefineNum = totalRefineNum;
+		double[] refineFactorsForMesh = pReader.getDoubleArray("refineFactorsForMesh");
+		if(refineFactorsForMesh != null) this.refineFactorsForMesh = refineFactorsForMesh;
+		int[] maxIterNumPerRefinement = pReader.getIntegerArray("maxIterNumPerRefinement");
+		if(maxIterNumPerRefinement != null) this.maxIterNumPerRefinement = maxIterNumPerRefinement;
+		double[] initStepLengthPerRefinement = pReader.getDoubleArray("initStepLengthPerRefinement");
+		if(initStepLengthPerRefinement != null) this.initStepLengthPerRefinement = initStepLengthPerRefinement;
+		
+		//Iteration control
+		Double stepReduceFactor = pReader.getDouble("stepReduceFactor");
+		if(stepReduceFactor != null) this.stepReduceFactor = stepReduceFactor;
+		Double maxTargetNormIncFactor = pReader.getDouble("maxTargetNormIncFactor");
+		if(maxTargetNormIncFactor != null) this.maxTargetNormIncFactor = maxTargetNormIncFactor;
+		Double maxInfNormIncFactor = pReader.getDouble("maxInfNormIncFactor");
+		if(maxInfNormIncFactor != null) this.maxInfNormIncFactor = maxInfNormIncFactor;
+		
+		//Cut control for every delta_a
+		double[] cutX = pReader.getDoubleArray("cutX");
+		if(cutX != null) this.cutX = cutX;
+		double[] cutY = pReader.getDoubleArray("cutY");
+		if(cutY != null) this.cutY = cutY;
+		Double cutThreshold = pReader.getDouble("cutThreshold");
+		if(cutThreshold != null) this.cutThreshold = cutThreshold;
+		Integer smoothNum = pReader.getInteger("smoothNum");
+		if(smoothNum != null) this.smoothNum = smoothNum;
+		
+	}
+	
+//	/**
+//	 * Override some parameters by args
+//	 * @param args
+//	 */
+//	public void overrideParameters(String[] args) {
+//		if(args.length == 3) {
+//			this.stepReduceFactor = Double.parseDouble(args[0]);
+//			this.maxTargetNormIncFactor = Double.parseDouble(args[1]);
+//			this.maxInfNormIncFactor = Double.parseDouble(args[2]);
+//			System.out.println("---begin with args specified, override configure file!---");
+//		}
+//	}
+	
+	public String getString(double[] ary) {
+		if(ary == null || ary.length == 0) return "";
+		StringBuilder sb = new StringBuilder();
+		sb.append(ary[0]);
+		for(int i=1;i<ary.length;i++) {
+			sb.append(",");
+			sb.append(ary[i]);
+		}
+		return sb.toString();
+	}
+	public String getString(int[] ary) {
+		if(ary == null || ary.length == 0) return "";
+		StringBuilder sb = new StringBuilder();
+		sb.append(ary[0]);
+		for(int i=1;i<ary.length;i++) {
+			sb.append(",");
+			sb.append(ary[i]);
+		}
+		return sb.toString();
+	}	
+	
+	public void printParameters() {
+		System.out.println(String.format("---------parameters----------\n"+
+				"debug=%s\n"+
+				"\n"+
+				
+				"outputFolder=%s\n"+
+				"gridFileBig=%s\n"+
+				"gridFileSmall=%s\n"+
+				"\n"+
+				
+				"LSx=%s\n"+
+				"LSy=%s\n"+
+				"\n"+
+				
+				"totalRefineNum=%s\n"+
+				"refineFactorsForMesh=%s\n"+
+				"maxIterNumPerRefinement=%s\n"+
+				"initStepLengthPerRefinement=%s\n"+
+				"\n"+
+				
+				"stepReduceFactor=%s\n"+
+				"maxTargetNormIncFactor=%s\n"+
+				"maxInfNormIncFactor=%s\n"+
+				"\n"+
+				
+				"cutX=%s\n"+
+				"cutY=%s\n"+
+				"cutThreshold=%s\n"+
+				"smoothNum=%s\n",
+				
+				this.debug,
+				this.outputFolderBase,
+				this.gridFileBig,
+				this.gridFileSmall,
+
+				getString(this.LSx),
+				getString(this.LSy),
+
+				this.totalRefineNum,
+				getString(this.refineFactorsForMesh),
+				getString(this.maxIterNumPerRefinement),
+				getString(this.initStepLengthPerRefinement),
+				
+				this.stepReduceFactor,
+				this.maxTargetNormIncFactor,
+				this.maxInfNormIncFactor,
+				
+				getString(this.cutX),
+				getString(this.cutY),
+				this.cutThreshold,
+				this.smoothNum
+				));
+		System.out.println("-------------------------------\n");		
+	}
+	
+	
 	/**
-	 * 输出结果到子文件夹中，子文件可以有多个，按照加密层次编号，从初始网格00开始编号
+	 * 默认配置文件名称为VGNDOT.conf，可以通过命令行参数指定配置文件名称。
+	 * 结算结果输出结果到子文件夹中，文件夹名称在配置文件中设置。
+	 * 输出的子文件可以有多个，按照加密层次编号，从初始网格00开始编号。
 	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		
 		System.out.println("Java version: "+System.getProperty("java.version"));
+		System.out.println("Usage: args[0]=configFileName (default=VGNDOT.conf)");
 		
-		String gridFileBig,gridFileSmall;
+		VariationGaussNewtonDOTGeneral vgn = new VariationGaussNewtonDOTGeneral();
 		
-		//------------Triangle Mesh--------
-//		gridFileBig = "prostate_test3_ex.grd";
-//		gridFileSmall = "prostate_test3.grd";
+		String configFile = "VGNDOT.conf";
+		if(args.length == 1)
+			configFile = args[0];
 		
-		//------------Rectangle Mesh----------
-//		gridFileBig = "prostate_test7_ex.grd";//粗
-//		gridFileSmall = "prostate_test7.grd";
-//		gridFileBig = "prostate_test8_ex.grd";//细
-//		gridFileSmall = "prostate_test8.grd";
-//		gridFileBig = "prostate_test9_ex.grd";//细2
-//		gridFileSmall = "prostate_test9.grd";
-//		gridFileBig = "prostate_test10_ex.grd";//细
-//		gridFileSmall = "prostate_test10.grd";
-//		gridFileBig = "prostate_test11_ex.grd";//粗
-//		gridFileSmall = "prostate_test11.grd";
-//		gridFileBig = "prostate_test12_ex.grd"; //细2
-//		gridFileSmall = "prostate_test12.grd";
-//		gridFileBig = "prostate_test13_ex.grd"; //细2 （区域上下左右对称）
-//		gridFileSmall = "prostate_test13.grd";
-		gridFileBig = "prostate_test14_ex.grd"; //细 （区域上下左右对称）
-		gridFileSmall = "prostate_test14.grd";
+		//Read parameters from configFile
+		vgn.readParameters(configFile);
 		
-		VariationGaussNewtonDOTGeneral vgn = new VariationGaussNewtonDOTGeneral(
-				"Lagrangian_SuLiu_Mult_test14_2LS",
-				gridFileBig,gridFileSmall);
-		
-		vgn.debug = true;
-		if(args.length == 3) {
-			vgn.stepReduceFactor = Double.parseDouble(args[0]);
-			vgn.maxTargetNormIncFactor = Double.parseDouble(args[1]);
-			vgn.maxInfNormIncFactor = Double.parseDouble(args[2]);
-			System.out.println(String.format("---------begin with args---------\n"+
-					"stepReduceFactor=%s\nmaxTargetNormIncFactor=%s\nmaxInfNormIncFactor=%s\n", 
-					vgn.stepReduceFactor,
-					vgn.maxTargetNormIncFactor,
-					vgn.maxInfNormIncFactor
-					));
-		} else {
-			System.out.println("---------begin without args specified-----------");
-		}
+		vgn.printParameters();
 		
 		//2011-10-24 设置aGlob为ak
-
 		vgn.start(true);
 		
 		//vgn.reStart(1,0,true);
