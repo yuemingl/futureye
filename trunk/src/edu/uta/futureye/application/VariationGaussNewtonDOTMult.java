@@ -158,9 +158,9 @@ public class VariationGaussNewtonDOTMult {
 		
 		
 		//背景mu_a
-		modelBk.setMu_a(0.0, 0.0, 0.0, 
+		modelBk.setMu_a(ModelDOTMult.getMu_a(0.0, 0.0, 0.0, 
 				0.1, //mu_a=0.1 mu_s(=model.k)=0.02 => a(x)=5
-				1);
+				1));
 //test9		
 //		//有包含物mu_a，真实模型
 //		modelReal.setMu_a(2.40, 2.60, 0.6,
@@ -177,17 +177,17 @@ public class VariationGaussNewtonDOTMult {
 
 //test9_1
 		//有包含物mu_a，真实模型
-		modelReal.setMu_a(2.20, 2.60, 0.6,
+		modelReal.setMu_a(ModelDOTMult.getMu_a(2.20, 2.60, 0.6,
 				0.4, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 		//有包含物mu_a，猜测模型
-		modelGuess.setMu_a(2.40, 2.60, 0.6,
+		modelGuess.setMu_a(ModelDOTMult.getMu_a(2.40, 2.60, 0.6,
 				0.4, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 		//有包含物mu_a，迭代初始值
-		modelInit.setMu_a(2.40, 2.60, 0.6,//0.8
+		modelInit.setMu_a(ModelDOTMult.getMu_a(2.40, 2.60, 0.6,//0.8
 				0.4, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 
 //test9_2
 //		//有包含物mu_a，真实模型
@@ -215,14 +215,10 @@ public class VariationGaussNewtonDOTMult {
      * @param s_i：Light source No. (0,1,2...)
      */
     public void reinitModelLight(int s_i) {
-		modelBk.setDelta(LSx[s_i], LSy[s_i]);
-		modelBk.lightNum = s_i;
-		modelReal.setDelta(LSx[s_i], LSy[s_i]);
-		modelReal.lightNum = s_i;
-		modelGuess.setDelta(LSx[s_i], LSy[s_i]);
-		modelGuess.lightNum = s_i;
-		modelInit.setDelta(LSx[s_i], LSy[s_i]);
-		modelInit.lightNum = s_i;
+		modelBk.setLightPosition(LSx[s_i], LSy[s_i]);
+		modelReal.setLightPosition(LSx[s_i], LSy[s_i]);
+		modelGuess.setLightPosition(LSx[s_i], LSy[s_i]);
+		modelInit.setLightPosition(LSx[s_i], LSy[s_i]);
     }
     
 	public static void plotVector(Mesh mesh, Vector v, String fileName) {
@@ -523,7 +519,7 @@ public class VariationGaussNewtonDOTMult {
 		
 		//不能忽略光源的影响???
 		//if(g == null)
-			weakForm.setF(this.modelReal.delta);
+			weakForm.setF(this.modelReal.getDelta());
 		//else
 		//	weakForm.setF(FC.c(0.0));
 		
@@ -1893,16 +1889,16 @@ public class VariationGaussNewtonDOTMult {
 		//vgn.mesh.printMeshInfo();
 		
 		
-		plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aRealBig.dat"));
-		plotFunction(vgn.mesh, vgn.modelReal.mu_a, String.format("aReal.dat"));
+		plotFunction(vgn.meshBig, vgn.modelReal.getMu_a(), String.format("aRealBig.dat"));
+		plotFunction(vgn.mesh, vgn.modelReal.getMu_a(), String.format("aReal.dat"));
 		//a(x)参考值（GCM方法得到的结果）
-		vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.mu_a);
+		vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.getMu_a());
 		plotVector(vgn.mesh, vgn.aGlob, "aGlob.dat");
 		//Vector a0 = vgn.aGlob.copy();
-		Vector a0 = Tools.function2vector(vgn.mesh, vgn.modelInit.mu_a);
+		Vector a0 = Tools.function2vector(vgn.mesh, vgn.modelInit.getMu_a());
 		plotVector(vgn.mesh, a0, "a0.dat");
 		plotVector(vgn.mesh, FMath.axpy(-1.0, a0, 
-				Tools.function2vector(vgn.mesh, vgn.modelReal.mu_a)),"aReal_diff.dat");
+				Tools.function2vector(vgn.mesh, vgn.modelReal.getMu_a())),"aReal_diff.dat");
 		
 		vgn.beginLog();
 		int totalRefineNum = 1;
@@ -1968,12 +1964,12 @@ public class VariationGaussNewtonDOTMult {
 			
 			outputFolder = String.format(tmpOutputFolder+"%02d", k);
 			//将结果插值到加密后的网格上
-			a0 = Tools.interplateFrom(oldMesh,vgn.mesh,ak);
+			a0 = Tools.interplateFrom(oldMesh,vgn.mesh,new Vector2Function(ak,oldMesh,"x","y"));
 			plotVector(vgn.mesh, a0, "a0.dat");
-			vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.mu_a);
+			vgn.aGlob = Tools.function2vector(vgn.mesh, vgn.modelGuess.getMu_a());
 			plotVector(vgn.mesh, vgn.aGlob, "aGlob.dat");
-			plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aRealBig_refine%02d.dat",k));
-			plotFunction(vgn.meshBig, vgn.modelReal.mu_a, String.format("aReal_refine%02d.dat",k));
+			plotFunction(vgn.meshBig, vgn.modelReal.getMu_a(), String.format("aRealBig_refine%02d.dat",k));
+			plotFunction(vgn.meshBig, vgn.modelReal.getMu_a(), String.format("aReal_refine%02d.dat",k));
 		}
 		vgn.endLog();
 		

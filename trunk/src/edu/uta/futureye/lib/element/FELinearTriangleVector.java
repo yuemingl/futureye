@@ -2,6 +2,7 @@ package edu.uta.futureye.lib.element;
 
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
+import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2DVector;
 import edu.uta.futureye.util.FutureyeException;
 
@@ -55,5 +56,10 @@ public class FELinearTriangleVector implements FiniteElementType {
 	@Override
 	public int getVectorShapeFunctionDim() {
 		return 2;
+	}
+	
+	@Override
+	public int getDOFNumOnMesh(Mesh mesh, int vsfDim) {
+		return mesh.getNodeList().size();
 	}
 }

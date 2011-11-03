@@ -31,8 +31,8 @@ import edu.uta.futureye.util.container.ObjList;
 
 /**
  * Problem:
- *   -\Nabla{k*\Nabla{\mathbf{u}} + \Nabla{p} = \mathbf{f}
- *   div{\mathbf{u}} = 0
+ *   -\Nabla{k*\Nabla{\vec{u}} + \Nabla{p} = \vec{f}
+ *   div{\vec{u}} = 0
  * 
  * Each dim:
  *   -k*(u1_xx+u1_yy) + p_x = f1
@@ -40,18 +40,18 @@ import edu.uta.futureye.util.container.ObjList;
  *   u1_x+u2_y              = 0
 
  * Weak form:
- *   find \mathbf{u} \in H_0^1(div;\Omega), p \in L_2(\Omega)
- *   such that, for all \mathbf{v} \in H_0^1(div;\Omega), q \in L_2(\Omega)
+ *   find \vec{u} \in H_0^1(div;\Omega), p \in L_2(\Omega)
+ *   such that, for all \vec{v} \in H_0^1(div;\Omega), q \in L_2(\Omega)
  *   
- *   (\Nabla{\mathbf{v}},k*\Nabla{\mathbf{u}}) - (div{\mathbf{v}},p) 
- *                   + (q,div{\mathbf{u}}) = (\mathbf{v},\mathbf{f})
+ *   (\Nabla{\vec{v}},k*\Nabla{\vec{u}}) - (div{\vec{v}},p) 
+ *                   + (q,div{\vec{u}}) = (\vec{v},\vec{f})
  *
  *   (v1_x,k*u1_x) + (v1_y,k*u1_y) + (v2_x,k*u2_x) + (v2_y,k*u2_y) 
  *                   - (v1_x+v2_y,p) + (q,u1_x+u2_y) = (v1*f1+v2*f2)      
  *
  * where
- *   \mathbf{u}=(u1,u2): velocity vector field    
- *   \mathbf{f}=(f1,f2): body force
+ *   \vec{u}=(u1,u2): velocity vector field    
+ *   \vec{f}=(f1,f2): body force
  *   
  * @author liuyueming
  *
@@ -189,7 +189,7 @@ public class Stokes {
 		}
 		
 		FEQuadraticV_LinearP fe = new FEQuadraticV_LinearP();
-		fe.initDOFIndexGenerator(nodes.size());
+		fe.initDOFIndexCounter(nodes.size());
 		for(int i=1;i<=eList.size();i++) {
 			fe.assignTo(eList.at(i));
 			//eList.at(i).printDOFInfo();
@@ -201,7 +201,7 @@ public class Stokes {
 		//Right hand side(RHS): f = (0,0)'
 		weakForm.setF(new SpaceVectorFunction(FC.c0,FC.c0));
 		weakForm.setParam(FC.c(1.0),FC.c0);
-		//Robin:  k*u_n + d*u - p\mathbf{n} = 0
+		//Robin:  k*u_n + d*u - p\vec{n} = 0
 		VectorFunction d = new SpaceVectorFunction(2);
 		d.set(1, FC.c0);
 		d.set(2, FC.c0);

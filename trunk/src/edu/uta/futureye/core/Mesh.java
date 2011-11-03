@@ -512,7 +512,7 @@ public class Mesh {
 	 * Neumann     =2
 	 * Robin       =3
 	 * Hanging Node=10
-	 * Unknown     =15
+	 * Unknown     =20
 	 * 
 	 * 
 	 * @param fileName

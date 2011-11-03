@@ -163,8 +163,9 @@ public class SpaceVector implements Vector {
 	@Override
 	public double normInf() {
 		Double max = Double.MIN_VALUE;
-		for(double d : data) {
-			if(d > max) max = d;
+		for(int i=0;i<dim;i++) {
+			double abs = Math.abs(data[i]);
+			if(abs > max) max = abs;
 		}
 		return max;
 	}

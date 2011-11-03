@@ -14,6 +14,7 @@ import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
+import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ElementList;
 
 /**
@@ -173,11 +174,62 @@ public class ModelPoissonEx {
 			Tools.plotVector(meshSmall, outputFolder, "uGuess2.dat", u);
 	}
 	
+	public static void genTest15(int type) {
+		String outputFolder = "ModelPoissonEx";
+		//String gridFileSmall = "prostate_test13.grd";
+		String gridFileSmall = "prostate_test15.grd";
+
+		MeshReader readerGCM = new MeshReader(gridFileSmall);
+		Mesh meshSmall = readerGCM.read2DMesh();
+		
+		ModelPoissonEx model = new ModelPoissonEx(meshSmall);
+		model.k = FC.c(0.2);
+		double scaleFactor = 40.0;//20.0;//v1-3=8.5,10
+		if(type==1)
+			model.f = VariationGaussNewtonDOTGeneral.generateRealMu_aTest15(meshSmall, 1/scaleFactor).M(scaleFactor);
+		else if(type==2)
+			model.f = VariationGaussNewtonDOTGeneral.generateGuessMu_aTest15(meshSmall, 1/scaleFactor).M(scaleFactor);
+		model.c = FC.c(10.0);
+		
+		//Use element library to assign degree of freedom (DOF) to element
+		FEBilinearRectangle fe = new FEBilinearRectangle();
+		ElementList eList = meshSmall.getElementList();
+		for(int i=1;i<=eList.size();i++)
+			fe.assignTo(eList.at(i));
+		meshSmall.computeNodeBelongsToElements();
+		meshSmall.computeNeighborNodes();		
+		
+		Vector u = model.solveDirichlet(FC.c(0.1));
+//		for(int i=1;i<=u.getDim();i++) {
+//			u.set(i,u.get(i)+0.005*Math.random());
+//		}
+		if(type==1)
+			Tools.plotVector(meshSmall, outputFolder, "uReal_Test15.dat", u);
+		else if(type==2)
+			Tools.plotVector(meshSmall, outputFolder, "uGuess_Test15.dat", u);
+	}
+	
+	public static void genTest15Direct() {
+		String outputFolder = "ModelPoissonEx";
+		String gridFileSmall = "prostate_test15.grd";
+
+		MeshReader readerGCM = new MeshReader(gridFileSmall);
+		Mesh meshSmall = readerGCM.read2DMesh();
+		Function real = VariationGaussNewtonDOTGeneral.generateRealMu_aTest15(meshSmall, 0.1);
+		Function guess = VariationGaussNewtonDOTGeneral.generateGuessMu_aTest15(meshSmall, 0.1);
+		Tools.plotFunction(meshSmall, outputFolder, "uReal_Test15.dat", real);
+		Tools.plotFunction(meshSmall, outputFolder, "uGuess_Test15.dat", guess);
+		
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		//gen1(1);
-		gen2(2);
+		//gen2(2);
+		//genTest15(1);
+		//genTest15(2);
+		genTest15Direct();
 	}		
 }

@@ -1375,7 +1375,8 @@ public class Element {
 			VectorShapeFunction sfI = dofI.getVSF();
 			int nLocalRow = dofI.getLocalIndex();
 			int nGlobalRow = dofI.getGlobalIndex();
-			System.out.print(String.format("localIndex=%02d,globalIndex=%02d  ", nLocalRow,nGlobalRow));
+			System.out.print(String.format("E%d DOFIdx:L=%02d, G=%d SF=", 
+					this.globalIndex, nLocalRow, nGlobalRow));
 			System.out.println(sfI);
 		}
 	}

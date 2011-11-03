@@ -206,7 +206,8 @@ public class SparseVector implements Vector {
 	public double normInf() {
 		Double max = Double.MIN_VALUE;
 		for(Double d : data.values()) {
-			if(d > max) max = d;
+			double abs = Math.abs(d);
+			if(abs > max) max = abs;
 		}
 		return max;
 	}

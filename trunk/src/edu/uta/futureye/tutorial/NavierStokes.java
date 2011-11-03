@@ -6,6 +6,8 @@ import edu.uta.futureye.algebra.SchurComplementStokesSolver;
 import edu.uta.futureye.algebra.SparseVector;
 import edu.uta.futureye.algebra.intf.BlockMatrix;
 import edu.uta.futureye.algebra.intf.BlockVector;
+import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -22,6 +24,8 @@ import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerVector;
+import edu.uta.futureye.lib.element.FEBilinearV_ConstantP;
+import edu.uta.futureye.lib.element.FEQuadraticV_ConstantP;
 import edu.uta.futureye.lib.element.FEQuadraticV_LinearP;
 import edu.uta.futureye.lib.weakform.WeakFormNavierStokes;
 import edu.uta.futureye.util.Constant;
@@ -38,20 +42,30 @@ import edu.uta.futureye.util.container.ObjList;
  *
  */
 public class NavierStokes {
-	protected String file = "benchmark_cylinder1";
-	protected static String outputFolder = "tutorial\\NavierStokes";
+	//protected String file = "benchmark_cylinder1"; //triangle mesh
+	//protected String file = "benchmark_cylinder2"; //triangle mesh
+	protected String file = "benchmark_cylinder3"; //rectangle mesh
+	protected static String outputFolder = "tutorial/NavierStokes";
 	protected Mesh mesh = null;
 	protected Mesh meshOld = null;
+	
 	//Quadratic Velocity - Linear Pressure Element
-	protected FEQuadraticV_LinearP fe = new FEQuadraticV_LinearP();
-	//Stokes weak form
+	int feFlag = 3;
+	//protected FEQuadraticV_LinearP fe = new FEQuadraticV_LinearP(); //feFlag=1
+	//protected FEQuadraticV_ConstantP fe = new FEQuadraticV_ConstantP(); //feFlag=2
+	protected FEBilinearV_ConstantP fe = new FEBilinearV_ConstantP(); //feFla=3
+	
+	//Navier-Stokes Weak Form (For Picard Iteration)
 	protected WeakFormNavierStokes weakForm = new WeakFormNavierStokes();
 	//Assembler
 	protected AssemblerVector assembler = null;
 	//Dirichlet boundary condition
 	protected VectorFunction diri = null;
-	//Previous velocity
+	//Previous Velocity
 	protected VectorFunction U = new SpaceVectorFunction(2);
+	
+	//delta t
+	protected double dt = 0.05;
 	
 	public void init() {
 		//Read a triangle mesh from an input file
@@ -62,27 +76,29 @@ public class NavierStokes {
 		mesh.nVertex = mesh.getNodeList().size();
 		
 		//Add nodes for quadratic element
-		for(int i=1;i<=mesh.getElementList().size();i++) {
-			Element e = mesh.getElementList().at(i);
-			e.adjustVerticeToCounterClockwise();
-			ObjList<EdgeLocal> edges = e.edges();
-			int nNode = e.nodes.size();
-			for(int j=1;j<=edges.size();j++) {
-				EdgeLocal edge = edges.at(j);
-				Vertex l = edge.beginVertex();
-				Vertex r = edge.endVertex();
-				double cx = (l.coord(1)+r.coord(1))/2.0;
-				double cy = (l.coord(2)+r.coord(2))/2.0;
-				Node node = new Node(mesh.getNodeList().size()+1, cx,cy);
-				Node findNode = mesh.containNode(node);
-				if(findNode == null) {
-					edge.addEdgeNode(new NodeLocal(++nNode,node));
-					mesh.addNode(node);
-				} else {
-					edge.addEdgeNode(new NodeLocal(++nNode,findNode));
+		if(feFlag==1 && feFlag==2) {
+			for(int i=1;i<=mesh.getElementList().size();i++) {
+				Element e = mesh.getElementList().at(i);
+				e.adjustVerticeToCounterClockwise();
+				ObjList<EdgeLocal> edges = e.edges();
+				int nNode = e.nodes.size();
+				for(int j=1;j<=edges.size();j++) {
+					EdgeLocal edge = edges.at(j);
+					Vertex l = edge.beginVertex();
+					Vertex r = edge.endVertex();
+					double cx = (l.coord(1)+r.coord(1))/2.0;
+					double cy = (l.coord(2)+r.coord(2))/2.0;
+					Node node = new Node(mesh.getNodeList().size()+1, cx,cy);
+					Node findNode = mesh.containNode(node);
+					if(findNode == null) {
+						edge.addEdgeNode(new NodeLocal(++nNode,node));
+						mesh.addNode(node);
+					} else {
+						edge.addEdgeNode(new NodeLocal(++nNode,findNode));
+					}
 				}
+				e.applyChange();
 			}
-			e.applyChange();
 		}
 		
 		//Geometry relationship
@@ -125,6 +141,7 @@ public class NavierStokes {
 			@Override
 			public double value(Variable v) {
 				double x = v.get("x");
+				//right side p=0
 				if(Math.abs(x-2.2) < Constant.meshEps)
 					return 1;
 				else
@@ -142,10 +159,10 @@ public class NavierStokes {
 			System.out.println(i+"  " + eList.at(i));
 		}
 
-		fe.initDOFIndexGenerator(nodes.size());
+		fe.initDOFIndexCounter(nodes.size());
 		for(int i=1;i<=eList.size();i++) {
 			fe.assignTo(eList.at(i));
-			//eList.at(i).printDOFInfo();
+			eList.at(i).printDOFInfo();
 		}
 
 		//Boundary condition
@@ -158,6 +175,7 @@ public class NavierStokes {
 						
 						double H  = 0.41;
 						double Um = 0.3;
+						//left boundary
 						if(x < Constant.meshEps)
 							return 4*Um*y*(H-y)/(H*H);
 						else
@@ -168,11 +186,14 @@ public class NavierStokes {
 		diri.set(3, FC.c0);
 	}
 	
-	public BlockVector nonlinearIter(int nIter) {
+	public BlockVector nonlinearIter(int time, int nIter, SpaceVectorFunction uk) {
 		//Right hand side(RHS): f = (0,0)'
-		weakForm.setF(new SpaceVectorFunction(FC.c0,FC.c0));
-		
-		weakForm.setParam(FC.c(0.1),U,FC.c0);
+		if(time==0)
+			weakForm.setF(new SpaceVectorFunction(FC.c0,FC.c0));
+		else
+			weakForm.setF(new SpaceVectorFunction(uk.get(1).D(dt),uk.get(2).D(dt)));
+			
+		weakForm.setParam(FC.c(0.005),U,FC.c(1.0/dt));
 		
 		//Robin:  k*u_n + d*u - p\mathbf{n} = 0
 		VectorFunction d = new SpaceVectorFunction(2);
@@ -189,6 +210,10 @@ public class NavierStokes {
 		//load.print();
 		//System.out.println(load.norm2());
 
+		Matrix C = stiff.getBlock(3, 3);
+		for(int i=1;i<=C.getRowDim();i++)
+			C.set(i, i, 0.00001);
+		
 		assembler.imposeDirichletCondition(diri);
 		//load.getBlock(1).print();
 		//load.getBlock(2).print();
@@ -205,32 +230,67 @@ public class NavierStokes {
 	public void run() {
 		init();
 		
-		U.set(1, FC.c0);
+		U.set(1, FC.c(0.1));
 		U.set(2, FC.c0);
 		BlockVector u = null;
-		for(int iter=0;iter<15;iter++) {
-			u = nonlinearIter(iter);
-			
-			int dim = u.getBlock(1).getDim();
-			SparseVector tmp = new SparseVector(dim);
-			for(int i=1;i<=dim;i++)
-				tmp.set(i, 
-						u.getBlock(1).get(i)-
-						U.get(1).value(new Variable().setIndex(i)));
-			
-			U.set(1, new Vector2Function(u.getBlock(1)));
-			U.set(2, new Vector2Function(u.getBlock(2)));
-
-			System.out.println("u=");
-			for(int i=1;i<=u.getDim();i++)
-				System.out.println(String.format("%.3f", u.get(i)));	
-			Tools.plotVector(mesh, outputFolder, String.format("%s_uv%02d.dat",file,iter), 
-					u.getBlock(1), u.getBlock(2));
-			Tools.plotVector(meshOld, outputFolder, String.format("%s_p%02d.dat",file,iter), 
-					u.getBlock(3));
-			
-			System.out.println("Error Norm = "+tmp.norm2());
-		
+		SpaceVectorFunction uk = new SpaceVectorFunction(2);
+		for(int time=0;time<200;time++) {
+			System.out.println(">>>>>>>>>>>>>>>>>>>time="+time);
+			uk.set(1, U.get(1));
+			uk.set(2, U.get(2));
+			for(int iter=0;iter<30;iter++) {
+				
+				u = nonlinearIter(time, iter, uk);
+				
+				int dim = u.getBlock(1).getDim();
+				SparseVector tmp = new SparseVector(dim);
+				for(int i=1;i<=dim;i++)
+					tmp.set(i, 
+							u.getBlock(1).get(i)-
+							U.get(1).value(new Variable().setIndex(i)));
+				
+				U.set(1, new Vector2Function(u.getBlock(1)));
+				U.set(2, new Vector2Function(u.getBlock(2)));
+	
+//				System.out.println("u=");
+//				for(int i=1;i<=u.getDim();i++)
+//					System.out.println(String.format("%.3f", u.get(i)));
+				System.out.println("Iter="+iter+" Error Norm2 (||u1_k+1 - u1_k||) = "+tmp.norm2());
+				if(tmp.norm2() < 1e-5) {
+					Tools.plotVector(mesh, outputFolder, String.format("%s_uv_final_t%02d.dat",file,time), 
+							u.getBlock(1), u.getBlock(2));
+					Tools.plotVector(meshOld, outputFolder, String.format("%s_p_final_t%02d.dat",file,time), 
+							element2node(u.getBlock(3)));
+					break;
+				} else {
+					Tools.plotVector(mesh, outputFolder, String.format("%s_uv%02d_%02d.dat",file,time,iter), 
+							u.getBlock(1), u.getBlock(2));
+					Tools.plotVector(meshOld, outputFolder, String.format("%s_p%02d_%02d.dat",file,time,iter), 
+							element2node(u.getBlock(3)));
+				}
+			}
+		}
+	}
+	
+	//Convert values of pressure p from piecewise constant on element to node if necessary 
+	public Vector element2node(Vector p) {
+		if(p.getDim()==mesh.getElementList().size() && p.getDim() != mesh.getNodeList().size()) {
+		    Vector pOnElement = p;
+		    ElementList eList = mesh.getElementList();
+		    Vector pOnNode = new SparseVector(mesh.getNodeList().size());
+		    for(int i=1;i<=eList.size();i++) {
+		    	NodeList nList = eList.at(i).nodes;
+		    	for(int j=1;j<=nList.size();j++) {
+		    		if(pOnElement.get(eList.at(i).globalIndex) > pOnNode.get(nList.at(j).globalIndex))
+		    		pOnNode.set(
+		    				nList.at(j).globalIndex,
+		    				pOnElement.get(eList.at(i).globalIndex)
+		    				);
+		    	}
+		    }
+		    return pOnNode;
+		} else {
+			return p;
 		}
 	}
 	
