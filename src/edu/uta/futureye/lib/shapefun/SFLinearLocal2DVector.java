@@ -29,9 +29,9 @@ public class SFLinearLocal2DVector extends AbstractVectorFunction
 
 		if(funIndex>=0 && funIndex<=2) {
 			sf.set(1, new SFLinearLocal2D(funIndex+1));
-			sf.set(2, new SF0(innerVarNames));
+			sf.set(2, new SFConstant0(innerVarNames));
 		} else if(funIndex>=3 && funIndex<=5) {
-			sf.set(1, new SF0(innerVarNames));
+			sf.set(1, new SFConstant0(innerVarNames));
 			sf.set(2, new SFLinearLocal2D(funIndex-2));
 		}
 		
@@ -66,9 +66,9 @@ public class SFLinearLocal2DVector extends AbstractVectorFunction
 
 			if(funIndex>=0 && funIndex<=1) {
 				sf.set(1, new SFLinearLocal1D(funIndex+1));
-				sf.set(2, new SF0(innerVarNames));
+				sf.set(2, new SFConstant0(innerVarNames));
 			} else if(funIndex>=2 && funIndex<=3) {
-				sf.set(1, new SF0(innerVarNames));
+				sf.set(1, new SFConstant0(innerVarNames));
 				sf.set(2, new SFLinearLocal1D(funIndex-1));
 			}
 		}

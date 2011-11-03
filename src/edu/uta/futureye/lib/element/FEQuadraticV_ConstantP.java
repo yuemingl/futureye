@@ -3,12 +3,11 @@ package edu.uta.futureye.lib.element;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
-import edu.uta.futureye.lib.shapefun.QuadraticV_LinearP;
+import edu.uta.futureye.lib.shapefun.QuadraticV_ConstantP;
 import edu.uta.futureye.util.FutureyeException;
-import edu.uta.futureye.util.container.VertexList;
 
-public class FEQuadraticV_LinearP implements FiniteElementType {
-	protected static QuadraticV_LinearP[] shapeFun = new QuadraticV_LinearP[15];
+public class FEQuadraticV_ConstantP implements FiniteElementType {
+	protected static QuadraticV_ConstantP[] shapeFun = new QuadraticV_ConstantP[13];
 	protected int nTotalNodes = -1;
 	//p自由度计数器
 	protected int nDOF_p = -1;
@@ -21,13 +20,12 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 		if(vsfDim <= 2)
 			return 6;
 		else
-			return 3;
+			return 1;
 	}
 	
-	
-	public FEQuadraticV_LinearP() {
-		for(int i=0;i<15;i++)
-			shapeFun[i] = new QuadraticV_LinearP(i+1);
+	public FEQuadraticV_ConstantP() {
+		for(int i=0;i<13;i++)
+			shapeFun[i] = new QuadraticV_ConstantP(i+1);
 	}
 	
 	/**
@@ -50,6 +48,7 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 			ex.printStackTrace();
 			System.exit(-1);
 		}
+		//单元结点数
 		int nNode = e.nodes.size();
 		//Assign shape function to DOF
 		for(int j=1;j<=nNode;j++) {
@@ -71,20 +70,17 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 			e.addNodeDOF(j, dof_u1);
 			e.addNodeDOF(j, dof_u2);
 		}
-		VertexList vertices = e.vertices();
-		for(int j=1;j<=vertices.size();j++) {
-			//Assign shape function to DOF
-			DOF dof = new DOF(
-						2*nNode+j, //Local DOF index
-						//this.nTotalNodes*2+nDOF_p, //Global DOF index for Pressure
-						this.nTotalNodes*2+vertices.at(j).globalNode().globalIndex, //Global DOF index for Pressure
-						shapeFun[2*nNode+j-1] //Shape function 
-						);
-			dof.setVvfIndex(3);
-			//System.out.println(this.nTotalNodes*2+nDOF_p);
-			nDOF_p++;
-			e.addNodeDOF(j, dof);
-		}
+		
+		//Assign shape function to DOF
+		DOF dof = new DOF(
+					2*nNode+1, //Local DOF index
+					//this.nTotalNodes*2+nDOF_p, //Global DOF index for Pressure
+					this.nTotalNodes*2+this.nDOF_p, //Global DOF index for Pressure
+					shapeFun[2*nNode] //Shape function 
+					);
+		this.nDOF_p++;
+		dof.setVvfIndex(3);	
+		e.addVolumeDOF(dof);
 	}
 	
 	@Override
@@ -92,6 +88,6 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 		if(vsfDim<=2)
 			return mesh.getNodeList().size();
 		else
-			return mesh.nVertex;
-	}	
+			return mesh.getElementList().size();
+	}
 }

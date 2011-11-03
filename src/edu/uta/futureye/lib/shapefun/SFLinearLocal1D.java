@@ -32,6 +32,7 @@ public class SFLinearLocal1D extends AbstractFunction  implements ScalarShapeFun
 	 * 
 	 * N1 = (1-r)/2
 	 * N2 = (1+r)/2
+	 * 
 	 * @param funID = 1,2
 	 * 
 	 */

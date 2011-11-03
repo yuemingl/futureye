@@ -110,14 +110,21 @@ public interface AlgebraVector {
 	public double dot(AlgebraVector y);
 	
 	/**
-	 * 二范数
+	 * 1 Norm
+	 * 
+	 * @return
+	 */
+	public double norm1();
+	
+	/**
+	 * 2 Norm
 	 * 
 	 * @return
 	 */
 	public double norm2();
 	
 	/**
-	 * 无穷范数
+	 * Infinity norm (Maximum norm)
 	 * 
 	 * @return
 	 */

@@ -8,35 +8,36 @@ import edu.uta.futureye.algebra.intf.BlockVector;
  *     (0   B2  C2)
  *     (C1' C2' C )
  *
- * f = (f1)
- *     (f2)
- *     (f3)
- *     
  * x = (u1)
  *     (u2)
  *     (p )
- *     
+ *
+ * f = (f1)
+ *     (f2)
+ *     (f3)
+ *
  * C1' = - trans(C1)
  * C2' = - trans(C2)
  *
- * 求 A*x=f, x=(u1 u2 p)'
+ * Solve A*x=f
  * 
- * B1 *u1 + C1 *p  = f1   ---(1)
- * B2 *u2 + C2 *p  = f2   ---(2)
- * C1'*u1 + C2'*u2 = f3   ---(3)
+ * B1 *u1          + C1*p = f1   ---(1)
+ *          B2 *u2 + C2*p = f2   ---(2)
+ * C1'*u1 + C2'*u2 +  C*p = f3   ---(3)
  * 
- * 由(1)(2)得：
+ * From (1)(2), we get
  * u1 = inv(B1) * (f1 - C1*p)  ---(4)
  * u2 = inv(B2) * (f2 - C2*p)  ---(5)
  * 
- * 带入(3)：
+ * Substitute into (3)：
  * (C1'*inv(B1)*C1 + C2'*inv(B2)*C2 + C)*p 
  *                 = C1'*inv(B1)*f1 + C2'*inv(B2)*f2 + f3   ---(6)
- *                 
+ * 
  * where S = C1'*inv(B1)*C1 + C2'*inv(B2)*C2 + C, 称为 Schur complement matrix
  *
- *求解：
- *  先求解(6)得p，再由(4)(5)得u1,u2
+ * Solving Steps
+ *  Firstly, solve (6), get p
+ *  Secondly, from (4)(5), get u1,u2
  *
  * @author liuyueming
  *
@@ -106,9 +107,15 @@ public class SchurComplementStokesSolver {
 		S.axpy(-1.0, S2.ax(-1.0));
 		S.axpy(1.0, CC);
 		
-		Solver sov = new Solver();
-		FullVector p = new FullVector(rhs.getDim(),1.0);
-		sov.solveCG(S, rhs, p);
+		
+		SolverJBLAS sov = new SolverJBLAS();
+		SparseMatrix SS2 = S.getSparseMatrix();
+		SparseVector Srhs = rhs.getSparseVector();
+		FullVector p = new FullVector(sov.solveDGESV(SS2, Srhs));
+		
+//		Solver sov = new Solver();
+//		FullVector p = new FullVector(rhs.getDim(),1.0);
+//		sov.solveCG(S, rhs, p);
 		
 		
 		//u1=inv(B1)*(f1-C1*p)

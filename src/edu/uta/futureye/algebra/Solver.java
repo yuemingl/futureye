@@ -16,6 +16,8 @@ public class Solver {
 	//迭代最大次数
 	public double maxIter = 20000;
 	
+	public boolean debug = false;
+	
 	/**
 	 * Conjugate Gradients iterative method, solves 
 	 * symmetric positive definite linear system:
@@ -49,7 +51,8 @@ public class Solver {
 			norm2 = r.norm2();
 			if((norm2<=this.epsRelIter*firstNorm2 && norm2<=this.epsAbsIterMax) || 
 					norm2<=this.epsAbsIterMin) {
-				System.out.println(
+				if(debug)
+					System.out.println(
 						String.format("Iter----->i=%05d, RError=%8.3e, AError=%8.3e", 
 								i,norm2/firstNorm2,norm2));
 				return x;
@@ -122,7 +125,8 @@ public class Solver {
 			norm2 = r.norm2();
 			if((norm2<=this.epsRelIter*firstNorm2 && norm2<=this.epsAbsIterMax) || 
 					norm2<=this.epsAbsIterMin) {
-				System.out.println(
+				if(debug)
+					System.out.println(
 						String.format("Iter----->i=%05d, RError=%8.3e, AError=%8.3e", 
 								i,norm2/firstNorm2,norm2));
 				return x;

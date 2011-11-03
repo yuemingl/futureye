@@ -11,6 +11,7 @@ import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.util.Utils;
 
 /**
+ * <blockquote><pre>
  * Problem:
  * -\nabla{k*\nabla{\vec{u}} 
  * 		+ \vec{U}\cdot\nabla\vec{u}
@@ -25,7 +26,7 @@ import edu.uta.futureye.util.Utils;
  *   
  *   (\nabla\vec{v},k*\nabla\vec{u})
  *   		+ (\vec{U}\cdot\nabla\vec{u},\vec{v})
- *   		+ c*(\vec{u},\vec{v})
+ *   		+ (c*\vec{u},\vec{v})
  *   		- (div{\vec{v}},p)
  *  		+ (q,div{\vec{u}}) 
  *			= (\vec{v},\vec{f})
@@ -38,10 +39,11 @@ import edu.uta.futureye.util.Utils;
  *			= (v1,f1)+(v2,f2)
  *
  * where
- *   \vec{u}=(u1,u2): velocity vector field    
+ *   \vec{u}=(u1,u2): velocity vector field
  *   \vec{f}=(f1,f2): body force
  *   \vec{U}=(U1,U2): previous velocity
- *   
+ * </blockquote></pre>
+ * 
  * @author liuyueming
  *
  */

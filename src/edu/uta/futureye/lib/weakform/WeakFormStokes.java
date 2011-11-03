@@ -12,22 +12,22 @@ import edu.uta.futureye.util.Utils;
 
 /**
  * Problem:
- * -\nabla{k*\nabla{\mathbf{u}} + \nabla{p} = \mathbf{f}
- * div{\mathbf{u}} = 0
+ * -\nabla{k*\nabla{\vec{u}} + \nabla{p} = \vec{f}
+ * div{\vec{u}} = 0
  * 
  * Weak form:
- *   find \mathbf{u} \in H_0^1(div;\Omega), p \in L_2(\Omega)
- *   such that, for all \mathbf{v} \in H_0^1(div;\Omega), q \in L_2(\Omega)
+ *   find \vec{u} \in H_0^1(div;\Omega), p \in L_2(\Omega)
+ *   such that, for all \vec{v} \in H_0^1(div;\Omega), q \in L_2(\Omega)
  *   
- *   (\nabla{\mathbf{v}},k*\nabla{\mathbf{u}}) - (div{\mathbf{v}},p) 
- *                   + (q,div{\mathbf{u}}) = (\mathbf{v},\mathbf{f})
+ *   (\nabla{\vec{v}},k*\nabla{\vec{u}}) - (div{\vec{v}},p) 
+ *                   + (q,div{\vec{u}}) = (\vec{v},\vec{f})
  *
  *   (v1_x,k*u1_x) + (v1_y,k*u1_y) + (v2_x,k*u2_x) + (v2_y,k*u2_y) 
  *                   - (v1_x+v2_y,p) + (q,u1_x+u2_y) = (v1,f1)+(v2,f2)    
  *
  * where
- *   \mathbf{u}=(u1,u2): velocity vector field    
- *   \mathbf{f}=(f1,f2): body force
+ *   \vec{u}=(u1,u2): velocity vector field    
+ *   \vec{f}=(f1,f2): body force
  *   
  * @author liuyueming
  *
@@ -36,7 +36,7 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 	protected VectorFunction g_f = null;
 	protected Function g_k = null;
 	protected Function g_c = null;
-	//Robin:  k*u_n + d*u - p\mathbf{n} = 0
+	//Robin:  k*u_n + d*u - p\vec{n} = 0
 	protected VectorFunction g_d = null;
 
 	public void setF(VectorFunction f) {
@@ -48,7 +48,7 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 		this.g_c = c;
 	}
 	
-	//Robin:  k*u_n + d*u - p\mathbf{n} = 0
+	//Robin:  k*u_n + d*u - p\vec{n} = 0
 	public void setRobin(VectorFunction d) {
 		this.g_d = d;
 	}
@@ -84,7 +84,7 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 				ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
 				ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
 				ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
-				//Robin:  - k*u_n = d*u - p\mathbf{n}
+				//Robin:  - k*u_n = d*u - p\vec{n}
 				//d1*u1 + d2*u2
 				Function borderIntegrand = fd1.M(u1.M(v1)).A(fd2.M(u2.M(v2)));
 				return borderIntegrand;
@@ -108,8 +108,8 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
 			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
 			ScalarShapeFunction p  = (ScalarShapeFunction)v.get(3);
-			//Robin:  - k*u_n = d*u - p\mathbf{n}
-			//- p\mathbf{n} = - p*n1*v1 - p*n2*v2
+			//Robin:  - k*u_n = d*u - p\vec{n}
+			//- p\vec{n} = - p*n1*v1 - p*n2*v2
 			Edge edge = (Edge)be.getGeoEntity();
 			Vector n = edge.getNormVector();
 			FC n1 = FC.c(-1.0*n.get(1));

@@ -34,33 +34,33 @@ public class AssemblerVector implements Assembler {
 	protected BlockMatrix globalStiff;
 	protected BlockVector globalLoad;
 	
+	/**
+	 * 构造一个整体合成器
+	 * 
+	 * @param mesh 网格
+	 * @param weakForm 弱形式
+	 * @param feType 有限元类型
+	 */
 	public AssemblerVector(Mesh mesh, WeakForm weakForm, 
 			FiniteElementType feType) {
 		this.mesh = mesh;
 		this.weakForm = weakForm;
 		
-		ElementList eList = mesh.getElementList();
-		int nEle = eList.size();
-		NodeList nodes = mesh.getNodeList();
-		int nNode = nodes.size();
-		
-//		Element e = eList.at(1);
-//		DOFList DOFs = e.getAllDOFList(DOFOrder.NEFV);
-//		VectorFunction vsf = DOFs.at(1).getVSF();
-//		int blockDim = vsf.getDim();
 		int blockDim = feType.getVectorShapeFunctionDim();
-		
-		//TODO
-		int[] dims = {0,nNode,nNode,mesh.nVertex};
+		//获取网格自由度总数
+		int[] dims = new int[blockDim];
+		for(int i=1;i<=blockDim;i++) {
+			dims[i-1] = feType.getDOFNumOnMesh(mesh, i);
+		}
 		globalStiff = new SparseBlockMatrix(blockDim,blockDim);
 		globalLoad = new SparseBlockVector(blockDim);
 		for(int i=1;i<=blockDim;i++) {
 			for(int j=1;j<=blockDim;j++) {
 				globalStiff.setBlock(i, j, 
-						new SparseMatrix(dims[i],dims[j]));
+						new SparseMatrix(dims[i-1],dims[j-1]));
 			}
 			globalLoad.setBlock(i, 
-					new SparseVector(dims[i]));
+					new SparseVector(dims[i-1]));
 		}
 		
 	}
