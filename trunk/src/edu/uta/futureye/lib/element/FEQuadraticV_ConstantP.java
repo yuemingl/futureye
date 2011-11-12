@@ -90,4 +90,10 @@ public class FEQuadraticV_ConstantP implements FiniteElementType {
 		else
 			return mesh.getElementList().size();
 	}
+
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		this.nTotalNodes = mesh.getNodeList().size();
+		nDOF_p = 1;
+	}	
 }

@@ -22,6 +22,7 @@ import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
 
 /**
+ * <blockquote><pre>
  * Convection-diffusion equation
  *   \frac{\partial{c}}{\partial{t}} = \Nabla{k*\Nabla{c}} - \mathbf{v}\dot\Nabla{c} + f
  * 
@@ -49,7 +50,9 @@ import edu.uta.futureye.util.container.ElementList;
  *   d*c + k*c_n = q,         on \Gamma2 (Robin)
  *
  * The following weak form just gives one step computation of c from c_n to c_n+1. 
- *   
+ * 
+ * </blockquote></pre>
+ * 
  * @author liuyueming
  *
  */

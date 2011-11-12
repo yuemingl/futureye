@@ -11,7 +11,16 @@ public interface FiniteElementType {
 	 */
 	void assignTo(Element e);
 	
+	/**
+	 * 初始化自由度编号生成器
+	 * @param nTotalNodes
+	 */
+	void initDOFIndexGenerator(Mesh mesh);
 	
+	/**
+	 * 获得向量值形函数的维度
+	 * @return
+	 */
 	int getVectorShapeFunctionDim();
 	
 	/**

@@ -101,9 +101,21 @@ public class DOF {
 	}
 	
 	public String toString() {
-		return String.format("{L%d G%d %s %s}", localIndex,
+		return String.format("{DOFL%d(G%d) SF:%s Owner:%s}", localIndex,
 				globalIndex,
 				shapeFun,
 				owner);
+	}
+	
+	public Node getNodeOwner() {
+		return (Node)owner;
+	}
+	
+	public EdgeLocal getLocalEdgeOwner() {
+		return (EdgeLocal)owner;
+	}
+	
+	public FaceLocal getLocalFaceOwner() {
+		return (FaceLocal)owner;
 	}
 }

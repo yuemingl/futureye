@@ -53,4 +53,10 @@ public class FEBilinearRectangleRegular implements FiniteElementType {
 		return mesh.getNodeList().size();
 	}
 
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

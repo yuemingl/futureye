@@ -43,5 +43,11 @@ public class FEQuadraticTriangle implements FiniteElementType {
 	@Override
 	public int getDOFNumOnMesh(Mesh mesh, int vsfDim) {
 		return mesh.getNodeList().size();
+	}
+
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		// TODO Auto-generated method stub
+		
 	}	
 }

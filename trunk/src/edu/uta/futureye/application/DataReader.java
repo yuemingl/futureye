@@ -11,6 +11,10 @@ public class DataReader {
 	public static boolean debug = false;
 	
 	public static Vector readVector(String file) {
+		return readVector(file, 3);
+	}
+	
+	public static Vector readVector(String file, int nCol) {
 		FileInputStream in;
 		Vector v = null;
 		try {
@@ -34,7 +38,7 @@ public class DataReader {
 					}
 				} else {
 					String[] line = str.split("(\\s)+");
-					v.set(dim,Double.valueOf(line[line.length-1]));
+					v.set(dim,Double.valueOf(line[nCol-1]));
 					dim++;
 					N--;
 					if(N==0) break;

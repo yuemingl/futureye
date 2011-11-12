@@ -30,16 +30,6 @@ public class FEBilinearV_ConstantP implements FiniteElementType {
 	}
 	
 	/**
-	 * 初始化自由度变数计数器
-	 * 
-	 * @param nTotalNodes
-	 */
-	public void initDOFIndexCounter(int nTotalNodes) {
-		this.nTotalNodes = nTotalNodes;
-		nDOF_p = 1;
-	}
-	
-	/**
 	 * Assign degree of freedom to element
 	 * @param e
 	 */
@@ -91,4 +81,10 @@ public class FEBilinearV_ConstantP implements FiniteElementType {
 		else
 			return mesh.getElementList().size();
 	}
+
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		this.nTotalNodes = mesh.getNodeList().size();
+		nDOF_p = 1;
+	}	
 }

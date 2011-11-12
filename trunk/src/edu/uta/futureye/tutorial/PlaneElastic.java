@@ -129,7 +129,7 @@ public class PlaneElastic {
         
         //7.Output results to an Techplot format file
         MeshWriter writer = new MeshWriter(mesh);
-        writer.writeTechplot("tuitoral_Elastic.dat", blkU.getBlock(1),
+        writer.writeTechplot("./tutorial/Elastic.dat", blkU.getBlock(1),
         		blkU.getBlock(2));
 	}
 

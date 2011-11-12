@@ -24,22 +24,12 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 			return 3;
 	}
 	
-	
 	public FEQuadraticV_LinearP() {
 		for(int i=0;i<15;i++)
 			shapeFun[i] = new QuadraticV_LinearP(i+1);
 	}
 	
-	/**
-	 * 初始化自由度变数计数器
-	 * 
-	 * @param nTotalNodes
-	 */
-	public void initDOFIndexCounter(int nTotalNodes) {
-		this.nTotalNodes = nTotalNodes;
-		nDOF_p = 1;
-	}
-	
+
 	/**
 	 * Assign degree of freedom to element
 	 * @param e
@@ -93,5 +83,11 @@ public class FEQuadraticV_LinearP implements FiniteElementType {
 			return mesh.getNodeList().size();
 		else
 			return mesh.nVertex;
+	}
+
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		this.nTotalNodes = mesh.getNodeList().size();
+		nDOF_p = 1;
 	}	
 }

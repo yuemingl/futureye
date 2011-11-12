@@ -199,4 +199,13 @@ public class FullVector implements AlgebraVector {
 		return rlt;
 	}
 
+	public FullVector copy() {
+		int dim = this.dim;
+		FullVector rlt = new FullVector(dim);
+		for(int i=0;i<dim;i++) {
+			rlt.data[i] = this.data[i];
+		}
+		return rlt;
+	}
+
 }

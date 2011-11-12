@@ -11,6 +11,7 @@ public interface WeakForm {
 	static enum ItemType {Domain, Border};
 	
 	//--- Common approach to provide weak form to assembler-----
+	//TODO 考虑直接传入DOF2011-11-6 (for upwind)
 	void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
 			ShapeFunction test, int testDofLocalIndex);
 	
