@@ -63,5 +63,8 @@ public class GeoEntity2D<
 	}
 	public void setTopology(Topology2D topology) {
 		this.topology = topology;
-	}	
+	}
+	public String toString() {
+		return "GeoEntity2D:"+this.vertices.toString();
+	}
 }

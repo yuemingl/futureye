@@ -67,6 +67,12 @@ public class Mesh {
 	public void addNode(Node n) {
 		nodeList.add(n);
 	}	
+	/**
+	 * Add element <code>e</code> to the mesh, the e.globalIndex will be
+	 * assigned automatically
+	 *  
+	 * @param e
+	 */
 	public void addElement(Element e) {
 		eleList.add(e);
 		e.globalIndex = eleList.size();

@@ -136,7 +136,8 @@ public class PlaneElasticHole {
       
       //7.Output results to an Techplot format file
       MeshWriter writer = new MeshWriter(mesh);
-      writer.writeTechplot("tuitoral_ElasticHole.dat", blkU.getBlock(1),
-      		blkU.getBlock(2));	}
+      writer.writeTechplot("./tutorial/ElasticHole.dat", blkU.getBlock(1),
+      		blkU.getBlock(2));	
+      }
 
 }

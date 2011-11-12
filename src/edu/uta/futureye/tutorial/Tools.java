@@ -19,6 +19,7 @@ import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.weakform.WeakFormDerivative;
 import edu.uta.futureye.util.Utils;
+import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
 
 public class Tools {
@@ -109,4 +110,32 @@ public class Tools {
         plotVector(model.mesh,".","testPlotULaplaceSmooth.dat", uLaplace);
 
 	}
+	
+	/**
+	 * Put values of vector v from piecewise constant on element to node if necessary
+	 * 
+	 * @param mesh
+	 * @param v
+	 * @return
+	 */
+	public static Vector valueOnElement2Node(Mesh mesh, Vector v) {
+		if(v.getDim()==mesh.getElementList().size() && v.getDim() != mesh.getNodeList().size()) {
+		    Vector pOnElement = v;
+		    ElementList eList = mesh.getElementList();
+		    Vector pOnNode = new SparseVector(mesh.getNodeList().size());
+		    for(int i=1;i<=eList.size();i++) {
+		    	NodeList nList = eList.at(i).nodes;
+		    	for(int j=1;j<=nList.size();j++) {
+		    		if(pOnElement.get(eList.at(i).globalIndex) > pOnNode.get(nList.at(j).globalIndex))
+		    		pOnNode.set(
+		    				nList.at(j).globalIndex,
+		    				pOnElement.get(eList.at(i).globalIndex)
+		    				);
+		    	}
+		    }
+		    return pOnNode;
+		} else {
+			return v;
+		}
+	}	
 }

@@ -1,14 +1,21 @@
 package edu.uta.futureye.lib.weakform;
 
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.core.DOF;
+import edu.uta.futureye.core.DOFOrder;
 import edu.uta.futureye.core.Edge;
 import edu.uta.futureye.core.Element;
+import edu.uta.futureye.core.Node;
+import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
+import edu.uta.futureye.lib.shapefun.SFConstant0;
+import edu.uta.futureye.util.MathEx;
 import edu.uta.futureye.util.Utils;
+import edu.uta.futureye.util.container.DOFList;
 
 /**
  * <blockquote><pre>
@@ -86,6 +93,42 @@ public class WeakFormNavierStokes extends AbstractVectorWeakForm {
 			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
 			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
 			ScalarShapeFunction q  = (ScalarShapeFunction)v.get(3);
+			
+			//upwind
+			DOFList dofs = e.getAllDOFList(DOFOrder.NEFV);
+			DOF dof = dofs.at(this.vDOFLocalIndex);
+			if(this.vDOFLocalIndex<=8) {
+				Node node1 = dof.getNodeOwner();
+//				Vector valUpwind = e.getDiagVectorInElement2D(node1);
+//				Vector valU = g_U.value(new Variable().setIndex(node1.globalIndex));
+//				double upwindWeight = 0.0;
+//				double dot = valUpwind.dot(valU);
+//				if(dot > 1e-8) {
+//					upwindWeight = -0.8;
+//				} else if(dot< -1e-8){
+//					upwindWeight = 0.8;
+//				}
+//				if(!(v1 instanceof SFConstant0)) v1.A(upwindWeight);
+//				if(!(v2 instanceof SFConstant0)) v1.A(upwindWeight);
+				
+				
+				
+				Vector valU = g_U.value(new Variable().setIndex(node1.globalIndex));
+				double normU = valU.norm2();
+				double h = e.getElementDiameter();
+				double k = g_k.value(Variable.createFrom(g_k, node1, node1.globalIndex));
+				double alpha = normU*h/(2*k);
+				//double k_tidle = 2*(MathEx.coth(alpha)-1.0/alpha)*normU*h;
+				double k_tidle = (MathEx.coth(alpha)-1.0/alpha)*normU*h;
+				if(!(v1 instanceof SFConstant0)) {
+					v1.A(FMath.grad(v1,v1.innerVarNames()).dot(valU).M(k_tidle).D(valU.norm2()));
+				}
+				if(!(v2 instanceof SFConstant0)) {
+					v2.A(FMath.grad(v2,v2.innerVarNames()).dot(valU).M(k_tidle).D(valU.norm2()));
+				}
+			}
+			
+			
 			/**
 			 *   k* [(v1_x,u1_x) + (v1_y,u1_y) + (v2_x,u2_x) + (v2_y,u2_y) ]
 			 *   		+ [(U1*u1_x,v1)+(U2*u1_y,v1)] + [(U1*u2_x,v2)+(U2*u2_y,v2)]
@@ -105,8 +148,7 @@ public class WeakFormNavierStokes extends AbstractVectorWeakForm {
 			Function cuv = fc.M(u1.M(v1).A(u2.M(v2)));
 			integrand = fk.M( uv1.A(uv2) ).A( cvect ).A( cuv ).S( div_v.M(p) ).A( div_u.M(q) );
 			return integrand;
-		}
-		else if(itemType==ItemType.Border) {
+		} else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
 				Function fd1 = Utils.interpolateFunctionOnElement(g_d.get(1), be);

@@ -65,5 +65,8 @@ public class GeoEntity3D<
 	}
 	public void setTopology(Topology3D topology) {
 		this.topology = topology;
-	}		
+	}
+	public String toString() {
+		return "GeoEntity3D:"+this.vertices.toString();
+	}	
 }

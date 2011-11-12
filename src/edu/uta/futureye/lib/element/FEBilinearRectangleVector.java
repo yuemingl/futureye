@@ -61,4 +61,10 @@ public class FEBilinearRectangleVector implements FiniteElementType {
 	public int getDOFNumOnMesh(Mesh mesh, int vsfDim) {
 		return mesh.getNodeList().size();
 	}
+
+	@Override
+	public void initDOFIndexGenerator(Mesh mesh) {
+		// TODO Auto-generated method stub
+		
+	}
 }

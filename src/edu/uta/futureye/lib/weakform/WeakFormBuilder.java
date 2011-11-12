@@ -5,6 +5,8 @@ import java.util.Map;
 
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.intf.WeakForm;
+import edu.uta.futureye.function.basic.FC;
+import edu.uta.futureye.function.basic.FX;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.ShapeFunction;
@@ -220,6 +222,11 @@ public class WeakFormBuilder {
 				}
 			}			
 		};
+		wfb.addParamters(FC.c1, "k");
+		wfb.addParamters(FC.c0, "c");
+		wfb.addParamters(FC.c1, "d");
+		wfb.addParamters(FX.fx.M(FX.fx), "f");
+		wfb.addParamters(FC.c0, "q");
 		WeakForm wf = wfb.getScalarWeakForm();
 
 	}

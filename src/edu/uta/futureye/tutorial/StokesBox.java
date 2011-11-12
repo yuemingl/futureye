@@ -120,7 +120,7 @@ public class StokesBox {
 		}
 		
 		FEQuadraticV_LinearP fe = new FEQuadraticV_LinearP();
-		fe.initDOFIndexCounter(nodes.size());
+		fe.initDOFIndexGenerator(mesh);
 		for(int i=1;i<=eList.size();i++) {
 			fe.assignTo(eList.at(i));
 			//eList.at(i).printDOFInfo();

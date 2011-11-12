@@ -209,5 +209,10 @@ public class Vector2Function extends AbstractFunction {
 		Function fd = new Vector2Function(vd,mesh,this.varNames);
 		return fd;
 	}
+	
+	@Override
+	public String toString() {
+		return "Vector2Function:"+this.u.toString();
+	}
 
 }

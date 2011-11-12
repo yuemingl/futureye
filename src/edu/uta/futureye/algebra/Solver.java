@@ -120,15 +120,18 @@ public class Solver {
 		
 		double firstNorm2 = r.norm2();
 		double norm2 = 0;
+		long begin = System.currentTimeMillis(),end=0;
 		//for (iter.setFirst(); !iter.converged(r, x); iter.next()) {
 		for(int i=0;i<maxIter;i++) {
 			norm2 = r.norm2();
 			if((norm2<=this.epsRelIter*firstNorm2 && norm2<=this.epsAbsIterMax) || 
 					norm2<=this.epsAbsIterMin) {
-				if(debug)
+				if(debug) {
+					end = System.currentTimeMillis();
 					System.out.println(
-						String.format("Iter----->i=%05d, RError=%8.3e, AError=%8.3e", 
-								i,norm2/firstNorm2,norm2));
+						String.format("Iter----->i=%05d, RError=%8.3e, AError=%8.3e, Time=%dms", 
+								i,norm2/firstNorm2,norm2,(end-begin)));
+				}
 				return x;
 			}
 			
@@ -164,7 +167,8 @@ public class Solver {
 
             rho_2 = rho_1;
         }
-		System.out.println("Iter Max----->maxIter="+maxIter+"  norm2="+norm2);
+		end = System.currentTimeMillis();
+		System.out.println("Iter Max----->maxIter="+maxIter+", Norm2="+norm2+", Time="+(end-begin));
 		return x;
     }	
 	

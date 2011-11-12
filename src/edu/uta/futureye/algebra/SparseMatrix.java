@@ -171,7 +171,7 @@ public class SparseMatrix implements Matrix {
 	public void print() {
 		for(int i=1;i<=rowDim;i++) {
 			for(int j=1;j<=colDim;j++) {
-				System.out.print(String.format("%8.6f", get(i,j))+"   ");
+				System.out.print(String.format("%8.6f   ", get(i,j)));
 			}
 			System.out.println();
 		}

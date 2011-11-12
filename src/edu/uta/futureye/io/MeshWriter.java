@@ -42,7 +42,20 @@ public class MeshWriter {
 			int dim = nodes.at(1).dim();
 			
 			String [] VNs ={"V","W","U4","U5","U6","U7","U8","U9"};
-			if(dim == 2) { //二维单元
+			if(dim == 1) {
+				StringBuilder sb = new StringBuilder();
+					for(int i=1;i<=nNode;i++) {
+						Node node = nodes.at(i);
+						sb.delete(0, sb.length());
+						sb.append("   ");
+						for(int ui=0;ui<us.length;ui++)
+							sb.append(String.format("%f    ", us[ui].get(i)));
+						br.println(String.format("%f    %f %s", 
+								node.coord(1),
+								u.get(i),
+								sb.toString()));	
+				}
+			} else if(dim == 2) { //二维单元
 				if(nMaxNodes % 3 == 0) {
 					StringBuilder sb = new StringBuilder();
 					sb.append("VARIABLES=\"X\",\"Y\",\"U\"");

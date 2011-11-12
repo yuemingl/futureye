@@ -122,19 +122,24 @@ public class Node implements Point {
 	 * @return
 	 */
 	public boolean isInnerNode() {
-		if(this.getNodeType() == null) {
+		if(this.getNodeType() == null) {//没有设置结点类型，按照几何结构判断
+			
 			if(belongToElements.size()==0)
 				throw new FutureyeException("Call Mesh.computeNodeBelongsToElements() first!");
-			//计算以node为顶点，周围单元结点与之形成的夹角角度，
-			//如果为360度（2*PI），就说明是内点
 			double sum = 0.0;
 			double coef = 0;
-			if(dim==2) {//2D
+			if(dim==1) { //1D 按照所属单元个数判断
+				if(belongToElements.size()==2)
+					return true;
+				else
+					return false;
+			} else if(dim==2) {//2D 按照包围结点单元是否形成圆周角2*PI
+				//计算以node为顶点，周围单元结点与之形成的夹角角度，如果为360度（2*PI），就说明是内点
 				coef = 2;
 				for(int j=1;j<=belongToElements.size();j++) {
 					sum += belongToElements.at(j).getAngleInElement2D(this);
 				}
-			} else if(dim==3) {//3D
+			} else if(dim==3) {//3D 按照单位球面三角形面积计算
 				coef = 4;
 				for(int j=1;j<=belongToElements.size();j++) {
 					sum += belongToElements.at(j).getUnitSphereTriangleArea(this);
@@ -144,8 +149,8 @@ public class Node implements Point {
 				return true;
 			else
 				return false;
-		} else {
-			//Use the result of Mesh.markBorderNode()
+		} else {//Use the result of Mesh.markBorderNode() 按照结点类型标记判断
+			
 			for(int i=1;i<=this.nodeTypes.size();i++)
 				if(this.nodeTypes.at(i) == null ||
 						this.nodeTypes.at(i) != NodeType.Inner)
@@ -182,8 +187,10 @@ public class Node implements Point {
 	
 	public void addBelongToElements(Element e) {
 		for(int i=1;i<=belongToElements.size();i++) {
-			//TODO e.globalIndex 用索引代替对象直接比较？
-			if(e.equals(belongToElements.at(i)))
+			Element es = belongToElements.at(i);
+			if(e.equals(es))//对象直接比较
+				return;
+			else if(e.globalIndex != 0 && e.globalIndex == es.globalIndex)//全局索引比较
 				return;
 		}
 		belongToElements.add(e);

@@ -80,7 +80,7 @@ public class Laplace {
 
         //7.Output results to an Techplot format file
         MeshWriter writer = new MeshWriter(mesh);
-        writer.writeTechplot("tuitoral_Laplace.dat", u);
+        writer.writeTechplot("./tutorial/Laplace2D.dat", u);
 
         this.mesh = mesh;
         this.u = u;

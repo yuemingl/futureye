@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import edu.uta.futureye.algebra.SpaceVector;
+import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.geometry.GeoEntity;
 import edu.uta.futureye.core.geometry.GeoEntity0D;
 import edu.uta.futureye.core.geometry.GeoEntity1D;
@@ -494,6 +496,56 @@ public class Element {
 	}
 	
 	/**
+	 * 获取单元的局部结点列表 2011-11-4
+	 * 
+	 * @see getNodeList() 这两个函数内部类似，何以考虑简化实现
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public ObjList<NodeLocal> localNodes() {
+		ObjList<NodeLocal> localNodes = null;
+		if(geoEntity instanceof GeoEntity1D<?>) {
+			localNodes = getLocalNodeList1D(
+					(GeoEntity1D<NodeLocal>) geoEntity);
+		} else if(geoEntity instanceof GeoEntity2D<?,?>) {
+			localNodes = getLocalNodeList2D(
+					(GeoEntity2D<EdgeLocal, NodeLocal>) geoEntity);
+		} else if(geoEntity instanceof GeoEntity3D<?,?,?>) {
+			localNodes = getLocalNodeList3D(
+					(GeoEntity3D<FaceLocal, EdgeLocal, NodeLocal>) geoEntity);
+		} else {
+			FutureyeException ex = new FutureyeException("Error: Can not build NodeList, geoEntity="+
+					geoEntity.getClass().getName());
+			ex.printStackTrace();
+			System.exit(0);
+		}
+//		Object[] a=localNodes.toArray();
+//		Arrays.sort(a, (Comparator)new Comparator<NodeLocal>(){
+//			@Override
+//			public int compare(NodeLocal o1, NodeLocal o2) {
+//				if(o1.localIndex > o2.localIndex)
+//					return 1;
+//				else
+//					return -1;
+//			}
+//		});
+		//按照局部结点的编号顺序返回
+		List<NodeLocal> list = localNodes.toList();
+		Collections.sort(list, new Comparator<NodeLocal>(){
+			@Override
+			public int compare(NodeLocal o1, NodeLocal o2) {
+				//升序
+				if(o1.localIndex > o2.localIndex)
+					return 1;
+				else
+					return -1;
+			}
+		});
+		return localNodes;
+	}
+	
+	/**
 	 * 获取单元的几何顶点
 	 * 应用：
 	 * 1.用于坐标变换
@@ -548,8 +600,11 @@ public class Element {
 			dofList = new DOFList();
 			nodeDOFList.put(localNodeIndex, dofList);
 		}
+
 		//2010-10-11 DOF反向索引Node
 		dof.setOwner(this.nodes.at(localNodeIndex));
+		//TODO 2011-11-4考虑是否改为：
+		//dof.setOwner(this.localNodes().at(localNodeIndex));
 		dofList.add(dof);
 	}
 	
@@ -905,6 +960,20 @@ public class Element {
 	}
 	
 	/**
+	 * 
+	 * TODO 获取单元直径 2011-11-7
+	 * @return
+	 */
+	public double getElementDiameter() {
+		double dia = Utils.computeLength(nodes.at(1), nodes.at(2));
+		for(int i=3;i<=nodes.size();i++) {
+			double tmp = Utils.computeLength(nodes.at(i-1), nodes.at(i));
+			if(tmp>dia) dia = tmp;
+		}
+		return dia;
+	}
+	
+	/**
 	 * Return true if exists an edge of this element that is on the border of the domain
 	 * 判断是否边界单元，即至少存在单元的一边位于区域边界上
 	 * @return
@@ -942,28 +1011,59 @@ public class Element {
 	}
 	
 	/**
-	 * 计算以node为顶点，其单元内相邻两结点与之形成的夹角角度
-	 * 参数要求：node为单元上的一个结点
+	 * 在2D单元中，计算以node为顶点，其相邻两结点与之形成的夹角角度
 	 * 
-	 * @param node
+	 * @param node: 必须为单元上的一个结点
 	 * @return
 	 */
 	public double getAngleInElement2D(Node node) {
 		int li = getLocalIndex(node);
+		if(li == 0)
+			throw new FutureyeException("Node("+node+") is NOT belongs to Element("+this+")!");
 		int vn = this.geoEntity.getVertices().size();
-		if(li <= vn) {
+		if(li <= vn) { //node在单元顶点上
 			Node l = nodes.at(li-1<1?vn:li-1);
 			Node r = nodes.at(li+1>vn?1:li+1);
 			return Utils.computeAngle2D(l, node, r, node);
-		} else if(this.nodes.size()/vn == 2){
+		} else if(this.nodes.size()/vn == 2){ //node在单元边上
 			Node l = nodes.at(li - vn);
 			//TODO 错误的：nodes.at(li - vn + 1)
 			Node r = nodes.at( (li - vn + 1)>vn?1:(li - vn + 1));
 			return Utils.computeAngle2D(l, node, r, node);
 		} else {
-			return 0.0; //TODO
+			throw new FutureyeException("Can NOT compute angle: Node("+node+") Element("+this+")!");
 		}
 		
+	}
+	
+	/**
+	 * 获取以node为顶点，其相邻两结点与之形成的两个向量的和向量
+	 * @param node
+	 * @return
+	 */
+	public Vector getDiagVectorInElement2D(Node node) {
+		int li = getLocalIndex(node);
+		SpaceVector v = new SpaceVector(2);
+		v.set(1, 0.0);
+		v.set(2, 0.0);
+		if(li == 0)
+			throw new FutureyeException("Node("+node+") is NOT belongs to Element("+this+")!");
+		int vn = this.geoEntity.getVertices().size();
+		if(li <= vn) { //node在单元顶点上
+			Node l = nodes.at(li-1<1?vn:li-1);
+			Node r = nodes.at(li+1>vn?1:li+1);
+			v.set(1,l.coord(1)+r.coord(1)-2*node.coord(1));
+			v.set(2,l.coord(2)+r.coord(2)-2*node.coord(2));
+			return v;
+		} else if(this.nodes.size()/vn == 2){ //node在单元边上
+			//Node l = nodes.at(li - vn);
+			//Node r = nodes.at( (li - vn + 1)>vn?1:(li - vn + 1));
+			//TODO 结点在边上，返回边的法方向的反方向向量？
+		} else {
+			//throw new FutureyeException("Can NOT compute angle: Node("+node+") Element("+this+")!");
+		}
+		//如果无法处理返回0向量
+		return v;
 	}
 	
 	/**

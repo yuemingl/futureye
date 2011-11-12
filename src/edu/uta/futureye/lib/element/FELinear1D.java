@@ -4,24 +4,23 @@ import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Vertex;
-import edu.uta.futureye.lib.shapefun.SFLinearLocal3D;
+import edu.uta.futureye.lib.shapefun.SFLinearLocal1D;
+import edu.uta.futureye.lib.shapefun.SFLinearLocal2DTest;
 import edu.uta.futureye.util.container.VertexList;
 
 /**
- * Linear Tetrahedron element for 3D
- * 3维四面体线性单元
+ * One dimension linear element
+ * 1维线性单元
  * 
  * @author liuyueming
  *
  */
-public class FELinearTetrahedron implements FiniteElementType {
-	protected static SFLinearLocal3D[] shapeFun = new SFLinearLocal3D[4];
+public class FELinear1D implements FiniteElementType {
+	protected static SFLinearLocal1D[] shapeFun = new SFLinearLocal1D[2];
 	
-	public FELinearTetrahedron() {
-		shapeFun[0] = new SFLinearLocal3D(1);
-		shapeFun[1] = new SFLinearLocal3D(2);
-		shapeFun[2] = new SFLinearLocal3D(3);
-		shapeFun[3] = new SFLinearLocal3D(4);
+	public FELinear1D() {
+		shapeFun[0] = new SFLinearLocal1D(1);
+		shapeFun[1] = new SFLinearLocal1D(2);
 	}
 	
 	/**
@@ -41,17 +40,17 @@ public class FELinearTetrahedron implements FiniteElementType {
 			e.addNodeDOF(j, dof);
 		}
 	}
-	
+
 	@Override
 	public int getDOFNumOnElement(int vsfDim) {
-		return 4;
+		return 2;
 	}
 
 	@Override
 	public int getVectorShapeFunctionDim() {
 		throw new UnsupportedOperationException();
-	}	
-
+	}
+	
 	@Override
 	public int getDOFNumOnMesh(Mesh mesh, int vsfDim) {
 		return mesh.getNodeList().size();

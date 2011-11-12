@@ -2,6 +2,7 @@ package edu.uta.futureye.algebra;
 
 import edu.uta.futureye.algebra.intf.BlockMatrix;
 import edu.uta.futureye.algebra.intf.BlockVector;
+import edu.uta.futureye.algebra.intf.Vector;
 
 /**
  * A = (B1  0   C1)
@@ -45,10 +46,16 @@ import edu.uta.futureye.algebra.intf.BlockVector;
 public class SchurComplementStokesSolver {
 	protected BlockMatrix A;
 	protected BlockVector f;
+	double init = 1.0;
+	public boolean debug = false;
 	
 	public SchurComplementStokesSolver(BlockMatrix A,BlockVector f) {
 		this.A = A;
 		this.f = f;
+	}
+	
+	public void setCGInit(double init) {
+		this.init = init;
 	}
 	
 	public BlockVector solve() {
@@ -147,8 +154,9 @@ public class SchurComplementStokesSolver {
 	 */
 	public FullVector invB_v(CompressedRowMatrix B, FullVector v) {
 		FullVector x = new FullVector(v.getDim(),0.1);
-		x.setRandom(10,0.0);
+		x.setRandom(init,0.0);
 		Solver sov = new Solver();
+		sov.debug = this.debug;
 		sov.solveCGS(B, v, x);
 		return x;
 	}
@@ -161,17 +169,84 @@ public class SchurComplementStokesSolver {
 	 */
 	public CompressedColMatrix invB_C(CompressedRowMatrix B, CompressedColMatrix C) {
 		CompressedColMatrix BC = new CompressedColMatrix(B.rowDim,C.colDim);
-		FullVector v = new FullVector(C.getRowDim());
-		FullVector x = new FullVector(C.getRowDim(),10);
 		
-		Solver sov = new Solver();
+		FullVector v = new FullVector(C.getRowDim());
+		FullVector x = new FullVector(C.getRowDim());
+		
+//		x.setRandom(init,0.0);
+//		Solver sov = new Solver();
+//		sov.debug = this.debug;
+//		int colDim = C.getColDim();
+//		for(int c=1; c<=colDim; c++) {
+//			C.getColVector(c, v);
+//			sov.solveCGS(B, v, x);
+//			FullVector.SparseData sd = x.getSparseData();
+//			BC.setCol(c, sd.index, sd.data);
+//		}
+		
+//		SolverMTJ solMTJ = new SolverMTJ();
+//		solMTJ.debug = this.debug;
+//		int colDim = C.getColDim();
+//		for(int c=1; c<=colDim; c++) {
+//			C.getColVector(c, v);
+//			SparseVector xx = x.getSparseVector();
+//			//solMTJ.solveGMRES(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			//solMTJ.solveBiCG(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			solMTJ.solveBiCGstab(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			//solMTJ.solveQMR(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			//solMTJ.solveCG(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			//solMTJ.solveCGS(B.getSparseMatrix(), v.getSparseVector(), xx);
+//			FullVector.SparseData sd = new FullVector(xx).getSparseData();
+//			BC.setCol(c, sd.index, sd.data);
+//		}
+		
+		
+//		//LU分解SparseMatrix
+//		int N = B.getRowDim();
+//		SparseMatrix A = B.getSparseMatrix();
+//		SparseMatrix L = new SparseMatrix(N,N);
+//		SparseMatrix U = new SparseMatrix(N,N);
+//		SparseMatrix P = new SparseMatrix(N,N);
+//		
+//		SparseVector x = new SparseVector(N);
+//		Vector x2 = x.copy();
+//		LUDecomposition.LU(A, L, U, P);
+//		
+//		int colDim = C.getColDim();
+//		FullVector v = new FullVector(C.getRowDim());
+//		for(int c=1; c<=colDim; c++) {
+//			System.out.println(c+"/"+colDim);
+//			C.getColVector(c, v);
+//			Vector f = v.getSparseVector();
+//			LUDecomposition.solvePx(P,x,f);
+//			LUDecomposition.solveLx(L,x2,x);
+//			LUDecomposition.solveUx(U,x,x2);
+//			FullVector fx = new FullVector(x);
+//			FullVector.SparseData sd = fx.getSparseData();
+//			BC.setCol(c, sd.index, sd.data);
+//		}
+		
+		//LU分解FullMatrix
+		int N = B.getRowDim();
+		FullMatrix fA = new FullMatrix(B.getSparseMatrix());
+		FullMatrix fL = new FullMatrix(N,N);
+		FullMatrix fU = new FullMatrix(N,N);
+		SparseMatrix P = new SparseMatrix(N,N);
+		
+		FullVector x2 = x.copy();
+		LUDecomposition.LU(fA, fL, fU, P);
+		
 		int colDim = C.getColDim();
 		for(int c=1; c<=colDim; c++) {
+			//System.out.println(c+"/"+colDim);
 			C.getColVector(c, v);
-			sov.solveCGS(B, v, x);
+			LUDecomposition.solvePx(P,x,v);
+			LUDecomposition.solveLx(fL,x2,x);
+			LUDecomposition.solveUx(fU,x,x2);
 			FullVector.SparseData sd = x.getSparseData();
 			BC.setCol(c, sd.index, sd.data);
 		}
+
 		return BC;
 	}
 	
