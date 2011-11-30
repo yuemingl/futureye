@@ -102,7 +102,7 @@ public class ProjectBasesMethod {
 		NodeList upSideNodes = getUpsideNodes(mesh);
 		
 		ModelDOT model = new ModelDOT();
-		model.setDelta(2.0, 3.5);
+		model.setLightPosition(2.0, 3.5);
 		
 		//Generate bases on upside
 		double h = 0.2;
@@ -110,8 +110,8 @@ public class ProjectBasesMethod {
 		for(int xi=1;xi<=100;xi++) {
 			double x = 1.0+(xi-1)*h;
 			if(x>4.0) break;
-			model.setMu_a(x, 2.8, 0.3, 1.0, 1);
-			plotFunction(meshBig, model.mu_a, String.format("mu_a%02d.dat",xi));
+			model.setMu_a(ModelParam.getMu_a(x, 2.8, 0.3, 1.0, 1));
+			plotFunction(meshBig, model.getMu_a(), String.format("mu_a%02d.dat",xi));
 			Vector u = model.solveNeumann(meshBig);
 			plotVector(meshBig, u, String.format("u_big%02d.dat",xi));
 			//截取meshBig的部分解到mesh上
@@ -121,8 +121,8 @@ public class ProjectBasesMethod {
 		}
 		
 		//Generate measurement data on upside
-		model.setMu_a(3.1, 2.8, 0.3, 1.0, 1);
-		plotFunction(meshBig, model.mu_a, String.format("mu_a.dat"));
+		model.setMu_a(ModelParam.getMu_a(3.1, 2.8, 0.3, 1.0, 1));
+		plotFunction(meshBig, model.getMu_a(), String.format("mu_a.dat"));
 		Vector ua = model.solveNeumann(meshBig);
 		plotVector(meshBig, ua, String.format("u_big.dat"));
 		//截取meshBig的部分解到mesh上
@@ -183,7 +183,7 @@ public class ProjectBasesMethod {
 		NodeList upSideNodes = getUpsideNodes(mesh);
 		
 		ModelDOT model = new ModelDOT();
-		model.setDelta(2.0, 3.5);
+		model.setLightPosition(2.0, 3.5);
 		
 		//Generate bases on upside
 		List<Vector> uSmalls = new ArrayList<Vector>();
@@ -192,8 +192,8 @@ public class ProjectBasesMethod {
 		for(int i=0;i<xx.length;i++) {
 			for(int j=0;j<yy.length;j++) {
 				int cnt = i*yy.length + j;
-				model.setMu_a(xx[i], yy[j], 0.2, 1.0, 1);
-				plotFunction(meshBig, model.mu_a, String.format("mu_a%02d.dat",cnt));
+				model.setMu_a(ModelParam.getMu_a(xx[i], yy[j], 0.2, 1.0, 1));
+				plotFunction(meshBig, model.getMu_a(), String.format("mu_a%02d.dat",cnt));
 				Vector u = model.solveNeumann(meshBig);
 				plotVector(meshBig, u, String.format("u_big%02d.dat",cnt));
 				//截取meshBig的部分解到mesh上
@@ -204,8 +204,8 @@ public class ProjectBasesMethod {
 		}
 		
 		//Generate measurement data on upside
-		model.setMu_a(2.83, 2.63, 0.3, 1.0, 1);
-		plotFunction(meshBig, model.mu_a, String.format("mu_a.dat"));
+		model.setMu_a(ModelParam.getMu_a(2.83, 2.63, 0.3, 1.0, 1));
+		plotFunction(meshBig, model.getMu_a(), String.format("mu_a.dat"));
 		Vector ua = model.solveNeumann(meshBig);
 		plotVector(meshBig, ua, String.format("u_big.dat"));
 		//截取meshBig的部分解到mesh上
@@ -262,8 +262,8 @@ public class ProjectBasesMethod {
 		for(int i=0;i<xx.length;i++) {
 			for(int j=0;j<yy.length;j++) {
 				int cnt = i*yy.length + j;
-				model.setMu_a(xx[i], yy[j], 0.2, 1.0, 1);
-				rlt_mu_a = rlt_mu_a.A(model.mu_a.M(coef[cnt]));
+				model.setMu_a(ModelParam.getMu_a(xx[i], yy[j], 0.2, 1.0, 1));
+				rlt_mu_a = rlt_mu_a.A(model.getMu_a().M(coef[cnt]));
 			}
 		}
 		plotFunction(meshBig, rlt_mu_a, String.format("mu_a_rlt.dat"));

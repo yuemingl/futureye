@@ -10,13 +10,18 @@ import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
+import edu.uta.futureye.core.Edge;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
+import edu.uta.futureye.core.Face;
 import edu.uta.futureye.core.FaceLocal;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;
+import edu.uta.futureye.core.Volume;
 import edu.uta.futureye.core.geometry.GeoEntity;
+import edu.uta.futureye.core.geometry.GeoEntity2D;
+import edu.uta.futureye.core.geometry.GeoEntity3D;
 import edu.uta.futureye.core.intf.Assembler;
 import edu.uta.futureye.core.intf.WeakForm;
 import edu.uta.futureye.function.Variable;
@@ -27,6 +32,7 @@ import edu.uta.futureye.lib.element.FiniteElementType;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
+import edu.uta.futureye.util.container.VertexList;
 
 public class AssemblerVector implements Assembler {
 	protected Mesh mesh;
@@ -69,13 +75,27 @@ public class AssemblerVector implements Assembler {
 	public void assemble() {
 		ElementList eList = mesh.getElementList();
 		int nEle = eList.size();
+		int nProgress = 20;
+		System.out.print("Progress[");
+		for(int i=0;i<nProgress;i++)
+			System.out.print("*");
+		System.out.println("]0%->100%");
+		
+		System.out.print("Progress[");
+		int nPS = nEle/nProgress;
+		int nProgressPrint = 0;
 		for(int i=1; i<=nEle; i++) {
 			eList.at(i).adjustVerticeToCounterClockwise();
 			assembleGlobal(eList.at(i),	globalStiff,globalLoad);
-			if(i%3000==0)
-				System.out.println("Assemble..."+
-						String.format("%.0f%%", 100.0*i/nEle));
+			if(i%nPS==0) {
+				nProgressPrint++;
+				System.out.print("*");
+			}
 		}
+		if(nProgressPrint<nProgress)
+			System.out.print("*");
+		System.out.println("]Done!");
+		
 		//procHangingNode(mesh);
 	}
 	
@@ -139,7 +159,7 @@ public class AssemblerVector implements Assembler {
 				
 				//形函数计算需要和单元关联
 				for(int i=1;i<=nBeDOF;i++) {
-					beDOFs.at(i).getVSF().asignElement(e);
+					beDOFs.at(i).getVSF().asignElement(be);
 				}
 				
 				//所有自由度双循环
@@ -240,6 +260,7 @@ public class AssemblerVector implements Assembler {
 						setDirichlet(dof.getGlobalIndex(),fdiri.value(v));
 					}
 				} else if(ge instanceof EdgeLocal) {
+					//2D单元（面）其中的局部边上的自由度
 					EdgeLocal edge = (EdgeLocal)ge;
 					if(edge.getBorderType(vvfIndex) == NodeType.Dirichlet) {
 						//TODO 以边的那个顶点取值？中点？
@@ -247,9 +268,41 @@ public class AssemblerVector implements Assembler {
 					}
 					
 				} else if(ge instanceof FaceLocal) {
+					//3D单元（体）其中的局部面上的自由度
 					FaceLocal face = (FaceLocal)ge;
 					if(face.getBorderType(vvfIndex) == NodeType.Dirichlet) {
 						//TODO
+					}
+				} else if(ge instanceof Edge) {
+					//1D单元（线段）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					VertexList vs = ((GeoEntity2D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType(vvfIndex)) {
+							Variable v = Variable.createFrom(fdiri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),fdiri.value(v));
+						}
+					}
+				} else if(ge instanceof Face) {
+					//2D单元（面）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					
+					VertexList vs = ((GeoEntity2D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType(vvfIndex)) {
+							Variable v = Variable.createFrom(fdiri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),fdiri.value(v));
+						}
+					}
+				} else if(ge instanceof Volume) {
+					//3D单元（体）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					VertexList vs = ((GeoEntity3D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType(vvfIndex)) {
+							Variable v = Variable.createFrom(fdiri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),fdiri.value(v));
+						}
 					}
 				}
 			}

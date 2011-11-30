@@ -1,5 +1,9 @@
 package edu.uta.futureye.function.operator;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import edu.uta.futureye.function.VN;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
 
@@ -17,9 +21,9 @@ public class FOIntegrate{
 		double rlt = 0.0;
 		if(degree == 2) {
 			Variable v = new Variable();
-			v.set("r", dOneThird);
-			v.set("s", dOneThird);
-			v.set("t", dOneThird);
+			v.set(VN.r, dOneThird);
+			v.set(VN.s, dOneThird);
+			v.set(VN.t, dOneThird);
 			rlt = integrand.value(v);
 		} else if(degree == 3) {
 			
@@ -27,9 +31,9 @@ public class FOIntegrate{
 			Variable v2 = new Variable();
 			Variable v3 = new Variable();
 			
-			v1.set("r", dOneTwo); v1.set("s", dOneTwo); v1.set("t", 0.0);
-			v2.set("r", 0.0); v2.set("s", dOneTwo); v2.set("t", dOneTwo);
-			v3.set("r", dOneTwo); v3.set("s", 0.0); v3.set("t", dOneTwo);
+			v1.set(VN.r, dOneTwo); v1.set(VN.s, dOneTwo); v1.set(VN.t, 0.0);
+			v2.set(VN.r, 0.0); v2.set(VN.s, dOneTwo); v2.set(VN.t, dOneTwo);
+			v3.set(VN.r, dOneTwo); v3.set(VN.s, 0.0); v3.set(VN.t, dOneTwo);
 			double pv1 = integrand.value(v1);
 			double pv2 = integrand.value(v2);
 			double pv3 = integrand.value(v3);
@@ -44,10 +48,10 @@ public class FOIntegrate{
 			Variable v3 = new Variable();
 			Variable v4 = new Variable();
 			
-			v1.set("r", 0.6); v1.set("s", 0.2); v1.set("t", 0.2);
-			v2.set("r", 0.2); v2.set("s", 0.6); v2.set("t", 0.2);
-			v3.set("r", 0.2); v3.set("s", 0.2); v3.set("t", 0.6);
-			v4.set("r", dOneThird); v4.set("s", dOneThird); v4.set("t", dOneThird);
+			v1.set(VN.r, 0.6); v1.set(VN.s, 0.2); v1.set(VN.t, 0.2);
+			v2.set(VN.r, 0.2); v2.set(VN.s, 0.6); v2.set(VN.t, 0.2);
+			v3.set(VN.r, 0.2); v3.set(VN.s, 0.2); v3.set(VN.t, 0.6);
+			v4.set(VN.r, dOneThird); v4.set(VN.s, dOneThird); v4.set(VN.t, dOneThird);
 			
 			rlt = w123 * (
 					integrand.value(v1)+
@@ -86,9 +90,9 @@ public class FOIntegrate{
 		    
 			Variable v = new Variable();
 			for(int i=0;i<7;i++) {
-				v.set("r", x[i]); 
-				v.set("s", y[i]); 
-				v.set("t", 1.0-x[i]-y[i]);
+				v.set(VN.r, x[i]); 
+				v.set(VN.s, y[i]); 
+				v.set(VN.t, 1.0-x[i]-y[i]);
 				rlt += w[i]*integrand.value(v);
 			}	
 		}
@@ -100,19 +104,52 @@ public class FOIntegrate{
 	//Dean Joseph E. Flaherty (fea6.pdf)
 	//Christoffel weights(h5) and roots(a5)
 	static double[] a5 = {
-			0,
-			0.538469310105683,
-			-0.538469310105683,
-			0.906179845938664,
-			-0.906179845938664
+		 0,
+		 0.538469310105683,
+		-0.538469310105683,
+		 0.906179845938664,
+		-0.906179845938664
 	};
 	static double[] h5 = {
-			0.568888888888889,
-			0.478628670499366,
-			0.478628670499366,
-			0.236926885056189,
-			0.236926885056189
+		 0.568888888888889,
+		 0.478628670499366,
+		 0.478628670499366,
+		 0.236926885056189,
+		 0.236926885056189
 		};
+	
+	static double[] a2 = {
+		-0.577350269189626,
+		 0.577350269189626
+		};
+	static double[] h2 = {
+		 1.0,
+		 1.0
+	};
+	
+	static double[] a3 = {
+		-0.774596669241483,
+		 0.0,
+		 0.774596669241483
+		 };
+	static double[] h3 = {
+		 0.555555555555556,
+		 0.888888888888889,
+		 0.555555555555556
+	};
+	
+	static double[] a4 = {
+		-0.861136311594953,
+		-0.339981043584856,
+		 0.339981043584856,
+		 0.861136311594953
+		 };
+	static double[] h4 = {
+		 0.347854845137454,
+		 0.652145154862546,
+		 0.652145154862546,
+		 0.347854845137454
+	};	
 	
 	/**
 	 * 一维参考单元[-1,1]上的数值积分
@@ -148,32 +185,32 @@ public class FOIntegrate{
 		Variable v = new Variable();
 		double rlt = 0.0;
 		if(degree == 1) {
-			v.set("r", a1_1);
+			v.set(VN.r, a1_1);
 			rlt += h1_1*integrand.value(v);
 		} else if(degree == 2) {
-			v.set("r", a2_1);
+			v.set(VN.r, a2_1);
 			rlt += h2_1*integrand.value(v);
-			v.set("r", a2_2);
+			v.set(VN.r, a2_2);
 			rlt += h2_2*integrand.value(v);
 		} else if(degree == 3) {
-			v.set("r", a3_1);
+			v.set(VN.r, a3_1);
 			rlt += h3_1*integrand.value(v);
-			v.set("r", a3_2);
+			v.set(VN.r, a3_2);
 			rlt += h3_2*integrand.value(v);
-			v.set("r", a3_3);
+			v.set(VN.r, a3_3);
 			rlt += h3_3*integrand.value(v);
 		} else if(degree == 4) {
-			v.set("r", a4_1);
+			v.set(VN.r, a4_1);
 			rlt += h4_1*integrand.value(v);
-			v.set("r", a4_2);
+			v.set(VN.r, a4_2);
 			rlt += h4_2*integrand.value(v);
-			v.set("r", a4_3);
+			v.set(VN.r, a4_3);
 			rlt += h4_3*integrand.value(v);
-			v.set("r", a4_4);
+			v.set(VN.r, a4_4);
 			rlt += h4_4*integrand.value(v);
 		} else if(degree == 5) {
 			for(int i=0;i<degree;i++) {
-				v.set("r", a5[i]);
+				v.set(VN.r, a5[i]);
 				rlt += h5[i]*integrand.value(v);
 			}
 		} else {
@@ -186,32 +223,32 @@ public class FOIntegrate{
 		double a1_1 = 0.0;
 		double h1_1 = 4.0;
 		double a2 = 0.577350269189626;
-		double h2 = 1.0;
+		//double h2 = 1.0;
 		
 		Variable v = new Variable();
 		double rlt = 0.0;
 		if(degree == 1) {
-			v.set("r", a1_1);
-			v.set("s", a1_1);
+			v.set(VN.r, a1_1);
+			v.set(VN.s, a1_1);
 			rlt += h1_1*integrand.value(v);
 		} else if(degree == 2) {
-			v.set("r", a2);
-			v.set("s", a2);
-			rlt += h2*integrand.value(v);			
-			v.set("r", -a2);
-			v.set("s", a2);
-			rlt += h2*integrand.value(v);			
-			v.set("r", a2);
-			v.set("s", -a2);
-			rlt += h2*integrand.value(v);			
-			v.set("r", -a2);
-			v.set("s", -a2);
-			rlt += h2*integrand.value(v);			
+			v.set(VN.r, a2);
+			v.set(VN.s, a2);
+			rlt += integrand.value(v);			
+			v.set(VN.r, -a2);
+			v.set(VN.s, a2);
+			rlt += integrand.value(v);			
+			v.set(VN.r, a2);
+			v.set(VN.s, -a2);
+			rlt += integrand.value(v);			
+			v.set(VN.r, -a2);
+			v.set(VN.s, -a2);
+			rlt += integrand.value(v);
 		} else if(degree == 5) {
 			for(int i=0;i<degree;i++) {
 				for(int j=0;j<degree;j++) {
-					v.set("r", a5[i]);
-					v.set("s", a5[j]);
+					v.set(VN.r, a5[i]);
+					v.set(VN.s, a5[j]);
 					rlt += h5[i]*h5[j]*integrand.value(v);
 				}
 			}
@@ -233,16 +270,16 @@ public class FOIntegrate{
 		Variable v = new Variable();
 		double rlt = 0.0;
 		if(degree == 1) {
-			v.set("r", a1_1);
-			v.set("s", a1_1);
-			v.set("t", a1_1);
-			v.set("u", a1_1);
+			v.set(VN.r, a1_1);
+			v.set(VN.s, a1_1);
+			v.set(VN.t, a1_1);
+			v.set(VN.u, a1_1);
 			rlt += h1_1*integrand.value(v);
 		} else if(degree ==2) {
 			for(int i=0;i<M24.length;i++) {
-				v.set("r", a2[M24[i][0]]);
-				v.set("s", a2[M24[i][1]]);
-				v.set("t", a2[M24[i][2]]);
+				v.set(VN.r, a2[M24[i][0]]);
+				v.set(VN.s, a2[M24[i][1]]);
+				v.set(VN.t, a2[M24[i][2]]);
 				v.set("u", a2[M24[i][3]]);
 				rlt += h2*integrand.value(v);			
 			}
@@ -251,5 +288,58 @@ public class FOIntegrate{
 		}
 		
 		return rlt;
-	}		
+	}
+	
+	public static double intOnHexahedraRefElement(Function integrand, int degree) {
+		Variable v = new Variable();
+		double rlt = 0.0;
+		if(degree == 2) {
+			for(int i=0;i<degree;i++) {
+				for(int j=0;j<degree;j++) {
+					for(int k=0;k<degree;k++) {
+						v.set(VN.r, a2[i]);
+						v.set(VN.s, a2[j]);
+						v.set(VN.t, a2[k]);
+						//rlt += h2[i]*h2[j]*h2[k]*integrand.value(v);
+						//速度提高1倍多
+						rlt += h2[i]*h2[j]*h2[k]*integrand.value(v,new HashMap<Object, Object>());
+					}
+				}
+			}
+		} else if(degree == 3) {
+			for(int i=0;i<degree;i++) {
+				for(int j=0;j<degree;j++) {
+					for(int k=0;k<degree;k++) {
+						v.set(VN.r, a3[i]);
+						v.set(VN.s, a3[j]);
+						v.set(VN.t, a3[k]);
+						rlt += h3[i]*h3[j]*h3[k]*integrand.value(v);
+					}
+				}
+			}
+		} else if(degree == 4) {
+			for(int i=0;i<degree;i++) {
+				for(int j=0;j<degree;j++) {
+					for(int k=0;k<degree;k++) {
+						v.set(VN.r, a4[i]);
+						v.set(VN.s, a4[j]);
+						v.set(VN.t, a4[k]);
+						rlt += h4[i]*h4[j]*h4[k]*integrand.value(v);
+					}
+				}
+			}
+		} else if(degree == 5) {
+			for(int i=0;i<degree;i++) {
+				for(int j=0;j<degree;j++) {
+					for(int k=0;k<degree;k++) {
+						v.set(VN.r, a5[i]);
+						v.set(VN.s, a5[j]);
+						v.set(VN.t, a5[k]);
+						rlt += h5[i]*h5[j]*h5[k]*integrand.value(v);
+					}
+				}
+			}
+		}
+		return rlt;
+	}
 }

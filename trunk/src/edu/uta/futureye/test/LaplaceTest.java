@@ -110,9 +110,9 @@ public class LaplaceTest {
 		long begin = System.currentTimeMillis();
 		assembler.assemble();
 		Matrix stiff = assembler.getStiffnessMatrix();
-		stiff.print();
+		//stiff.print();
 		Vector load = assembler.getLoadVector();
-		load.print();
+		//load.print();
 		assembler.imposeDirichletCondition(new FC(0.0));
 		long end = System.currentTimeMillis();
 		System.out.println("Assemble done!");
@@ -167,8 +167,8 @@ public class LaplaceTest {
 */
 		//Use element library
 		ElementList eList = mesh.getElementList();
-		FEBilinearRectangleRegular bilinearRectangle = new FEBilinearRectangleRegular();
-//		FEBilinearRectangle bilinearRectangle = new FEBilinearRectangle();
+//		FEBilinearRectangleRegular bilinearRectangle = new FEBilinearRectangleRegular();
+		FEBilinearRectangle bilinearRectangle = new FEBilinearRectangle();
 		for(int i=1;i<=eList.size();i++)
 			bilinearRectangle.assignTo(eList.at(i));
 		
@@ -576,13 +576,13 @@ public class LaplaceTest {
 		
 	}
 	public static void main(String[] args) {
-//		triangleTest();
-		rectangleTest();
+		triangleTest();
+//		rectangleTest();
 	
 //TODO
 //		mixedTest(); //OK 数值积分的问题fixed
 		
-//		serendipityTest(); // java.lang.ArithmeticException: / by zero
+//		serendipityTest(); //TODO 错误: java.lang.ArithmeticException: / by zero
 //		quadraticLocal2DTest();
 //		triangleBDCTest();
 	}

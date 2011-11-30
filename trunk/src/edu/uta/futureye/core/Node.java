@@ -19,10 +19,10 @@ public class Node implements Point {
 	public int globalIndex = 0;
 	
 	//全局来看，结点所属单元
-	public ElementList belongToElements = new ElementList();
+	public ElementList belongToElements = null;
 	
 	//相邻结点
-	public NodeList neighbors = new NodeList();
+	public NodeList neighbors = null;
 	
 	//空间维度
 	protected int dim = 0;
@@ -31,8 +31,11 @@ public class Node implements Point {
 	protected double[] coords = new double[3];
 	
 	//结点类型：边界结点 or 内部结点
-	ObjVector<NodeType> nodeTypes = new ObjVector<NodeType>();
+	protected ObjVector<NodeType> nodeTypes = null;
 	
+	//结点属于的加密层次，即第level次加密产生的结点
+	protected int refineLevel = 1;
+
 	public Node() {
 	}
 	
@@ -58,6 +61,13 @@ public class Node implements Point {
 		}
 	}
 	
+	/**
+	 * Set node globalIndex and coordinates
+	 * 
+	 * @param globalIndex
+	 * @param coords
+	 * @return
+	 */
 	public Node set(int globalIndex, double ...coords) {
 		this.globalIndex = globalIndex;
 		if(coords!=null && coords.length > 0) {
@@ -111,20 +121,19 @@ public class Node implements Point {
 	}
 	
 	/**
-	 * 判断是否内部结点
+	 * Return true if the node is inner node
+	 * 判断是否是内部结点
 	 * 
 	 * Dependents:
-	 * 
-	 * Mesh.computeNodeBelongsToElements()
-	 * or 
-	 * Mesh.markBorderNode()
+	 * Function <code>Mesh.computeNodeBelongsToElements()</code> or 
+	 * <code>Mesh.markBorderNode()</code> must be call first
 	 * 
 	 * @return
 	 */
 	public boolean isInnerNode() {
 		if(this.getNodeType() == null) {//没有设置结点类型，按照几何结构判断
 			
-			if(belongToElements.size()==0)
+			if(belongToElements==null || belongToElements.size()==0)
 				throw new FutureyeException("Call Mesh.computeNodeBelongsToElements() first!");
 			double sum = 0.0;
 			double coef = 0;
@@ -159,33 +168,71 @@ public class Node implements Point {
 		}
 	}
 	
+	/**
+	 * Get node type for scalar valued function problems
+	 * 
+	 * @return
+	 */
 	public NodeType getNodeType() {
+		if(nodeTypes == null) 
+			return null;
 		return nodeTypes.at(1);
 	}
 	
 	/**
-	 * 对于向量值问题，每个分量在同一边界结点上的类型不一定相同，
-	 * 该函数返回分量<tt>vvfIndex</tt>对应的边界结点类型
-	 * Vector valued function (vvf)
-	 * @param vvfIndex
+	 * Get node type for vector valued function problems
+	 * 
+	 * 对于向量值问题，每个函数分量在同一结点上的类型（例如速度各个分量、压强的边界类型）不一定相同，
+	 * 该函数返回函数分量<tt>vvfIndex</tt>对应的边界结点类型
+	 * 
+	 * @param vvfIndex: vector valued function dim index
 	 * @return
 	 */
 	public NodeType getNodeType(int vvfIndex) {
+		if(nodeTypes == null) 
+			return null;
 		return nodeTypes.at(vvfIndex);
 	}
 	
+	/**
+	 * Set node type for scalar valued function problems
+	 * 
+	 * @param nodeType: node type
+	 */
 	public void setNodeType(NodeType nodeType) {
-		this.nodeTypes.setSize(1);
-		this.nodeTypes.set(1,nodeType);
+		if(nodeTypes == null) 
+			nodeTypes = new ObjVector<NodeType>();
+		nodeTypes.setSize(1);
+		nodeTypes.set(1,nodeType);
 	}
 	
+	/**
+	 * Set node type for vector valued function problems
+	 * 
+	 * @param vvfIndex: vector valued function dim index
+	 * @param nodeType: node type
+	 */
 	public void setNodeType(int vvfIndex, NodeType nodeType) {
-		if(this.nodeTypes.size()<vvfIndex)
-			this.nodeTypes.setSize(vvfIndex);
-		this.nodeTypes.set(vvfIndex,nodeType);
+		if(nodeTypes == null) 
+			nodeTypes = new ObjVector<NodeType>();
+		if(vvfIndex<=0) {
+			throw new FutureyeException("vvfIndex should be greater than 1!");
+		}
+		if(nodeTypes.size()<vvfIndex)
+			nodeTypes.setSize(vvfIndex);
+		nodeTypes.set(vvfIndex,nodeType);
 	}
 	
+	/**
+	 * Add a element <code>e</code> which contains this node to 
+	 * <code>this.belongToElements</code> list. 
+	 * Duplicate element will NOT be added.
+	 * 
+	 * @param e
+	 */
 	public void addBelongToElements(Element e) {
+		if(belongToElements == null)
+			belongToElements = new ElementList();
 		for(int i=1;i<=belongToElements.size();i++) {
 			Element es = belongToElements.at(i);
 			if(e.equals(es))//对象直接比较
@@ -196,24 +243,94 @@ public class Node implements Point {
 		belongToElements.add(e);
 	}
 	
-	//////////////////////////////////////////////////////
-	//结点属于的加密层次，即第level次加密产生的结点
-	protected int level = 1;
-	
-	public int getLevel() {
-		return this.level;
+	/**
+	 * Add a <code>node</code> which is the neighbor of this node to 
+	 * <code>this.neighbors</code> list.
+	 * Duplicate node will NOT be added.
+	 * 
+	 * @param node
+	 */
+	public void addNeighbors(Node node) {
+		if(neighbors == null)
+			neighbors = new NodeList();
+		for(int i=1;i<=neighbors.size();i++) {
+			Node ni = neighbors.at(i);
+			if(ni.equals(node))//对象直接比较
+				return;
+			else if(ni.globalIndex != 0 && ni.globalIndex == node.globalIndex)//全局索引比较
+				return;
+		}
+		neighbors.add(node);		
 	}
 	
-	public void setLevel(int level) {
-		this.level = level;
+	public void clearBelongToElements() {
+		if(belongToElements != null)
+			belongToElements.clear();
 	}
-	///////////////////////////////////////////////////////
 	
+	public void clearNeighbors() {
+		if(neighbors != null)
+			neighbors.clear();
+	}
+	
+	/**
+	 * Get node level number from refined mesh
+	 * 
+	 * @return
+	 */
+	public int getRefineLevel() {
+		return this.refineLevel;
+	}
+	
+	/**
+	 * Set node level number when doing mesh refinement
+	 * 
+	 * @param level
+	 */
+	public void setRefineLevel(int level) {
+		this.refineLevel = level;
+	}
+	
+	/**
+	 * Return node information. Prefix "GN" means "Global Node"
+	 * 
+	 */
 	public String toString()  {
-		String r = "GN"+globalIndex+"( ";
+		String s = "GN"+globalIndex+"( ";
 		for(int i=0;i<dim;i++)
-			r += String.valueOf(coords[i])+" ";
-		return r+")";
+			s += String.valueOf(coords[i])+" ";
+		return s+")";
 	}
+	
+	@Override
+    public boolean equals(Object obj) {
+        if(super.equals(obj)) {
+        	return true;
+        } else {
+        	if(obj instanceof Node) {
+        		Node n2 = (Node)obj;
+        		//if(globalIndex != 0 && globalIndex == n2.globalIndex && dim == n2.dim) {
+        		if(globalIndex == n2.globalIndex && dim == n2.dim) {
+        			//全局索引相同，坐标值相同
+        			for(int i=0;i<dim;i++) {
+        				if(Math.abs(this.coords[i] - n2.coords[i]) > Constant.meshEps) {
+        					throw new FutureyeException(
+        							this+" and "+n2+" should be equal, please check!");
+        				}
+        			}
+        			return true;
+        		}
+        	}
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+    	if(globalIndex != 0) 
+    		return globalIndex;
+    	else 
+    		return super.hashCode();
+    }
 }
  

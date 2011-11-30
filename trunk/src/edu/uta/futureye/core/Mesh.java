@@ -102,7 +102,7 @@ public class Mesh {
 		
 		//New algorithm
 		for(int i=1;i<=nodeList.size();i++) {
-			nodeList.at(i).belongToElements.clear();
+			nodeList.at(i).clearBelongToElements();
 		}
 		for(int i=1;i<=eleList.size();i++) {
 			Element e = eleList.at(i);
@@ -301,7 +301,7 @@ public class Mesh {
 	 */
 	public void computeNeighborNodes() {
 		for(int i=1;i<=nodeList.size();i++) {
-			nodeList.at(i).neighbors.clear();
+			nodeList.at(i).clearNeighbors();
 		}
 		for(int i=1;i<=nodeList.size();i++) {
 			Node node = nodeList.at(i);
@@ -313,11 +313,13 @@ public class Mesh {
 			else {
 				ElementList eList = node.belongToElements;
 				for(int j=1;j<=eList.size();j++) {
-					NodeList nList = eList.at(j).nodes;
-					for(int k=1;k<=nList.size();k++) {
-						Node nbNode = nList.at(k);
-						if(nbNode.globalIndex != node.globalIndex)
-							node.neighbors.add(nbNode);
+					Element e = eList.at(j);
+					for(int k=1;k<=e.nodes.size();k++) {
+						Node nbNode = e.nodes.at(k);
+						if(nbNode.globalIndex != node.globalIndex && 
+								//2011-11-20 增加是否包含边的判断，可以正确处理四边形单元、六面体单元
+								e.containsEdge(node, nbNode))
+							node.addNeighbors(nbNode);
 					}
 				}
 			}
@@ -497,12 +499,12 @@ public class Mesh {
 				if(node instanceof NodeRefined) {
 					NodeRefined nf = (NodeRefined)node;
 					if(nf.isHangingNode())
-						System.out.println("\t"+nf+" level:"+nf.level+" HangingNode");
+						System.out.println("\t"+nf+" level:"+nf.refineLevel+" HangingNode");
 					else
-						System.out.println("\t"+nf+" level:"+nf.level);
+						System.out.println("\t"+nf+" level:"+nf.refineLevel);
 						
 				} else {
-					System.out.println("\t"+node+" level:"+node.level);
+					System.out.println("\t"+node+" level:"+node.refineLevel);
 				}
 			}
 		}
@@ -524,17 +526,20 @@ public class Mesh {
 	 * @param fileName
 	 */
 	public void writeNodesInfo(String fileName) {
+		writeNodesInfo(fileName,1);
+	}
+	public void writeNodesInfo(String fileName, int vvfIndex) {
 		int N = nodeList.size();
 		Vector v = new SparseVector(N,20);
 		for(int i=1;i<=N;i++) {
 			Node node = nodeList.at(i);
-			if(node.getNodeType() == NodeType.Inner) 
+			if(node.getNodeType(vvfIndex) == NodeType.Inner) 
 				v.set(i, 5.0);
-			else if(node.getNodeType() == NodeType.Dirichlet)
+			else if(node.getNodeType(vvfIndex) == NodeType.Dirichlet)
 				v.set(i, 1);
-			else if(node.getNodeType() == NodeType.Neumann)
+			else if(node.getNodeType(vvfIndex) == NodeType.Neumann)
 				v.set(i,2);
-			else if(node.getNodeType() == NodeType.Robin)
+			else if(node.getNodeType(vvfIndex) == NodeType.Robin)
 				v.set(i, 3);
 			if(node instanceof NodeRefined) {
 				NodeRefined nr = (NodeRefined)node;

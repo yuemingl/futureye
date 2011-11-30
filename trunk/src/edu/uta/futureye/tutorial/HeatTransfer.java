@@ -1,5 +1,6 @@
 package edu.uta.futureye.tutorial;
 
+import java.io.File;
 import java.util.HashMap;
 
 import edu.uta.futureye.algebra.SolverJBLAS;
@@ -19,7 +20,7 @@ import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
 import edu.uta.futureye.util.container.ElementList;
 
 /**
- * d1dt(u) - Laplace(u) = f
+ * d(u)/dt - Laplace(u) = f
  * =>
  *  (u_{n+1}-u_{n})/Dt  - Laplace(u) = f
  * =>
@@ -32,7 +33,8 @@ import edu.uta.futureye.util.container.ElementList;
  *
  */
 public class HeatTransfer {
-	protected Mesh mesh = null;
+	String outputFolder = "./tutorial/HeatTranfer";
+	Mesh mesh = null;
 	
 	//Laplace2D weak form
 	WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
@@ -71,7 +73,10 @@ public class HeatTransfer {
 		for(int i=1;i<=eList.size();i++)
 			linearTriangle.assignTo(eList.at(i));
 		
-
+	    File file = new File(outputFolder);
+		if(!file.exists()) {
+			file.mkdirs();
+		}
 	}
 	
 	public Vector solverOneStep(int step, Function u_n) {
@@ -97,7 +102,7 @@ public class HeatTransfer {
 			System.out.println(String.format("%.3f", u.get(i)));	
 	    
 	    MeshWriter writer = new MeshWriter(mesh);
-	    writer.writeTechplot(String.format("tuitoral_HeatTranfer_t%02d.dat",step), u);
+	    writer.writeTechplot(String.format("%s/u_t%02d.dat",outputFolder, step), u);
 	    return u;
 		
 	}

@@ -64,7 +64,7 @@ import edu.uta.futureye.util.container.ObjList;
 public class QuadraticV_ConstantP extends AbstractVectorFunction 
 								implements VectorShapeFunction {
 	//(u1,u2,p)
-	protected SpaceVectorFunction sf = new SpaceVectorFunction(3);
+	protected SpaceVectorFunction sf = null;
 	protected int funIndex;
 	protected ObjList<String> innerVarNames = null;
 	
@@ -73,9 +73,10 @@ public class QuadraticV_ConstantP extends AbstractVectorFunction
 	 * @param funID
 	 */
 	public QuadraticV_ConstantP(int funID) {
-		dim = 3;
 		funIndex = funID - 1;
-
+		dim = 3;
+		sf = new SpaceVectorFunction(dim);
+		
 		varNames.add("r");
 		varNames.add("s");
 		varNames.add("t");
@@ -116,7 +117,7 @@ public class QuadraticV_ConstantP extends AbstractVectorFunction
 
 	QuadraticV_ConstantP1D []sf1D = null;
 	/**
-	 * Restrict to boundary:
+	 * Restrict to boundary edge:
 	 * * Velocity:
 	 * | \
 	 * |  \

@@ -147,4 +147,8 @@ public class ObjVector<T> {
 	public String toString() {
 		return objs.toString();
 	}
+	
+	public boolean contains(T o) {
+		return objs.contains(o);
+	}
 }

@@ -1,12 +1,14 @@
 package edu.uta.futureye.util.container;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.uta.futureye.util.FutureyeException;
 
 /**
  * Object list container
+ * 
  * * index starts from 1
  * * <tt>null</tt> element is not allowed,
  * * auto size increment.
@@ -15,12 +17,13 @@ import edu.uta.futureye.util.FutureyeException;
  *
  * @param <T>
  */
-public class ObjList<T> {
+public class ObjList<T> implements Iterable<T>{
 	protected List<T> objs = new ArrayList<T>();
 	
 	public ObjList() {
 	}
 	
+	@SafeVarargs
 	public ObjList(T ...es) {
 		for(T e : es) this.add(e);
 	}
@@ -127,5 +130,14 @@ public class ObjList<T> {
 	
 	public String toString() {
 		return objs.toString();
+	}
+
+	@Override
+	public Iterator<T> iterator() {
+		return objs.iterator();
+	}
+	
+	public boolean contains(T o) {
+		return objs.contains(o);
 	}
 }

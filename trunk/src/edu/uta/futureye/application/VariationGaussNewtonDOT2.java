@@ -120,17 +120,17 @@ public class VariationGaussNewtonDOT2 {
 			LS[i] = LS[0] + i*h;
 		
 		//背景mu_a
-		modelBk.setMu_a(0.0, 0.0, 0.0, 
+		modelBk.setMu_a(ModelParam.getMu_a(0.0, 0.0, 0.0, 
 				0.1, //mu_a=0.1 mu_s(=model.k)=0.02 => a(x)=5
-				1);
+				1));
 		//有包含物mu_a，真实模型
-		modelReal.setMu_a(2.91, 2.36, 0.5,
+		modelReal.setMu_a(ModelParam.getMu_a(2.91, 2.36, 0.5,
 				2.0, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 		//有包含物mu_a，猜测模型
-		modelGuess.setMu_a(2.91, 2.36, 0.5,
+		modelGuess.setMu_a(ModelParam.getMu_a(2.91, 2.36, 0.5,
 				1.0, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 
     }
     
@@ -139,12 +139,9 @@ public class VariationGaussNewtonDOT2 {
      * @param s_i：Light source No. (0,1,2...)
      */
     public void reinitModelLight(int s_i) {
-		modelBk.setDelta(LS[s_i], 3.5);
-		modelBk.lightNum = s_i;
-		modelReal.setDelta(LS[s_i], 3.5);
-		modelReal.lightNum = s_i;
-		modelGuess.setDelta(LS[s_i], 3.5);
-		modelGuess.lightNum = s_i;
+		modelBk.setLightPosition(LS[s_i], 3.5);
+		modelReal.setLightPosition(LS[s_i], 3.5);
+		modelGuess.setLightPosition(LS[s_i], 3.5);
     }
     
 	public static void plotVector(Mesh mesh, Vector v, String fileName) {

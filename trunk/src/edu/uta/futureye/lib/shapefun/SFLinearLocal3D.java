@@ -125,8 +125,8 @@ public class SFLinearLocal3D extends AbstractFunction
 		};
 	
 	@Override
-	public ShapeFunction restrictTo(int funIndex) {
-		return faceSF[funIndex-1];
+	public ShapeFunction restrictTo(int funID) {
+		return faceSF[funID-1];
 	}
 
 	@Override

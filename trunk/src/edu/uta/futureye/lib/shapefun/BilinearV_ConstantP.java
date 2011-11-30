@@ -14,7 +14,7 @@ import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.ObjList;
 
 /**
- * Q1/P0 Element
+ * 2D Q1/P0 Element
  * -Continuous bilinear velocity
  * -Piecewise constant pressure
  * 
@@ -38,7 +38,7 @@ import edu.uta.futureye.util.container.ObjList;
  * 
  * * 2D vector valued shape functions
  * * 二维单元上的形函数，速度压强共9个自由度：
- * Ni = (v1,v2,p)', i=1,...,9
+ * Ni = (u1,u2,p)', i=1,...,9
  * 
  * N1  =  (NV1, 0, 0)'
  * N2  =  (NV2, 0, 0)'
@@ -55,7 +55,7 @@ import edu.uta.futureye.util.container.ObjList;
 public class BilinearV_ConstantP extends AbstractVectorFunction 
 								implements VectorShapeFunction {
 	//(u1,u2,p)
-	protected SpaceVectorFunction sf = new SpaceVectorFunction(3);
+	protected SpaceVectorFunction sf = null;
 	protected int funIndex;
 	protected ObjList<String> innerVarNames = null;
 	
@@ -64,9 +64,10 @@ public class BilinearV_ConstantP extends AbstractVectorFunction
 	 * @param funID
 	 */
 	public BilinearV_ConstantP(int funID) {
-		dim = 3;
 		funIndex = funID - 1;
-
+		dim = 3;
+		sf = new SpaceVectorFunction(dim);
+		
 		varNames.add("r");
 		varNames.add("s");
 		innerVarNames = new ObjList<String>("x","y");
@@ -106,7 +107,7 @@ public class BilinearV_ConstantP extends AbstractVectorFunction
 
 	LinearV_ConstantP1D []sf1D = null;
 	/**
-	 * Restrict to boundary:
+	 * Restrict to boundary edge:
 	 * * Velocity:
 	 * |    |
 	 * |    |
@@ -118,7 +119,7 @@ public class BilinearV_ConstantP extends AbstractVectorFunction
 	 * * Pressure:
 	 * NP=1
 	 * 
-	 * Ni = (v1,v2,p)', i=1,...,5, on boundary
+	 * Ni = (u1,u2,p)', i=1,...,5, on boundary
 	 * 
 	 * N1 =  (NV1,0,0)'
 	 * N2 =  (NV2,0,0)'

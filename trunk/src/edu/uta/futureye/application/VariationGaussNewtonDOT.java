@@ -127,9 +127,9 @@ public class VariationGaussNewtonDOT {
 			LS[i] = LS[0] + i*h;
 		
 		//背景mu_a
-		modelBk.setMu_a(0.0, 0.0, 0.0, 
+		modelBk.setMu_a(ModelParam.getMu_a(0.0, 0.0, 0.0, 
 				0.1, //mu_a=0.1 mu_s(=model.k)=0.02 => a(x)=5
-				1);
+				1));
 //		//有包含物mu_a，真实模型
 //		modelReal.setMu_a(2.57, 2.69, 0.3,
 //				2.0, //peak value of mu_a
@@ -158,13 +158,13 @@ public class VariationGaussNewtonDOT {
 //				1); //Number of inclusions
 		
 		//有包含物mu_a，真实模型
-		modelReal.setMu_a(3.0, 2.50, 0.5,
+		modelReal.setMu_a(ModelParam.getMu_a(3.0, 2.50, 0.5,
 				2.0, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 		//有包含物mu_a，猜测模型
-		modelGuess.setMu_a(2.8, 2.50, 0.5,
+		modelGuess.setMu_a(ModelParam.getMu_a(2.8, 2.50, 0.5,
 				1.8, //peak value of mu_a
-				1); //Number of inclusions
+				1)); //Number of inclusions
 
     }
     
@@ -173,12 +173,9 @@ public class VariationGaussNewtonDOT {
      * @param s_i：Light source No. (0,1,2...)
      */
     public void reinitModelLight(int s_i) {
-		modelBk.setDelta(LS[s_i], 3.5);
-		modelBk.lightNum = s_i;
-		modelReal.setDelta(LS[s_i], 3.5);
-		modelReal.lightNum = s_i;
-		modelGuess.setDelta(LS[s_i], 3.5);
-		modelGuess.lightNum = s_i;
+		modelBk.setLightPosition(LS[s_i], 3.5);
+		modelReal.setLightPosition(LS[s_i], 3.5);
+		modelGuess.setLightPosition(LS[s_i], 3.5);
     }
     
 	public static void plotVector(Mesh mesh, Vector v, String fileName) {
@@ -912,7 +909,7 @@ public class VariationGaussNewtonDOT {
 		Vector aReal = new SparseVector(nodes.size());
 		for(int i=1;i<=nodes.size();i++) {
 			Node node = nodes.at(i);
-			double mu_a = modelReal.mu_a.value(Variable.createFrom(modelReal.mu_a, node, i));
+			double mu_a = modelReal.getMu_a().value(Variable.createFrom(modelReal.getMu_a(), node, i));
 			aReal.set(i,mu_a/this.model_k);
 		}
 		plotVector(mesh,aReal,"aReal.dat");
@@ -1639,8 +1636,8 @@ public class VariationGaussNewtonDOT {
 			//a(x)参考值（GCM方法得到的结果）
 			vgn.aGlob = new SparseVector(nodes.size());
 			for(int j=1;j<=nodes.size();j++) {
-				double mu_a = vgn.modelGuess.mu_a.value(
-								Variable.createFrom(vgn.modelGuess.mu_a, nodes.at(j), j));
+				double mu_a = vgn.modelGuess.getMu_a().value(
+								Variable.createFrom(vgn.modelGuess.getMu_a(), nodes.at(j), j));
 				vgn.aGlob.set(j, mu_a/vgn.model_k);
 			}
 			VariationGaussNewtonDOT.plotVector(vgn.mesh, vgn.aGlob, "aGlob.dat");

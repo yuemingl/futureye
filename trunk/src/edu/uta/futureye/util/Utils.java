@@ -320,7 +320,7 @@ public class Utils {
 //				rlt = FOBasic.Plus(rlt, FOBasic.Mult(PValue, dofI.getSSF()));
 //			}
 //		}
-		if(e.eleDim() == 1) {
+		if(e.dim() == 1) {
 			CoordinateTransform trans = new CoordinateTransform(1);
 			Map<Vertex,ScalarShapeFunction> transSF = trans.getTransformLinear1DShapeFunction(e);
 			for(Entry<Vertex,ScalarShapeFunction> entry : transSF.entrySet()) {
@@ -338,7 +338,7 @@ public class Utils {
 				rlt = rlt.A(PValue.M(sf));			
 			}
 			
-		} else if(e.eleDim() == 2) {
+		} else if(e.dim() == 2) {
 			CoordinateTransform trans = new CoordinateTransform(2);
 			Map<Vertex,ScalarShapeFunction> transSF = trans.getTransformLinear2DShapeFunction(e);
 			for(Entry<Vertex,ScalarShapeFunction> entry : transSF.entrySet()) {
@@ -355,7 +355,7 @@ public class Utils {
 				Function PValue = new FC(fun.value(var));
 				rlt = rlt.A(PValue.M(sf));	
 			}
-		} else if(e.eleDim()==3) {
+		} else if(e.dim()==3) {
 			//TODO 有没有更简洁的办法？
 			CoordinateTransform trans = new CoordinateTransform(3);
 			Map<Vertex,ScalarShapeFunction> transSF = trans.getTransformLinear3DShapeFunction(e);
@@ -595,7 +595,7 @@ public class Utils {
 		double angle1 = Math.PI-computeAngle(v1,v2);
 		double angle2 = Math.PI-computeAngle(v2,v3);
 		double angle3 = Math.PI-computeAngle(v3,v1);
-
+//Ouput Matlab code to visualize parameters
 //		System.out.print("plot3(");
 //		System.out.print("["+o.coord(1)+" "+a.coord(1)+" "+b.coord(1)+" "+c.coord(1)+" "+a.coord(1)+"],");
 //		System.out.print("["+o.coord(2)+" "+a.coord(2)+" "+b.coord(2)+" "+c.coord(2)+" "+a.coord(2)+"],");
@@ -607,9 +607,9 @@ public class Utils {
 //		System.out.print("["+b.coord(3)+" "+o.coord(3)+" "+c.coord(3)+"])");
 //		System.out.println("\nhold on\n");
 		
-		double angle = (angle1 + angle2 + angle3 - Math.PI)*r*r;
+		double area = (angle1 + angle2 + angle3 - Math.PI)*r*r;
 
-		return angle;
+		return area;
 	}
 	
 
@@ -737,6 +737,17 @@ public class Utils {
 //			a[1] = tmp;
 //		}
 		return a;
+	}
+	
+	public static double determinant(double[][] A) {
+		if(A.length == 2) {
+			return A[0][0]*A[1][1] - A[0][1]*A[1][0];
+		} else if(A.length == 3) {
+			return    A[0][0]*(A[1][1]*A[2][2] - A[1][2]*A[2][1]) 
+					- A[0][1]*(A[1][0]*A[2][2] - A[1][2]*A[2][0]) 
+					+ A[0][2]*(A[0][0]*A[1][1] - A[0][1]*A[0][1]);
+		}
+		throw new FutureyeException("NOT Supported!");
 	}
 	
 }

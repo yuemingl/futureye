@@ -83,21 +83,21 @@ public class Refiner {
 				Node node4 = new NodeRefined(2);
 				node4.setCoord(1, (v1.coord(1)+v2.coord(1))/2.0);
 				node4.setCoord(2, (v1.coord(2)+v2.coord(2))/2.0);
-				node4.setLevel(e.getLevel()+1);
+				node4.setRefineLevel(e.getLevel()+1);
 				Node tmpNode = mesh.containNode(node4);
 				if(tmpNode != null) node4 = tmpNode;
 				
 				Node node5 = new NodeRefined(2);
 				node5.setCoord(1, (v2.coord(1)+v3.coord(1))/2.0);
 				node5.setCoord(2, (v2.coord(2)+v3.coord(2))/2.0);
-				node5.setLevel(e.getLevel()+1);
+				node5.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node5);
 				if(tmpNode != null) node5 = tmpNode;
 				
 				Node node6 = new NodeRefined(2);
 				node6.setCoord(1, (v3.coord(1)+v1.coord(1))/2.0);
 				node6.setCoord(2, (v3.coord(2)+v1.coord(2))/2.0);
-				node6.setLevel(e.getLevel()+1);
+				node6.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node6);
 				if(tmpNode != null) node6 = tmpNode;
 				
@@ -159,35 +159,35 @@ public class Refiner {
 				Node node5 = new NodeRefined(2);
 				node5.setCoord(1, (v1.coord(1)+v2.coord(1))/2.0);
 				node5.setCoord(2, (v1.coord(2)+v2.coord(2))/2.0);
-				node5.setLevel(e.getLevel()+1);
+				node5.setRefineLevel(e.getLevel()+1);
 				Node tmpNode = mesh.containNode(node5);
 				if(tmpNode != null) node5 = tmpNode;
 				
 				Node node6 = new NodeRefined(2);
 				node6.setCoord(1, (v2.coord(1)+v3.coord(1))/2.0);
 				node6.setCoord(2, (v2.coord(2)+v3.coord(2))/2.0);
-				node6.setLevel(e.getLevel()+1);
+				node6.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node6);
 				if(tmpNode != null) node6 = tmpNode;
 				
 				Node node7 = new NodeRefined(2);
 				node7.setCoord(1, (v3.coord(1)+v4.coord(1))/2.0);
 				node7.setCoord(2, (v3.coord(2)+v4.coord(2))/2.0);
-				node7.setLevel(e.getLevel()+1);
+				node7.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node7);
 				if(tmpNode != null) node7 = tmpNode;
 				
 				Node node8 = new NodeRefined(2);
 				node8.setCoord(1, (v4.coord(1)+v1.coord(1))/2.0);
 				node8.setCoord(2, (v4.coord(2)+v1.coord(2))/2.0);
-				node8.setLevel(e.getLevel()+1);
+				node8.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node8);
 				if(tmpNode != null) node8 = tmpNode;
 				
 				Node node9 = new NodeRefined(2);
 				node9.setCoord(1, (node5.coord(1)+node7.coord(1))/2.0);
 				node9.setCoord(2, (node5.coord(2)+node7.coord(2))/2.0);
-				node9.setLevel(e.getLevel()+1);
+				node9.setRefineLevel(e.getLevel()+1);
 				tmpNode = mesh.containNode(node9);
 				if(tmpNode != null) node9 = tmpNode;
 				
@@ -338,7 +338,7 @@ public class Refiner {
 				for(int j=1;j<=eChild.nodes.size();j++) {
 					Node nNew = eChild.nodes.at(j);
 					//!!! Node的level与单元level相同时，清空hanging node限制值条件，准备重新计算
-					if(nNew.getLevel() == eChild.getLevel()) {
+					if(nNew.getRefineLevel() == eChild.getLevel()) {
 						NodeRefined nRefined = (NodeRefined)nNew;
 						nRefined.clearConstrainNodes();
 					}
@@ -355,7 +355,7 @@ public class Refiner {
 				//循环每个子单元的结点
 				for(int j=1;j<=eChild.nodes.size();j++) {
 					Node nNew = eChild.nodes.at(j);
-					if(nNew.getLevel() == eChild.getLevel()) {
+					if(nNew.getRefineLevel() == eChild.getLevel()) {
 						NodeRefined nRefined = (NodeRefined)nNew;
 						//循环大单元的相邻单元，判断该节点是否Hanging node，
 						//如果是边界单元的边界上加密，nRefined将没有ConstrainNode，默认为非Hanging node

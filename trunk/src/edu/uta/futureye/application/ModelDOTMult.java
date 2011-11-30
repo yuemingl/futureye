@@ -42,10 +42,10 @@ import edu.uta.futureye.util.container.NodeList;
  *
  */
 public class ModelDOTMult {
-	//Light source
+	//Light source delta function
 	private Function delta = null;
-	public Variable lightPosition = null; //light source position
-	//public int lightNum = -1;
+	//light source position
+	public Variable lightPosition = null; 
 	
 	//Absorption coefficient mu_a
 	private Function mu_a = null;
@@ -80,66 +80,6 @@ public class ModelDOTMult {
 		return new FDelta(this.lightPosition,0.01,2e5);
 	}
 	
-	/**
-	 * Generate mu_a for testing
-	 * 
-	 * type=1: one inclusion
-	 * type=2: two inclusion
-	 * @param incX
-	 * @param incY
-	 * @param incR
-	 * @param maxMu_a
-	 * @param type
-	 */
-	public static Function getMu_a(double incX, double incY, double incR, double maxMu_a,
-			int type) {
-		final double fcx = incX;
-		final double fcy = incY;
-		final double fcr = incR;
-		final double fmu_a = maxMu_a;
-		final double distance = 0.8;
-		Function rltMu_a = null;
-		if(type == 1) {
-			rltMu_a = new AbstractFunction("x","y"){
-				@Override
-				public double value(Variable v) {
-					double bk = 0.1;
-					double dx = v.get("x")-fcx;
-					double dy = v.get("y")-fcy;
-					if(Math.sqrt(dx*dx+dy*dy) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx*dx+dy*dy)/fcr); 
-						return r<bk?bk:r;
-					}
-					else
-						return bk;
-				}
-			};
-		} else if(type == 2) {
-			rltMu_a = new AbstractFunction("x","y"){
-				@Override
-				public double value(Variable v) {
-					double bk = 0.1;
-					double dx = v.get("x")-fcx;
-					double dy = v.get("y")-fcy;
-					double dx1 = v.get("x")-(fcx+distance);
-					double dy1 = v.get("y")-fcy;
-					if(Math.sqrt(dx*dx+dy*dy) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx*dx+dy*dy)/fcr); 
-						return r<bk?bk:r;
-					}
-					else if(Math.sqrt(dx1*dx1+dy1*dy1) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx1*dx1+dy1*dy1)/fcr); 
-						return r<bk?bk:r;
-					}
-					else
-						return bk;
-				}
-			};			
-		}
-		return rltMu_a;
-	}
-	
-
 	/**
 	 * 求解混合问题，需要提供函数diriBoundaryMark来标记Dirichlet边界类型，
 	 * 其余边界为Neumann类型。
@@ -239,7 +179,7 @@ public class ModelDOTMult {
 //		model.setMu_a(2.0, 2.5, 0.5, //(x,y;r)
 //				0.4, //maxMu_a
 //				1); //type
-		model.setMu_a(getMu_a(3.0, 2.30, 0.6,
+		model.setMu_a(ModelParam.getMu_a(3.0, 2.30, 0.6,
 				0.8, //peak value of mu_a
 				1)); //Number of inclusions
 		model.setLightPosition(2.5, 3.5);
@@ -322,7 +262,7 @@ public class ModelDOTMult {
 //		model.setMu_a(2.2, 2.5, 0.5, //(x,y;r)
 //				0.4, //maxMu_a
 //				1); //type
-		model.setMu_a(getMu_a(3.2, 2.10, 0.6,
+		model.setMu_a(ModelParam.getMu_a(3.2, 2.10, 0.6,
 				0.8, //peak value of mu_a
 				1)); //Number of inclusions
 		

@@ -49,14 +49,14 @@ public class SFLinearLocal2D  extends AbstractFunction
 				//d(N1)/dr = 1.0
 				//d(N2)/ds = 1.0
 				//d(N3)/dt = 1.0
-				return new FC(1.0);
+				return FC.c1;
 			} else if(funIndex == 2){ 
 				//N3 = r = 1 - s - t, not free variable
 				//d(N3)/ds = -1.0
 				//d(N3)/dt = -1.0
-				return new FC(-1.0);
+				return FC.cm1;
 			} else {
-				return new FC(0.0);
+				return FC.c0;
 			}
 		}
 		@Override

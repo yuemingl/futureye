@@ -201,6 +201,8 @@ public class MeshWriter {
 				//四面体单元
 				if(nMaxNodes == 4)
 					br.println(String.format("ZONE F=FEPOINT ET=TETRAHEDRON N=%d E=%d",nNode,nElement));
+				else if(nMaxNodes == 8)
+					br.println(String.format("ZONE F=FEPOINT ET=BRICK N=%d E=%d",nNode,nElement));
 				for(int i=1;i<=nNode;i++) {
 					Node node = nodes.at(i);
 					sb.delete(0, sb.length());
@@ -223,6 +225,17 @@ public class MeshWriter {
 								e.nodes.at(3).globalIndex,
 								e.nodes.at(4).globalIndex
 								));
+					} else if(e.nodes.size() == 8) {
+						br.println(String.format("%d    %d    %d    %d    %d    %d    %d    %d", 
+								e.nodes.at(1).globalIndex,
+								e.nodes.at(2).globalIndex,
+								e.nodes.at(3).globalIndex,
+								e.nodes.at(4).globalIndex,
+								e.nodes.at(5).globalIndex,
+								e.nodes.at(6).globalIndex,
+								e.nodes.at(7).globalIndex,
+								e.nodes.at(8).globalIndex
+								));						
 					}
 				}
 				

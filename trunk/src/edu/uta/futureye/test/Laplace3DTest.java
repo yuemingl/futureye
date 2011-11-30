@@ -24,6 +24,8 @@ import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FELinearTetrahedron;
+import edu.uta.futureye.lib.element.FELinearTriangle;
+import edu.uta.futureye.lib.element.FETrilinearHexahedron;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal3D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace3D;
@@ -77,10 +79,6 @@ public class Laplace3DTest {
 			fe.assignTo(eList.at(i));
 		
 		//User defined weak form of PDE (including bounder conditions)
-		//-\Delta{u} = f
-		//u(x,y)=0, (x,y)\in\partial{\Omega}
-		//u=(x^2-9)*(y^2-9)
-		//f=-2*(x^2+y^2)+36
 		WeakFormLaplace3D weakForm = new WeakFormLaplace3D();
 		
 		weakForm.setF(new FC(1.0));
@@ -180,10 +178,6 @@ public class Laplace3DTest {
 		}
 		
 		//User defined weak form of PDE (including bounder conditions)
-		//-\Delta{u} = f
-		//u(x,y)=0, (x,y)\in\partial{\Omega}
-		//u=(x^2-9)*(y^2-9)
-		//f=-2*(x^2+y^2)+36
 		WeakFormLaplace weakForm = new WeakFormLaplace();
 		
 		weakForm.setF(new FC(1.0));
@@ -218,12 +212,75 @@ public class Laplace3DTest {
 		
 	}
 	
+	public static void hexahedronTest_WeakFormxD() {
+		//String meshName = "human_phantom3D";
+		//String meshName = "stokes_cavity3d";
+		String meshName = "stokes_cavity3d2";
+		MeshReader reader = new MeshReader(meshName+".grd");
+		Mesh mesh = reader.read3DMesh(); //3D
+		mesh.computeNodeBelongsToElements(); //worked in 3D
+		mesh.computeGlobalEdge();
+		
+		HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
+		mapNTF.put(NodeType.Robin, new AbstractFunction("x","y","z"){
+			@Override
+			public double value(Variable v) {
+				if(1.0-v.get("z")<0.01)
+					return 1.0;
+				else
+					return -1.0;
+			}
+		});
+		mapNTF.put(NodeType.Dirichlet, null);
+		mesh.markBorderNode(mapNTF);
+		//mesh.writeNodesInfo(meshName+"_mark.dat");
+		
+        ElementList eList = mesh.getElementList();
+        FETrilinearHexahedron feTLH = new FETrilinearHexahedron();
+        for(int i=1;i<=eList.size();i++)
+        	feTLH.assignTo(eList.at(i));
+		
+		//User defined weak form of PDE (including bounder conditions)
+		WeakFormLaplace weakForm = new WeakFormLaplace();
+		
+		weakForm.setF(new FC(1.0));
+		
+		weakForm.setParam(
+					null,
+					new FC(1.0),
+					new FC(0.0),
+					null //Robin: 6*y^2-54
+				);
+		
+		
+		AssemblerScalar assembler = new AssemblerScalar(mesh, weakForm);
+		System.out.println("Begin Assemble...");
+		long begin = System.currentTimeMillis();
+		assembler.assemble();
+		Matrix stiff = assembler.getStiffnessMatrix();
+		Vector load = assembler.getLoadVector();
+		System.out.println("Assemble done!");
+		long end = System.currentTimeMillis();
+		System.out.println("Time used:"+(end-begin));
+		assembler.imposeDirichletCondition(FC.c0);
+		
+		SolverJBLAS solver = new SolverJBLAS();
+		Vector u = solver.solveDGESV(stiff, load);
+	    System.out.println("u=");
+	    for(int i=1;i<=u.getDim();i++)
+	        System.out.println(String.format("%.3f", u.get(i)));	
+	    
+	    MeshWriter writer = new MeshWriter(mesh);
+	    writer.writeTechplot(meshName+"_out.dat", u);
+		
+	}
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		//triangleTest();
-		triangleTest_WeakFormxD();
+		//triangleTest_WeakFormxD();
+		hexahedronTest_WeakFormxD();
 	}
 
 }
