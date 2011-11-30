@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import edu.uta.futureye.core.geometry.topology.TetrahedronTp;
+import edu.uta.futureye.function.AbstractFunction;
+import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
@@ -14,14 +17,24 @@ import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal1D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal3D;
+import edu.uta.futureye.lib.shapefun.SFTrilinearLocal3D;
 import edu.uta.futureye.util.FutureyeException;
+import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.VertexList;
 
 public class CoordinateTransform {
-	private List<String> fromVarNames = null;
-	private List<String> toVarNames = null;
-	private List<Function> transFuns = null;
+	protected List<String> fromVarNames = null;
+	protected List<String> toVarNames = null;
 	
+	//coordinate transform functions
+	//e.g. x=x(r,s,t); y=y(r,s,t); z=z(r,s,t)
+	protected List<Function> transFuns = null;
+	
+	protected Function[] JacobianMatrix = null;
+	//Jacobian determinant: the determinant of the Jacobian matrix
+	protected Function Jacobian = null;
+	
+	//--------------------------------------
 	private ScalarShapeFunction sf1d1 = null;
 	private ScalarShapeFunction sf1d2 = null;
 
@@ -33,14 +46,12 @@ public class CoordinateTransform {
 	private ScalarShapeFunction sfb2d2 = null;
 	private ScalarShapeFunction sfb2d3 = null;
 	private ScalarShapeFunction sfb2d4 = null;
-
-	private ScalarShapeFunction sf3d1 = null;
-	private ScalarShapeFunction sf3d2 = null;
-	private ScalarShapeFunction sf3d3 = null;
-	private ScalarShapeFunction sf3d4 = null;
-
+	
+	private ScalarShapeFunction[] sf3dHex = null;
+	//-------------------------------------------
+	
 	/**
-	 * 构造一个坐标变换：
+	 * 构造一个坐标变换对象：
 	 * e.g. 
 	 *  2D (x,y)   -> (r,s)
 	 *  3D (x,y,z) -> (r,s,t)
@@ -91,8 +102,8 @@ public class CoordinateTransform {
 		if(vl.size() == 2) {
 			if(sf1d1 == null) sf1d1 = new SFLinearLocal1D(1);
 			if(sf1d2 == null) sf1d2 = new SFLinearLocal1D(2);
-			sf1d1.asignElement(be);
-			sf1d2.asignElement(be);
+//			sf1d1.asignElement(be);
+//			sf1d2.asignElement(be);
 			mapVS.put(vl.at(1), sf1d1);
 			mapVS.put(vl.at(2), sf1d2);
 		}
@@ -115,9 +126,9 @@ public class CoordinateTransform {
 			if(sf2d1 == null) sf2d1 = new SFLinearLocal2D(1);
 			if(sf2d2 == null) sf2d2 = new SFLinearLocal2D(2);
 			if(sf2d3 == null) sf2d3 = new SFLinearLocal2D(3);
-			sf2d1.asignElement(e);
-			sf2d2.asignElement(e);
-			sf2d3.asignElement(e);
+//			sf2d1.asignElement(e);
+//			sf2d2.asignElement(e);
+//			sf2d3.asignElement(e);
 			mapVS.put(vl.at(1), sf2d1);
 			mapVS.put(vl.at(2), sf2d2);
 			mapVS.put(vl.at(3), sf2d3);
@@ -126,10 +137,10 @@ public class CoordinateTransform {
 			if(sfb2d2 == null) sfb2d2 = new SFBilinearLocal2D(2);
 			if(sfb2d3 == null) sfb2d3 = new SFBilinearLocal2D(3);
 			if(sfb2d4 == null) sfb2d4 = new SFBilinearLocal2D(4);
-			sfb2d1.asignElement(e);
-			sfb2d2.asignElement(e);
-			sfb2d3.asignElement(e);
-			sfb2d4.asignElement(e);
+//			sfb2d1.asignElement(e);
+//			sfb2d2.asignElement(e);
+//			sfb2d3.asignElement(e);
+//			sfb2d4.asignElement(e);
 			mapVS.put(vl.at(1), sfb2d1);
 			mapVS.put(vl.at(2), sfb2d2);
 			mapVS.put(vl.at(3), sfb2d3);
@@ -154,23 +165,15 @@ public class CoordinateTransform {
 		VertexList vl = e.vertices();
 		Map<Vertex, ScalarShapeFunction> mapVS = new LinkedHashMap<Vertex, ScalarShapeFunction>();
 		if(vl.size() == 4) {
-			if(sf3d1 == null) sf3d1 = new SFLinearLocal3D(1);
-			if(sf3d2 == null) sf3d2 = new SFLinearLocal3D(2);
-			if(sf3d3 == null) sf3d3 = new SFLinearLocal3D(3);
-			if(sf3d4 == null) sf3d4 = new SFLinearLocal3D(4);
-			//TODO 可以省略？
-			sf3d1.asignElement(e);
-			sf3d2.asignElement(e);
-			sf3d3.asignElement(e);
-			sf3d4.asignElement(e);
-			////////////////////////
-			mapVS.put(vl.at(1), sf3d1);
-			mapVS.put(vl.at(2), sf3d2);
-			mapVS.put(vl.at(3), sf3d3);
-			mapVS.put(vl.at(4), sf3d4);
+			//坐标变换的形函数用来计算Jacobian，用到N_r,N_s,N_t，不会用到N_x,N_y,N_z，因此不需要赋予单元
+			//优化过的代码(2011-11-21)，如果在这里调用asignElement会形成递归调用，导致堆栈溢出
+			for(int i=1;i<=4;i++) 
+				mapVS.put(vl.at(i), new SFLinearLocal3D(i));
+		} else if(vl.size() == 8) {
+			for(int i=1;i<=8;i++)
+				mapVS.put(vl.at(i), new SFTrilinearLocal3D(i));
 		} else {
-			throw new FutureyeException(
-					"Error: getTransformLinear3DShapeFunction");
+			return getTransformShapeFunctionByElement(e);
 		}
 		return mapVS;
 	}
@@ -194,18 +197,29 @@ public class CoordinateTransform {
 	}
 	
 	/**
+	 * 由结点、形函数对构造坐标变换函数：
+	 * 2D: (x,y)=(x(r,s), y(r,s)) 
+	 * 3D: (x,y,z)=(x(r,s,t), y(r,s,t), z(r,s,t)) 
+	 * 
 	 * e.g. 二维笛卡尔坐标(x,y) -> 三角形面积（重心）坐标(r,s,t)
 	 * (xi,yi), i=1,2,3 三角形三个顶点
 	 * x = x(r,s,t) = x1*sf1 + x2*sf2 + x3*sf3 = x1*r + x2*s + x3*t
 	 * y = y(r,s,t) = y1*sf1 + y2*sf2 + y3*sf3 = y1*r + y2*s + y3*t
-	 * 利用后面的等式，可以简化运算
+	 * where r,s are free variables and t=1-r-s
+	 * TODO 利用后面的等式，可以简化运算
 	 * 
 	 * e.g. 三维笛卡尔坐标(x,y,z) -> 四面体体积（重心）坐标(r,s,t,u)
 	 * (xi,yi), i=1,2,3,4 四面体四个顶点
-	 * x = x(r,s,t,u) = x1*sf1 + x2*sf2 + x3*sf3 * x4*sf4 = x1*r + x2*s + x3*t * x4*u 
+	 * x = x(r,s,t,u) = x1*sf1 + x2*sf2 + x3*sf3 * x4*sf4 = x1*r + x2*s + x3*t * x4*u
 	 * y = y(r,s,t,u) = y1*sf1 + y2*sf2 + y3*sf3 * y4*sf4 = y1*r + y2*s + y3*t * y4*u 
 	 * z = z(r,s,t,u) = z1*sf1 + z2*sf2 + z3*sf3 * z4*sf4 = z1*r + z2*s + z3*t * z4*u 
-	 * 利用后面的等式，可以简化运算
+	 * where r,s,t are free variables and u=1-r-s-t
+	 * TODO 利用后面的等式，可以简化运算
+	 * 
+	 * e.g. 三维笛卡尔坐标(x,y,z) ->	 六面体局部坐标(r,s,t)
+	 * x = x(r,s,t) = sum_{i=1}^{8}{xi*sfi}
+	 * y = y(r,s,t) = sum_{i=1}^{8}{yi*sfi}
+	 * z = z(r,s,t) = sum_{i=1}^{8}{zi*sfi}
 	 * 
 	 * @param mapVS
 	 * @return 坐标变换函数列表: 2D:[x,y]; 3D:[x,y,z]
@@ -257,92 +271,186 @@ public class CoordinateTransform {
 				);
 	}
 	
-	public Function getJacobian1D() {
-		Function[] funs = new Function[2];
-		int index = 0;
-		if(transFuns.size() != 2)
-			return null;
+	
+	/**
+	 * Compute Jacobian matrix, call getJacobianMatrix() to access it.
+	 * 
+	 */
+	public void computeJacobianMatrix() {
+		//多线程需要枷锁
+		if(this.JacobianMatrix == null) {
+			if(transFuns == null)
+				throw new FutureyeException("Call setTransformFunction() first!");
+			Function[] funs = new Function[transFuns.size()*toVarNames.size()];
+			int index = 0;
+			for(Function transFun : transFuns) { //x=x(r,s,t), y=y(r,s,t), x(r,s,t)
+				for(String var : toVarNames) {   //r,s,t
+					funs[index++] = transFun._d(var);
+				}
+			}
+			this.JacobianMatrix = funs;
+		}
+	}
+	
+	
+	/**
+	 * Return Jacobian matrix, call computeJacobianMatrix() first.
+	 * 
+	 * 1D JacMat = (r[0]) = (x_r)
+	 * 
+	 *             (r[0] r[1])   (x_r, x_s)
+	 * 2D JacMat = (r[2] r[3]) = (y_r, y_s)
+	 * 
+	 *             (r[0] r[1] r[2])   (x_r, x_s, x_t)
+	 * 3D JacMat = (r[3] r[4] r[5]) = (y_r, y_s, y_t)
+	 *             (r[6] r[7] r[8])   (z_r, z_s, z_t)
+	 * 
+	 * @return Function[] r
+	 */
+	public Function[] getJacobianMatrix() {
+		return this.JacobianMatrix;
+	}
+	
+	/**
+	 * @return det(Jac)
+	 */
+	public Function getJacobian() {
+		return this.Jacobian;
+	}
+	
+	/**  
+	 *  Compute 1D determinant of Jacobian matrix
+	 *  1D: det(Jac) = x_r
+	 *  2D boundary: det(Jac)= sqrt(x_r^2 + y_r^2)
+	 *  
+	 */
+	public void computeJacobian1D() {
+		Function[] funs = this.JacobianMatrix;
+		this.Jacobian = FMath.sqrt(funs[0].M(funs[0]) .A (funs[1].M(funs[1])));
+	}
+	
+	/**
+	 *  Compute 2D determinant of Jacobian matrix
+	 *  
+	 *             |x_r x_s|
+	 *  det(Jac) = |y_r y_s|
+	 *  
+	 */
+	public void computeJacobian2D() {
 		/*
+		 * 三角形面积坐标
 		 * x = x(r,s,t) = x1*sf1 + x2*sf2 + x3*sf3 = x1*r + x2*s + x3*t
 		 * y = y(r,s,t) = y1*sf1 + y2*sf2 + y3*sf3 = y1*r + y2*s + y3*t
+		 * where r,s are free variables and t=1-r-s
 		 */
-		for(Function transFun : transFuns) {
-			for(String var : toVarNames) { //free variable r,s
-				funs[index++] = transFun._d(var);
-			}
-		}
-		/*  
-		 *  det(Jac)= Sqrt(0^2 + 1^2)
-		 */
-		return FMath.sqrt(
-				funs[0].M(funs[0]) .A (funs[1].M(funs[1]))
-				);
-	}
-	
-	/**
-	 * Dependent on setTransformFunction()
-	 * @return
-	 */
-	public Function getJacobian2D() {
-		Function[] funs = new Function[4];
-		int index = 0;
-		if(transFuns==null || transFuns.size() != 2)
-			return null;
-		for(Function transFun : transFuns) {
-			for(String var : toVarNames) {
-				funs[index++] = transFun._d(var);
-			}
-		}
+		
+		Function[] funs = this.JacobianMatrix;
 		/*
 		 * 要求结点编号为逆时针：funs[0:3]
-		 *            |0 1|
-		 *  det(Jac)= |2 3| = 0*3-1*2
+		 *            |f0 f1|
+		 *  det(Jac)= |f2 f3| = f0*f3-f1*f2
 		 */
-		return funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
+		this.Jacobian = funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
 	}
 	
-	
-	
 	/**
-	 * Dependent on setTransformFunction()
-	 * @return
+	 *  Compute 3D determinant of Jacobian matrix
+	 *  
+	 *             |x_r x_s x_t|
+	 *  det(Jac) = |y_r y_s y_t|
+	 *             |z_r z_s z_t|
+	 * 
 	 */
-	public Function getJacobian3D() {
-		Function[] funs = new Function[9];
-		int index = 0;
-		if(transFuns==null || transFuns.size() != 3)
-			return null;
+	public void computeJacobian3D() {
 		/*
+		 * 四面体
 		 * x = x(r,s,t,u) = x1*sf1 + x2*sf2 + x3*sf3 * x4*sf4 = x1*r + x2*s + x3*t * x4*u 
 		 * y = y(r,s,t,u) = y1*sf1 + y2*sf2 + y3*sf3 * y4*sf4 = y1*r + y2*s + y3*t * y4*u 
 		 * z = z(r,s,t,u) = z1*sf1 + z2*sf2 + z3*sf3 * z4*sf4 = z1*r + z2*s + z3*t * z4*u 
+		 * where r,s,t are free variable, u=1-r-s-t
+		 * 
+		 * 六面体
+		 * x = x(r,s,t) = sum_{i=1}^{8}{xi*sfi}
+		 * y = y(r,s,t) = sum_{i=1}^{8}{yi*sfi}
+		 * z = z(r,s,t) = sum_{i=1}^{8}{zi*sfi}
 		 */
-		 for(Function transFun : transFuns) {
-			for(String var : toVarNames) { //free variable r,s,t
-				funs[index++] = transFun._d(var);
-			}
-		}
-		/*
-		 * 要求结点编号为逆时针 ：funs[0:8]
-		 *            |0 1 2|
-		 *  det(Jac)= |3 4 5| = 0*3-1*2
-		 *            |6 7 8|
-		 */
-		Function det4875 = funs[4].M(funs[8]) .S (funs[7].M(funs[5]));
-		Function det6538 = funs[6].M(funs[5]) .S (funs[3].M(funs[8]));
-		Function det3764 = funs[3].M(funs[7]) .S (funs[6].M(funs[4]));
-
-		return FMath.sum(
-				funs[0].M(det4875), 
-			    funs[1].M(det6538),
-			    funs[2].M(det3764)
-			    );
+		
+//11/26/2011 重新定义一个函数Jacobian3D，代替下面注释掉的代码，可以提高计算速度1/3
+		Function[] funs = this.JacobianMatrix;
+//		/*
+//		 * 要求结点编号为逆时针 ：funs[0:8]
+//		 *            |f0 f1 f2|
+//		 *  det(Jac)= |f3 f4 f5|
+//		 *            |f6 f7 f8|
+//		 */
+//		Function det4875 = funs[4].M(funs[8]) .S (funs[7].M(funs[5]));
+//		Function det6538 = funs[6].M(funs[5]) .S (funs[3].M(funs[8]));
+//		Function det3764 = funs[3].M(funs[7]) .S (funs[6].M(funs[4]));
+//
+//		return FMath.sum(
+//				funs[0].M(det4875), 
+//			    funs[1].M(det6538),
+//			    funs[2].M(det3764)
+//			    );
+		this.Jacobian = new Jacobian3D(funs);
 	}
 	
-	public Function getJacobian3DFast(Element e) {
+	public static class Jacobian3D extends AbstractFunction {
+		Function[] funs = null;
+		public Jacobian3D(Function[] funs) {
+			this.funs = funs;
+		}
+		@Override
+		public double value(Variable v) {
+			return value(v,null);
+		}
+		
+		@Override
+		public double value(Variable v, Map<Object,Object> cache) {
+			Double detJ = null;
+			if(cache != null) {
+				detJ = (Double)cache.get(1);
+			}
+			if(detJ == null) {
+				double[][] J = new double[3][3];
+				J[0][0] = funs[0].value(v);
+				J[0][1] = funs[1].value(v);
+				J[0][2] = funs[2].value(v);
+				J[1][0] = funs[3].value(v);
+				J[1][1] = funs[4].value(v);
+				J[1][2] = funs[5].value(v);
+				J[2][0] = funs[6].value(v);
+				J[2][1] = funs[7].value(v);
+				J[2][2] = funs[8].value(v);	
+				//@see ./doc/invA33.png
+				detJ = Utils.determinant(J);
+				if(cache != null) {
+					cache.put(1, detJ);
+					cache.put(2, J);
+				}
+			}
+			return detJ;
+		}
+		
+		public String toString() {
+			return "Jacobian";
+		}
+	}
+	
+	/**
+	 * compute det(Jac) for Tetrahedron element only, it is optimized for faster speed
+	 * 
+	 * @param e
+	 * @return det(Jac)
+	 */
+	public Function computeJacobian3DTetrahedron(Element e) {
 		double x1,x2,x3,x4;
 		double y1,y2,y3,y4;
 		double z1,z2,z3,z4;
+		if(!(e.getGeoEntity3D().getTopology() instanceof TetrahedronTp))
+			throw new FutureyeException(
+					"Function computeJacobian3DTetrahedron() is used only for Tetrahedron element!");
+
 		x1 = e.nodes.at(1).coord(1);
 		x2 = e.nodes.at(2).coord(1);
 		x3 = e.nodes.at(3).coord(1);
@@ -359,7 +467,8 @@ public class CoordinateTransform {
 		/*
 		 * x = x(r,s,t,u) =  x1*r + x2*s + x3*t * x4*u 
 		 * y = y(r,s,t,u) =  y1*r + y2*s + y3*t * y4*u 
-		 * z = z(r,s,t,u) =  z1*r + z2*s + z3*t * z4*u 
+		 * z = z(r,s,t,u) =  z1*r + z2*s + z3*t * z4*u
+		 * where r,s,t are free variables and u=1-r-s-t
 		 */
 		items[0] = x1 - x4;
 		items[1] = x2 - x4;
@@ -373,9 +482,9 @@ public class CoordinateTransform {
 		
 		/*
 		 * 要求结点编号为逆时针 ：items[0:8]
-		 *            |0 1 2|
-		 *  det(Jac)= |3 4 5| = 0*3-1*2
-		 *            |6 7 8|
+		 *            |i0 i1 i2|
+		 *  det(Jac)= |i3 i4 i5|
+		 *            |i6 i7 i8|
 		 */
 		double det4875 = items[4]*items[8]-items[7]*items[5];
 		double det6538 = items[6]*items[5]-items[3]*items[8];

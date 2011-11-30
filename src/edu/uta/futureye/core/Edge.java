@@ -2,6 +2,8 @@ package edu.uta.futureye.core;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.geometry.GeoEntity1D;
+import edu.uta.futureye.util.Constant;
+import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.NodeList;
 
@@ -43,7 +45,7 @@ public class Edge extends GeoEntity1D<NodeLocal> {
 					this.vertices.at(1),
 					this.vertices.at(2)
 					);
-			
+
 		return this.globalUnitNormVector;
 	}
 	
@@ -119,6 +121,19 @@ public class Edge extends GeoEntity1D<NodeLocal> {
 		return rlt;
 	}
 	
+	public boolean containsNode(Node node) {
+		if(this.beginNode().equals(node))
+			return true;
+		if(this.endNode().equals(node))
+			return true;
+		if(this.edgeNodes != null) {
+			for(int i=1;i<=this.edgeNodes.size();i++)
+				if(this.edgeNodes.at(i).equals(node))
+					return true;
+		}
+		return false;
+	}
+	
 	public double getEdgeLength() {
 		return Utils.computeLength(
 					this.vertices.at(1),
@@ -129,4 +144,30 @@ public class Edge extends GeoEntity1D<NodeLocal> {
 	public String toString() {
 		return "Edge"+this.globalIndex+":"+this.vertices.toString();
 	}	
+	
+	@Override
+    public boolean equals(Object obj) {
+        if(super.equals(obj)) {
+        	return true;
+        } else {
+        	if(obj instanceof Edge) {
+        		Edge ed2 = (Edge)obj;
+        		if( globalIndex == ed2.globalIndex && 
+        			beginNode().equals(ed2.beginNode()) && 
+        			endNode().equals(ed2.endNode())) {
+        			//全局索引相同，两端结点相同
+        			return true;
+        		}
+        	}
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+    	if(globalIndex != 0) 
+    		return globalIndex;
+    	else 
+    		return super.hashCode();
+    }
 }

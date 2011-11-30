@@ -99,7 +99,9 @@ public class ShapeFunctionTest {
 		v.set("s", 0);
 
 		
-		Function jac = trans.getJacobian2D();
+		trans.computeJacobianMatrix(); //2011/11/26
+		trans.computeJacobian2D(); //2011/11/26
+		Function jac = trans.getJacobian();
 		System.out.println(jac);
 		System.out.println("jac="+jac.value(v));
 		

@@ -23,8 +23,13 @@ public class SFBilinearLocal2D extends AbstractFunction implements ScalarShapeFu
 	private ObjList<String> innerVarNames = null;
 	private double coef = 1.0;
 
-	private Element e;
-	private double jacFast = 0.0;
+	Element e;
+	CoordinateTransform trans = new CoordinateTransform(2);
+	Function jac = null;
+	Function x_r = null;
+	Function x_s = null;
+	Function y_r = null;
+	Function y_s = null;
 	
 	
 	/**
@@ -63,37 +68,38 @@ public class SFBilinearLocal2D extends AbstractFunction implements ScalarShapeFu
 		
 		for(final String varName : varNames) {
 			fInners.put(varName, new AbstractFunction(innerVarNames.toList()) {
-				
-				protected CoordinateTransform trans = new CoordinateTransform(2);
-				
+				//r_x, r_y, s_x, s_y
 				public Function _d(String var) {
-					//Coordinate transform and Jacbian on element e
-					List<Function> funs = trans.getTransformFunction(
-							trans.getTransformLinear2DShapeFunction(e)
-							);
-					trans.setTransformFunction(funs);
-					
-					Function fx = funs.get(0);
-					Function fy = funs.get(1);
-					
-					Function x_r = fx._d("r");
-					Function x_s = fx._d("s");
-					Function y_r = fy._d("r");
-					Function y_s = fy._d("s");
-					
-					//Function jac = trans.getJacobian2D();
-					//Faster 快一倍
-					Function jac = FC.c(jacFast);
-					
+
+/**
+f(x,y) = g(r,s)
+f_x = g_r*r_x + g_s*s_x  ---(1)
+f_y = g_r*r_y + g_s*s_y  ---(2)
+
+for (1) let f=x,f=y we get 2 equations, solve them:
+(x_r x_s)   (r_x)   (1)
+(y_r y_s) * (s_x) = (0)
+
+similarly, for (2):
+(x_r x_s)   (r_y)   (0)
+(y_r y_s) * (s_y) = (1)
+
+        (x_r x_s)
+Let J = (y_r y_s)
+        
+from the above 4 equations, we have:
+ (r_x r_y)
+ (s_x s_y) = inv(J)
+ */
 					if(varName.equals("r")) {
-						if(var.equals("x"))
+						if(var.equals("x")) //r_x
 							return y_s.D(jac);
-						if(var.equals("y"))
+						else //r_y
 							return FC.c0.S(x_s.D(jac));
 					} else if(varName.equals("s")) {
-						if(var.equals("x"))
+						if(var.equals("x")) //s_x
 							return FC.c0.S(y_r.D(jac));
-						if(var.equals("y"))
+						else //s_y
 							return x_r.D(jac);
 					}
 					return null;
@@ -141,9 +147,28 @@ public class SFBilinearLocal2D extends AbstractFunction implements ScalarShapeFu
 	public void asignElement(Element e) {
 		this.e = e;
 		VertexList vList = e.vertices();
-		//用面积计算Jacobin
-		jacFast = Utils.getRectangleArea(vList)/4.0;
+	
+//		//从_d()移动到这里，速度又快一倍
+//		//Coordinate transform and Jacbian on element e
+//		List<Function> funs = trans.getTransformFunction(
+//				trans.getTransformLinear2DShapeFunction(e)
+//				);
+//		trans.setTransformFunction(funs);
+//		Function fx = funs.get(0); //x=x(r,s)
+//		Function fy = funs.get(1); //y=y(r,s)
+//		x_r = fx._d("r");
+//		x_s = fx._d("s");
+//		y_r = fy._d("r");
+//		y_s = fy._d("s");
 		
+		Function [] funs = e.getCoordTrans().getJacobianMatrix();
+		x_r = funs[0];
+		x_s = funs[1];
+		y_r = funs[2];
+		y_s = funs[3];
+		
+		//用面积计算Jacobin，速度要快一倍
+		jac = FC.c(Utils.getRectangleArea(vList)/4.0);
 	}
 
 	public String toString() {

@@ -42,9 +42,10 @@ public class SolverJBLAS {
 	    }
 	    intW info = new intW(0);
 	    
-        System.out.println("Begin Solver...");
+       //System.out.println("Begin Solver...");
         DGESV.DGESV(N, nrhs, a, ipiv, b, info);
-        System.out.println("Solver info = " + info.val);
+        if(info.val != 0)
+        	System.out.println("Solver info = " + info.val);
 	    
     	Vector rv = v.copy();
 	    for(int i=0;i<N;i++) {

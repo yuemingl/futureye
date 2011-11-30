@@ -6,8 +6,10 @@ import edu.uta.futureye.algebra.Solver;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.Mesh;
+import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
+import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.core.intf.Assembler;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
@@ -18,80 +20,42 @@ import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
-import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
 import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
-import edu.uta.futureye.util.container.NodeList;
 
+/**
+ * Solver the following model problem:
+ * 
+ *   -\nabla{(1/k)*\nabla{u}} + a*u = f
+ * 
+ * where 
+ *   k = 1/(3*mu_s')
+ *   a = a(x) = mu_a(x)
+ *   
+ * @author liuyueming
+ *
+ */
 public class ModelDOT {
-	//Light source
-	public Function delta = null;
-	public Variable lightPosition = null; //light source position
-	public int lightNum = -1;
+	//Light source delta function
+	private Function delta = null;
+	//light source position
+	public Variable lightPosition = null; 
 	
-	//Inclusion mu_a
-	public Function mu_a = null;
-	
-	//Inclusion 1/(3*mu_s') = 1.0/30.0 ?
+	//Absorption coefficient mu_a
+	private Function mu_a = null;
+	//Reduced scattering coefficient mu_s'
+	//k = 1/(3*mu_s') = 0.02
 	public Function k = new FC(0.02);
 	
-	/**
-	 * type=1: one inclusion
-	 * type=2: two inclusion
-	 * @param incX
-	 * @param incY
-	 * @param incR
-	 * @param maxMu_a
-	 * @param type
-	 */
-	public void setMu_a(double incX, double incY, double incR, double maxMu_a,
-			int type) {
-		final double fcx = incX;
-		final double fcy = incY;
-		final double fcr = incR;
-		final double fmu_a = maxMu_a;
-		final double distance = 0.8;
-		if(type == 1) {
-			mu_a = new AbstractFunction("x","y"){
-				@Override
-				public double value(Variable v) {
-					double bk = 0.1;
-					double dx = v.get("x")-fcx;
-					double dy = v.get("y")-fcy;
-					if(Math.sqrt(dx*dx+dy*dy) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx*dx+dy*dy)/fcr); 
-						return r<bk?bk:r;
-					}
-					else
-						return bk;
-				}
-			};
-		} else if(type == 2) {
-			mu_a = new AbstractFunction("x","y"){
-				@Override
-				public double value(Variable v) {
-					double bk = 0.1;
-					double dx = v.get("x")-fcx;
-					double dy = v.get("y")-fcy;
-					double dx1 = v.get("x")-(fcx+distance);
-					double dy1 = v.get("y")-fcy;
-					if(Math.sqrt(dx*dx+dy*dy) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx*dx+dy*dy)/fcr); 
-						return r<bk?bk:r;
-					}
-					else if(Math.sqrt(dx1*dx1+dy1*dy1) < fcr) {
-						double r = fmu_a*Math.cos((Math.PI/2)*Math.sqrt(dx1*dx1+dy1*dy1)/fcr); 
-						return r<bk?bk:r;
-					}
-					else
-						return bk;
-				}
-			};			
-		}
+	public void setMu_a(Function fMu_a) {
+		this.mu_a = fMu_a;
+	}
+	public Function getMu_a() {
+		return this.mu_a;
 	}
 	
-	public void setDelta(double x,double y) {
+	public void setLightPosition(double x,double y) {
 		this.lightPosition = new Variable();
 		this.lightPosition.set("x", x);
 		this.lightPosition.set("y", y);
@@ -99,7 +63,15 @@ public class ModelDOT {
 		//测试将dleta函数变得平缓
 		//delta = new FDelta(this.lightSource,0.05,2e5);
 	}
-
+	public Point getLightPosition() {
+		Node p = new Node(0,lightPosition.get("x"),
+				lightPosition.get("y"));
+		return p;
+	}
+	public Function getDelta() {
+		return this.delta;
+	}
+	
 	/**
 	 * 求解混合问题，需要提供函数diriBoundaryMark来标记Dirichlet边界类型，
 	 * 其余边界为Neumann类型。
@@ -135,7 +107,7 @@ public class ModelDOT {
 		WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
 		
 		//Right hand side
-		weakForm.setF(this.k.M(this.delta));
+		weakForm.setF(this.delta);
 		//如果光源在区域外，rhs=0 与非零没有差别
 		//weakForm.setF(FC.c0);
 
@@ -224,10 +196,10 @@ public class ModelDOT {
 //		String gridFileSmall = "prostate_test8.grd";
 
 		ModelDOT model = new ModelDOT();
-		model.setMu_a(2.0, 2.6, 0.5, //(x,y;r)
+		model.setMu_a(ModelParam.getMu_a(2.0, 2.6, 0.5, //(x,y;r)
 				0.2, //maxMu_a
-				1); //type
-		model.setDelta(1.5, 3.5);
+				1)); //type
+		model.setLightPosition(1.5, 3.5);
 	
 		MeshReader readerForward = new MeshReader(gridFileBig);
 		Mesh meshBig = readerForward.read2DMesh();
@@ -263,7 +235,7 @@ public class ModelDOT {
 				FMath.axpy(-1.0, uSmallDiri, uSmallExtract));
 		
 		Vector a = Tools.solveParamInverse(meshSmall, uSmallDiri, 
-				model.k.M(model.delta), model.k,FC.c(0.1));
+				model.delta, model.k,FC.c(0.1));
 		Tools.plotVector(meshSmall, outputFolder, "a_sovle.dat", a);
 		
 		//stableFactor=0.0求出的导数与Tecplot计算的一致
@@ -285,13 +257,13 @@ public class ModelDOT {
 		Tools.plotVector(meshBig, outputFolder, "u_big_y2.dat", uBig_y2);
 		
 		Vector aBig = Tools.solveParamInverse(meshBig, uBig, 
-				model.k.M(model.delta), model.k,FC.c(0.1));
+				model.delta, model.k,FC.c(0.1));
 		Tools.plotVector(meshBig, outputFolder, "a_sovle_big.dat", aBig);
 		
 		//First Guess a(x)
-		model.setMu_a(2.0, 2.6, 0.5, //(x,y;r)
+		model.setMu_a(ModelParam.getMu_a(2.0, 2.6, 0.5, //(x,y;r)
 				0.2, //maxMu_a
-				1); //type
+				1)); //type
 		Vector uBigGuess = model.solveNeumann(meshBig);
 		Tools.plotVector(meshBig, outputFolder, "u_big_guess.dat", uBigGuess);
 		
@@ -304,7 +276,7 @@ public class ModelDOT {
 				FMath.axpy(-1.0, uSmallGuess, uSmallApproximate));
 		
 		Vector aApproximate = Tools.solveParamInverse(meshSmall, uSmallApproximate, 
-				model.k.M(model.delta), model.k,FC.c(0.1));
+				model.delta, model.k,FC.c(0.1));
 		Tools.plotVector(meshSmall, outputFolder, "a_sovle_approximate.dat", aApproximate);
 		
 		//Adaptive
@@ -331,7 +303,7 @@ public class ModelDOT {
 		Tools.plotVector(meshBig, outputFolder, "u_big_refine_y.dat", uBigRefine_y);
 
 		Vector aBigRefine = Tools.solveParamInverse(meshBig, uBigRefine, 
-				model.k.M(model.delta), model.k,FC.c(0.1));
+				model.delta, model.k,FC.c(0.1));
 		Tools.plotVector(meshBig, outputFolder, "a_sovle_big_refine.dat", aBigRefine);
 		
 		//TEST 3. Only up side of the domain is Dirichlet boundary

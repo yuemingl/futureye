@@ -17,6 +17,7 @@ public class FC extends AbstractFunction{
 	//Predefined constant
 	public static FC c0 = new FC(0.0);
 	public static FC c1 = new FC(1.0);
+	public static FC cm1 = new FC(-1.0);
 	public static FC PI = new FC(Math.PI);
 	public static FC E = new FC(Math.E);
 	

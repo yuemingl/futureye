@@ -158,7 +158,7 @@ public class VariationGaussNewtonDOTMult {
 		
 		
 		//背景mu_a
-		modelBk.setMu_a(ModelDOTMult.getMu_a(0.0, 0.0, 0.0, 
+		modelBk.setMu_a(ModelParam.getMu_a(0.0, 0.0, 0.0, 
 				0.1, //mu_a=0.1 mu_s(=model.k)=0.02 => a(x)=5
 				1));
 //test9		
@@ -177,15 +177,15 @@ public class VariationGaussNewtonDOTMult {
 
 //test9_1
 		//有包含物mu_a，真实模型
-		modelReal.setMu_a(ModelDOTMult.getMu_a(2.20, 2.60, 0.6,
+		modelReal.setMu_a(ModelParam.getMu_a(2.20, 2.60, 0.6,
 				0.4, //peak value of mu_a
 				1)); //Number of inclusions
 		//有包含物mu_a，猜测模型
-		modelGuess.setMu_a(ModelDOTMult.getMu_a(2.40, 2.60, 0.6,
+		modelGuess.setMu_a(ModelParam.getMu_a(2.40, 2.60, 0.6,
 				0.4, //peak value of mu_a
 				1)); //Number of inclusions
 		//有包含物mu_a，迭代初始值
-		modelInit.setMu_a(ModelDOTMult.getMu_a(2.40, 2.60, 0.6,//0.8
+		modelInit.setMu_a(ModelParam.getMu_a(2.40, 2.60, 0.6,//0.8
 				0.4, //peak value of mu_a
 				1)); //Number of inclusions
 

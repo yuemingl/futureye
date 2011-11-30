@@ -1,10 +1,8 @@
 package edu.uta.futureye.lib.shapefun;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import edu.uta.futureye.core.CoordinateTransform;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
@@ -28,7 +26,12 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 	private Function funOuter = null;
 	private ObjList<String> innerVarNames = null;
 	
-	private Element e = null;
+	private Function jac = null;
+	private Function x_r = null;
+	private Function x_s = null;
+	private Function y_r = null;
+	private Function y_s = null;
+	
 	/**
 	 * 构造下列形函数中的一个：
 	 *  s
@@ -73,39 +76,7 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 		
 		for(final String varName : varNames) {
 			fInners.put(varName, new AbstractFunction(innerVarNames.toList()) {
-				
-				protected CoordinateTransform trans = new CoordinateTransform(2);
-				
 				public Function _d(String var) {
-					//Coordinate transform and Jacbian on element e
-					List<Function> funs = trans.getTransformFunction(
-							trans.getTransformLinear2DShapeFunction(e)
-							//TODO 下面的调用有问题
-							//trans.getTransformShapeFunctionByElement(e)
-								);
-					trans.setTransformFunction(funs);
-					
-					Function x_r = funs.get(0)._d("r");
-					Function x_s = funs.get(0)._d("s");
-					Function y_r = funs.get(1)._d("r");
-					Function y_s = funs.get(1)._d("s");
-					Function jac = trans.getJacobian2D();
-					
-					//TODO !!! 数值积分点的选取问题
-//					Variable v = new Variable();
-//					v.set("r", 0.0);
-//					v.set("s", 0.0);
-//					System.out.println(x_r.value(v));
-//					System.out.println(x_s.value(v));
-//					System.out.println(y_r.value(v));
-//					System.out.println(y_s.value(v));
-//					System.out.println(jac.value(v));
-//					0.0
-//					0.33333333349999994
-//					-0.33333333349999994
-//					0.0
-//					0.11111111122222218
-					
 					if(varName.equals("r")) {
 						if(var.equals("x"))
 							return y_s.D(jac);
@@ -117,7 +88,6 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 						if(var.equals("y"))
 							return x_r.D(jac);
 					}
-					
 					return null;
 				}
 			});
@@ -154,7 +124,14 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 	
 	@Override
 	public void asignElement(Element e) {
-		this.e = e;
+		Function[] funs = e.getCoordTrans().getJacobianMatrix();
+		
+		x_r = funs[0];
+		x_s = funs[1];
+		y_r = funs[2];
+		y_s = funs[3];
+		jac = e.getCoordTrans().getJacobian();
+		
 	}
 
 	//TODO ??? 应该采用一维二次型函数

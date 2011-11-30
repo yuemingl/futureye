@@ -16,7 +16,7 @@ public interface Matrix {
 	/**
 	 * 零元素阈值
 	 */
-	public static double zeroEps = 1e-10;
+	public static double zeroEps = 1e-15;
 	
 	/**
 	 * 设置矩阵行数

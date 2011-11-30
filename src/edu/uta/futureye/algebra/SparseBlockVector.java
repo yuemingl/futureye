@@ -156,11 +156,17 @@ public class SparseBlockVector implements BlockVector {
 
 	@Override
 	public Vector getBlock(int index) {
+		if(index > this.blockDim) 
+			throw new FutureyeException(
+					"index(="+index+") should <= blockDim(="+this.blockDim+")");
 		return data.get(index);
 	}
 
 	@Override
 	public void setBlock(int index, Vector v) {
+		if(index > this.blockDim) 
+			throw new FutureyeException(
+					"index(="+index+") should <= blockDim(="+this.blockDim+")");
 		data.put(index, v);
 	}
 

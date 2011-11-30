@@ -18,6 +18,7 @@ import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.core.geometry.topology.HexahedronTp;
 import edu.uta.futureye.core.geometry.topology.RectangleTp;
 import edu.uta.futureye.core.geometry.topology.TetrahedronTp;
+import edu.uta.futureye.core.geometry.topology.Topology3D;
 import edu.uta.futureye.core.geometry.topology.TriangleTp;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
@@ -34,7 +35,18 @@ import edu.uta.futureye.util.container.VertexList;
 
 /**
  * Element of a triangulation
- * 剖分单元
+ * 剖分单元类
+ * 
+ * 单元的几何信息保存在GeoEntity对象中，包含：
+ * (1)局部顶点：形成单元几何外形的顶点
+ * (2)局部结点：代表有限元结点，对于不同的有限元，结点分布也不相同
+ * (3)局部边：2D或3D有限单元的边
+ * (4)局部面：3D有限单元的面
+ * (5)体：全局对象，代表
+ * 局部对象都有局部索引（编号），通过局部索引来操作相关的局部对象，例如关联自由度、获取自由度
+ * 
+ * 
+ * 
  * 
  * @author liuyueming
  *
@@ -74,6 +86,18 @@ public class Element {
 	public GeoEntity0D getGeoEntity() {
 		return geoEntity;
 	}
+	@SuppressWarnings("rawtypes")
+	public GeoEntity1D getGeoEntity1D() {
+		return (GeoEntity1D)geoEntity;
+	}
+	@SuppressWarnings("rawtypes")
+	public GeoEntity2D getGeoEntity2D() {
+		return (GeoEntity2D)geoEntity;
+	}
+	@SuppressWarnings("rawtypes")
+	public GeoEntity3D getGeoEntity3D() {
+		return (GeoEntity3D)geoEntity;
+	}
 	public void setGeoEntity(GeoEntity0D geoEntity) {
 		this.geoEntity = geoEntity;
 		this.nodes.addAll(getNodeList(geoEntity));
@@ -89,10 +113,11 @@ public class Element {
 	 * 单元维度：1D, 2D or 3D
 	 */
 	protected int eleDim = 0;
-	public int eleDim() {
+	public int dim() {
 		return eleDim;
 	}
 
+	private CoordinateTransform trans = null;
 	protected Function jac = null;
 
 	////////////////////////////////////////////////////////////////////
@@ -321,7 +346,8 @@ public class Element {
 		this.eleDim = nodes.at(1).dim();
 		int n = nodes.size();
 		if(this.eleDim == 1) {
-			GeoEntity1D<NodeLocal> entity = new GeoEntity1D<NodeLocal>();
+//			GeoEntity1D<NodeLocal> entity = new GeoEntity1D<NodeLocal>();
+			Edge entity = new Edge();//2011/11/28
 			if(n >= 2) {
 				entity.addVertex(new Vertex(1,new NodeLocal(1,nodes.at(1))));
 				entity.addVertex(new Vertex(2,new NodeLocal(2,nodes.at(n))));
@@ -337,8 +363,9 @@ public class Element {
 			this.geoEntity = entity;
 			
 		} else if(this.eleDim == 2) {
-			GeoEntity2D<EdgeLocal,NodeLocal> entity = 
-						new GeoEntity2D<EdgeLocal,NodeLocal>();
+//			GeoEntity2D<EdgeLocal,NodeLocal> entity = 
+//						new GeoEntity2D<EdgeLocal,NodeLocal>();
+			Face entity = new Face();//add 2011/11/28
 			int [][]edgesTp = null;
 			if(n == 3) {
 				//线性三角形单元
@@ -407,25 +434,27 @@ public class Element {
 			this.geoEntity = entity;
 			
 		} else if(this.eleDim == 3) {
-			GeoEntity3D<FaceLocal,EdgeLocal,NodeLocal> entity = 
-						new GeoEntity3D<FaceLocal,EdgeLocal,NodeLocal>();
+//			GeoEntity3D<FaceLocal,EdgeLocal,NodeLocal> entity = 
+//						new GeoEntity3D<FaceLocal,EdgeLocal,NodeLocal>();
+			Volume entity = new Volume();//2011/11/28
 			int [][]edgesTp = null;
 			int [][]facesTp = null;
+			Topology3D topo = null;
 			if(n == 4) {
 				//线性四面体单元
-				TetrahedronTp tetTp = new TetrahedronTp();
-				entity.setTopology(tetTp);
-				edgesTp = tetTp.getEdges();
-				facesTp = tetTp.getFaces();
-				for(int i=1;i<=tetTp.getVertices().length;i++)
+				topo = new TetrahedronTp();
+				entity.setTopology(topo);
+				edgesTp = topo.getEdges();
+				facesTp = topo.getFaces();
+				for(int i=1;i<=topo.getVertices().length;i++)
 					entity.addVertex(new Vertex(i,new NodeLocal(i,nodes.at(i))));
 			} else if(n == 8) {
 				//线性六面体单元
-				HexahedronTp hexTp = new HexahedronTp();
-				entity.setTopology(hexTp);
-				edgesTp = hexTp.getEdges();
-				facesTp = hexTp.getFaces();
-				for(int i=1;i<=hexTp.getVertices().length;i++)
+				topo = new HexahedronTp();
+				entity.setTopology(topo);
+				edgesTp = topo.getEdges();
+				facesTp = topo.getFaces();
+				for(int i=1;i<=topo.getVertices().length;i++)
 					entity.addVertex(new Vertex(i,new NodeLocal(i,nodes.at(i))));
 			} else {
 				FutureyeException ex = new FutureyeException("Error: Not supported element, try use Element(GeoEntity geoEntity)");
@@ -448,7 +477,8 @@ public class Element {
 										new NodeLocal(edgesTp[i][j],nodes.at(edgesTp[i][j])))
 								);
 					}
-					fl.addEdge(el);
+					if(topo.edgeOnface(facesTp[k],edgesTp[i]))
+						fl.addEdge(el);
 				}
 				entity.addFace(fl);
 			}
@@ -558,14 +588,20 @@ public class Element {
 	}
 	
 	/**
-	 * 获取单元的边列表
+	 * 获取单元的局部边列表
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
 	public ObjList<EdgeLocal> edges() {
 		if(this.eleDim == 2) {
-			GeoEntity2D entity = (GeoEntity2D)this.geoEntity;
-			return entity.getEdges();
+			return getGeoEntity2D().getEdges();
+		} else if(this.eleDim == 3){
+			ObjList<FaceLocal> faces = this.getGeoEntity3D().getFaces();
+			ObjList<EdgeLocal> edges = new ObjList<EdgeLocal>();
+			for(FaceLocal face : faces) {
+				edges.addAll(face.getEdges());
+			}
+			return edges;
 		} else {
 			throw new FutureyeException("Error: "+this.geoEntity.getClass().getName());
 		}
@@ -578,8 +614,7 @@ public class Element {
 	@SuppressWarnings("unchecked")
 	public ObjList<FaceLocal> faces() {
 		if(this.eleDim == 3) {
-			GeoEntity3D entity = (GeoEntity3D)this.geoEntity;
-			return entity.getFaces();
+			return getGeoEntity3D().getFaces();
 		} else {
 			throw new FutureyeException("Error: "+this.geoEntity.getClass().getName());
 		}
@@ -623,7 +658,7 @@ public class Element {
 		}
 		//DOF反向索引Edge
 		dof.setOwner(this.edges().at(localEdgeIndex));
-		dofList.add(dof);		
+		dofList.add(dof);
 	}
 	
 	/**
@@ -1070,8 +1105,8 @@ public class Element {
 	 * 适用于四面体单元
 	 * 
 	 * 计算以node为顶点，其单元内相邻三结点与之形成的单位球面三角形的面积，
-	 * 可用于判断是否内点，即当某结点相邻所有单元上的结点与之形成的单位球面三角形的面积只和=4*PI时为内点
-	 * （球面体：4*PI*r^2，求体积：(4/3)*PI*r^3）
+	 * 可用于判断是否内点，即当某结点相邻所有单元上的结点与之形成的单位球面三角形的面积之和等于4*PI时为内点
+	 * （球面体：4*PI*r^2，球体积：(4/3)*PI*r^3）
 	 * 参数要求：node为单元上的一个结点
 	 * 
 	 * @param node
@@ -1082,33 +1117,83 @@ public class Element {
 		int li = getLocalIndex(node);
 		int vn = this.geoEntity.getVertices().size();
 		if(li <= vn) {
-			return Utils.getSphereTriangleArea(1, node, 
-					nodes.at(ary[li][0]), 
-					nodes.at(ary[li][1]), 
-					nodes.at(ary[li][2]));
-		} else {
-			return 0.0; //TODO
+			if(this.getGeoEntity3D().getTopology() instanceof TetrahedronTp) {
+				return Utils.getSphereTriangleArea(1, node, 
+						nodes.at(ary[li][0]), 
+						nodes.at(ary[li][1]), 
+						nodes.at(ary[li][2]));
+			} else if(this.getGeoEntity3D().getTopology() instanceof HexahedronTp) {
+				ObjList<Edge> edges = this.getGlobalEdges();
+				Node[] findNode = new Node[3];
+				int k=0;
+				for(int i=1;i<=edges.size();i++) {
+					Edge edge = edges.at(i);
+					if(edge.beginNode().coordEquals(node))
+						findNode[k++] = edge.endNode();
+					else if(edge.endNode().coordEquals(node))
+						findNode[k++] = edge.beginNode();
+				}
+				return Utils.getSphereTriangleArea(1, node, 
+						findNode[0], 
+						findNode[1], 
+						findNode[2]);
+			}
 		}
+		throw new FutureyeException("");
 	}
 	
+	public ObjList<Edge> getGlobalEdges() {
+		ObjList<Edge> rlt = new ObjList<Edge>();
+		@SuppressWarnings("unchecked")
+		GeoEntity3D<FaceLocal,EdgeLocal,NodeLocal> g = this.getGeoEntity3D();
+		ObjList<FaceLocal> faces = g.getFaces();
+		for(int i=1;i<=faces.size();i++) {
+			ObjList<EdgeLocal> edges = faces.at(i).getEdges();
+			for(int j=1;j<=edges.size();j++) {
+				if(!rlt.contains(edges.at(j).globalEdge))
+					rlt.add(edges.at(j).globalEdge);
+			}
+		}
+		return rlt;
+	}
+	
+	/**
+	 * 获取坐标变换对象，用来得到Jacobian matrix和Jacobian determinant
+	 * 
+	 * @return
+	 */
+	public CoordinateTransform getCoordTrans() {
+		return trans;
+	}
+	
+	/**
+	 * 
+	 * 二维问题的一位边界：[x,y]->[r]
+	 * 
+	 * 一维问题：[x]->[r] //TODO 现在对于一位问题还是[x,y]两个变量，只不多y对应的是0，所有不影响计算结果
+	 */
 	public void updateJacobinLinear1D() {
 		String[] fromVars = {"x","y"};
 		String[] toVars = {"r"};
 		//Coordinate transform and Jacbian on this border element
 		CoordinateTransform transBorder = new CoordinateTransform(fromVars,toVars);
 		transBorder.transformLinear1D(this);
-		jac = (Function) transBorder.getJacobian1D();
-		//TODO 不要用这个，修改函数运算
-		jac = FC.c(transBorder.getJacobian1D().value(null));
+		transBorder.computeJacobianMatrix();
+		transBorder.computeJacobian1D();
+		jac = transBorder.getJacobian();
+		//TODO 不要用这个，因为Jacobian有时会随坐标值不同而不同
+		//但是当Jacobian是常数时可以提高计算速度
+		//jac = FC.c(transBorder.getJacobian().value(null));
 	}
 
 	public void updateJacobinLinear2D() {
 		//Coordinate transform and Jacbian on this element
-		CoordinateTransform trans = new CoordinateTransform(2);
+		trans = new CoordinateTransform(2);
+		
 		trans.transformLinear2D(this);
-		//jac = (Function) trans.getJacobian2D();
-		//TODO 不要用这个，修改函数运算
-		jac = trans.getJacobian2D();
+		trans.computeJacobianMatrix();
+		trans.computeJacobian2D();
+		jac = trans.getJacobian();
 
 //TODO adaptive的时候不适用		
 //		List<FunctionDerivable> funs = trans.getTransformFunction(
@@ -1118,17 +1203,23 @@ public class Element {
 //		jac = trans.getJacobian2D();
 	}
 	
+
 	public void updateJacobinLinear3D() {
+		if(trans == null) trans = new CoordinateTransform(3);
+		
 		//Coordinate transform and Jacbian on this element
-		CoordinateTransform trans = new CoordinateTransform(3);
-		
-		//trans.transformLinear3D(this);
-		//jac = (Function) trans.getJacobian3D();
-		
-		jac = trans.getJacobian3DFast(this);
-		
-		//System.out.println(jac.value(null));
-		//System.out.println(trans.getJacobian3DFast(this).value(null));
+		if(getGeoEntity3D().getTopology() instanceof TetrahedronTp) {
+			//trans.computeJacobianMatrix();
+			trans.computeJacobian3DTetrahedron(this);
+			jac = trans.getJacobian();
+		}
+		else {
+			
+			trans.transformLinear3D(this); //coordinate transform of this element
+			trans.computeJacobianMatrix();
+			trans.computeJacobian3D();
+			jac = (Function) trans.getJacobian();
+		}
 	}
 	
 	/**
@@ -1154,6 +1245,7 @@ public class Element {
 	 * @return
 	 */
 	public Function getJacobin() {
+		if(jac == null) throw new FutureyeException("");
 		return jac;
 	}
 	
@@ -1426,6 +1518,18 @@ public class Element {
 		this.neighbors.add(nb);
 	}	
 	
+	@SuppressWarnings("unchecked")
+	public boolean containsEdge(Point p1, Point p2) {
+		if(eleDim == 2) {
+			if(getGeoEntity2D().containsEdge(p1, p2))
+				return true;
+		} else if(eleDim == 3) {
+			if(getGeoEntity3D().containsEdge(p1, p2))
+				return true;
+		}
+		return false;
+	}
+	
 	////////////////////////////////////////////////////////////////////
 	/**
 	 * 自适应网格加密用来保存从该单元加密出来的子网格单元
@@ -1480,4 +1584,5 @@ public class Element {
 			System.out.println(sfI);
 		}
 	}
+
 }

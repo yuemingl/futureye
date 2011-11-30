@@ -246,7 +246,7 @@ public class Stokes {
 		SchurComplementStokesSolver solver = 
 			new SchurComplementStokesSolver(stiff,load);
 		
-		BlockVector u = solver.solve();
+		BlockVector u = solver.solve2D();
 		
 		System.out.println("u=");
 		for(int i=1;i<=u.getDim();i++)

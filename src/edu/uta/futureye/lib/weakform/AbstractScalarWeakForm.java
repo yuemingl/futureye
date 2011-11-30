@@ -44,7 +44,7 @@ public abstract class AbstractScalarWeakForm implements WeakForm {
 	@Override
 	public double integrate(Element e, Function fun) {
 		if(fun == null) return 0.0;
-		if(e.eleDim() == 2) {
+		if(e.dim() == 2) {
 			if(e.vertices().size() == 3) {
 				//三角形单元
 				return FOIntegrate.intOnTriangleRefElement(
@@ -56,14 +56,19 @@ public abstract class AbstractScalarWeakForm implements WeakForm {
 						fun.M(e.getJacobin()),5 //TODO
 						);
 			}
-		} else if(e.eleDim() == 3) {
+		} else if(e.dim() == 3) {
 			if(e.vertices().size() == 4) {
 				//四面体单元
 				return FOIntegrate.intOnTetrahedraRefElement(
 						fun.M(e.getJacobin()),2
 					);
+			} else if(e.vertices().size() == 8) {
+				//六面体单元
+				return FOIntegrate.intOnHexahedraRefElement(
+						fun.M(e.getJacobin()),2
+					);
 			}
-		} else if(e.eleDim() == 1) {
+		} else if(e.dim() == 1) {
 			//一维单元
 			return FOIntegrate.intOnLinearRefElement(
 					fun.M(e.getJacobin()),5

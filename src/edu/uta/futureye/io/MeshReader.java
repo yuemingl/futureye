@@ -124,7 +124,19 @@ public class MeshReader {
 							list.add(mesh.getNodeList().at(Integer.valueOf(line[5])));
 							list.add(mesh.getNodeList().at(Integer.valueOf(line[6])));
 							Element ele = new Element(list);
-							mesh.addElement(ele);						
+							mesh.addElement(ele);
+						} else if(type.equalsIgnoreCase("hex")) {
+							NodeList list = new NodeList();
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[3])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[4])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[5])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[6])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[7])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[8])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[9])));
+							list.add(mesh.getNodeList().at(Integer.valueOf(line[10])));
+							Element ele = new Element(list);
+							mesh.addElement(ele);	
 						}
 					}
 				}

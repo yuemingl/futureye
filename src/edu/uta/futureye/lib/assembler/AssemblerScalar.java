@@ -9,11 +9,19 @@ import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
+import edu.uta.futureye.core.Edge;
+import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
+import edu.uta.futureye.core.Face;
+import edu.uta.futureye.core.FaceLocal;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
+import edu.uta.futureye.core.Volume;
+import edu.uta.futureye.core.geometry.GeoEntity;
+import edu.uta.futureye.core.geometry.GeoEntity2D;
+import edu.uta.futureye.core.geometry.GeoEntity3D;
 import edu.uta.futureye.core.intf.Assembler;
 import edu.uta.futureye.core.intf.WeakForm;
 import edu.uta.futureye.function.Variable;
@@ -24,6 +32,7 @@ import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
+import edu.uta.futureye.util.container.VertexList;
 
 public class AssemblerScalar implements Assembler {
 	private int status = 0;
@@ -64,7 +73,7 @@ public class AssemblerScalar implements Assembler {
 		for(int i=1; i<=nEle; i++) {
 			eList.at(i).adjustVerticeToCounterClockwise();
 			assembleGlobal(eList.at(i),	globalStiff,globalLoad);
-			if(i%1000==0)
+			if(i%100==0)
 				System.out.println("Assemble..."+
 						String.format("%.0f%%", 100.0*i/nEle));
 		}
@@ -88,24 +97,111 @@ public class AssemblerScalar implements Assembler {
 		if(procHangingNode)
 			procHangingNode(mesh);
 	}
+
+
+
 	
+	protected void setDirichlet(int matIndex, double value) {
+		int row = matIndex;
+		int col = matIndex;
+		this.globalStiff.set(row, col, 1.0);
+		this.globalLoad.set(row,value);
+		for(int r=1;r<=this.globalStiff.getRowDim();r++) {
+			if(r != row) {
+				this.globalLoad.add(r,-this.globalStiff.get(r, col)*value);
+				this.globalStiff.set(r, col, 0.0);
+			}
+		}
+		for(int c=1;c<=this.globalStiff.getColDim();c++) {
+			if(c != col) {
+				this.globalStiff.set(row, c, 0.0);
+			}
+		}
+	}
+	
+//	@Override
+//	public void imposeDirichletCondition(Function diri) {
+//		status = 2;
+//		NodeList nList = mesh.getNodeList();
+//		for(int i=1;i<=nList.size();i++) {
+//			Node n = nList.at(i);
+//			if(n.getNodeType() == NodeType.Dirichlet) {
+//				Variable v = Variable.createFrom(diri, n, n.globalIndex);
+//				this.globalStiff.set(n.globalIndex, n.globalIndex, 1.0);
+//				double val = diri.value(v);
+//				this.globalLoad.set(n.globalIndex, val);
+//				for(int j=1;j<=this.globalStiff.getRowDim();j++) {
+//					if(j!=n.globalIndex) {
+//						//TODO 行列都需要置零
+//						this.globalLoad.add(j, -this.globalStiff.get(j, n.globalIndex)*val);
+//						this.globalStiff.set(j, n.globalIndex, 0.0);
+//						this.globalStiff.set(n.globalIndex, j, 0.0);
+//					}
+//				}
+//			}
+//		}
+//	}
+	
+	//2011/11/28 modified according to vector valued case
 	@Override
 	public void imposeDirichletCondition(Function diri) {
-		status = 2;
-		NodeList nList = mesh.getNodeList();
-		for(int i=1;i<=nList.size();i++) {
-			Node n = nList.at(i);
-			if(n.getNodeType() == NodeType.Dirichlet) {
-				Variable v = Variable.createFrom(diri, n, n.globalIndex);
-				this.globalStiff.set(n.globalIndex, n.globalIndex, 1.0);
-				double val = diri.value(v);
-				this.globalLoad.set(n.globalIndex, val);
-				for(int j=1;j<=this.globalStiff.getRowDim();j++) {
-					if(j!=n.globalIndex) {
-						//TODO 行列都需要置零
-						this.globalLoad.add(j, -this.globalStiff.get(j, n.globalIndex)*val);
-						this.globalStiff.set(j, n.globalIndex, 0.0);
-						this.globalStiff.set(n.globalIndex, j, 0.0);
+		ElementList eList = mesh.getElementList();
+		for(int i=1;i<=eList.size();i++) {
+			Element e = eList.at(i);
+			DOFList DOFs = e.getAllDOFList(DOFOrder.NEFV);
+			for(int j=1;j<=DOFs.size();j++) {
+				DOF dof = DOFs.at(j);
+				GeoEntity ge = dof.getOwner();
+				if(ge instanceof Node) {
+					Node n = (Node)ge;
+					if(n.getNodeType() == NodeType.Dirichlet) {
+						Variable v = Variable.createFrom(diri, n, 0);
+						setDirichlet(dof.getGlobalIndex(),diri.value(v));
+					}
+				} else if(ge instanceof EdgeLocal) {
+					//2D单元（面）其中的局部边上的自由度
+					EdgeLocal edge = (EdgeLocal)ge;
+					if(edge.getBorderType() == NodeType.Dirichlet) {
+						//TODO 以边的那个顶点取值？中点？
+						//Variable v = Variable.createFrom(fdiri, ?, 0);
+					}
+					
+				} else if(ge instanceof FaceLocal) {
+					//3D单元（体）其中的局部面上的自由度
+					FaceLocal face = (FaceLocal)ge;
+					if(face.getBorderType() == NodeType.Dirichlet) {
+						//TODO
+					}
+				} else if(ge instanceof Edge) {
+					//1D单元（线段）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					VertexList vs = ((GeoEntity2D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType()) {
+							Variable v = Variable.createFrom(diri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),diri.value(v));
+						}
+					}
+				} else if(ge instanceof Face) {
+					//2D单元（面）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					
+					VertexList vs = ((GeoEntity2D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType()) {
+							Variable v = Variable.createFrom(diri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),diri.value(v));
+						}
+					}
+				} else if(ge instanceof Volume) {
+					//3D单元（体）上的自由度，其Dirichlet边界用结点来计算推出，而不需要专门标记单元
+					VertexList vs = ((GeoEntity3D) ge).getVertices();
+					for(int k=1;k<=vs.size();k++) {
+						Node n = vs.at(k).globalNode();
+						if(NodeType.Dirichlet == n.getNodeType()) {
+							Variable v = Variable.createFrom(diri, n, 0);
+							setDirichlet(dof.getGlobalIndex(),diri.value(v));
+						}
 					}
 				}
 			}

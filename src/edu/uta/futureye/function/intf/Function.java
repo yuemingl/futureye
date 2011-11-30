@@ -23,6 +23,14 @@ public interface Function {
 	double value(Variable v);
 	
 	/**
+	 * 
+	 * @param v
+	 * @param cache
+	 * @return
+	 */
+	double value(Variable v, Map<Object,Object> cache);
+	
+	/**
 	 * Set function variable names
 	 * <p>
 	 * 设置函数自变量名称，对于复合函数，只设置外层自变量名称

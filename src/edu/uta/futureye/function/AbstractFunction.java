@@ -48,6 +48,12 @@ public abstract class AbstractFunction implements Function {
 	}
 	
 	@Override
+	public double value(Variable v, Map<Object,Object> cache) {
+		//Ignore cache
+		return value(v);
+	}
+
+	@Override
 	public double value() {
 		throw new UnsupportedOperationException();
 	}
@@ -66,21 +72,25 @@ public abstract class AbstractFunction implements Function {
 		return new AbstractFunction(fOuter.varNames()) {
 			@Override
 			public double value(Variable v) {
+				return value(v,null);
+			}
+			
+			@Override
+			public double value(Variable v, Map<Object,Object> cache) {
 				//bugfix 增加或条件
 				if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
 						v.getValues().keySet().containsAll(fOuter.varNames())) {
-					return fOuter.value(v);
+					return fOuter.value(v,cache);
 				} else if(fOuter.varNames().size() == fInners.size()){
 					Variable newVar = new Variable();
 					for(String varName : fOuter.varNames()) {
-						Function f = fInners.get(varName);
-						if(f != null )
-							newVar.set(varName, f.value(v));
+						Function fInner = fInners.get(varName);
+						if(fInner != null )
+							newVar.set(varName, fInner.value(v,cache));
 						else
-							throw new FutureyeException("\nERROR:\n Can not find "+
-									varName+" in fInners.");
+							throw new FutureyeException("\nERROR:\n Can not find "+varName+" in fInners.");
 					}
-					return fOuter.value(newVar);
+					return fOuter.value(newVar,cache);
 				} else {
 					throw new FutureyeException(
 							"\nERROR:\n Variable number mismatch of fOuter("+
@@ -153,6 +163,30 @@ public abstract class AbstractFunction implements Function {
 				public double value(Variable v) {
 					return f1.value(v) + f2.value(v);
 				}
+				
+				@Override
+				public double value(Variable v, Map<Object,Object> cache) {
+//基本运算不需要cache，否则计算效率会更低					
+//					if(cache != null) {
+//						Double v1, v2;
+//						v1 = cache.get(f1);
+//						if(v1 == null) {
+//							v1 = f1.value(v,cache);
+//							cache.put(f1, v1);
+//						}
+//						v2 = cache.get(f2);
+//						if(v2 == null) {
+//							v2 = f2.value(v,cache);
+//							cache.put(f2, v2);
+//						}
+//						return v1 + v2;
+//					} else {
+//						return value(v);
+//					}
+					return f1.value(v,cache) + f2.value(v,cache);
+
+				}
+				
 				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).A(f2._d(varName)).setVarNames(this.varNames);
@@ -191,6 +225,12 @@ public abstract class AbstractFunction implements Function {
 				public double value(Variable v) {
 					return f1.value(v) - f2.value(v);
 				}
+				
+				@Override
+				public double value(Variable v, Map<Object,Object> cache) {
+					return f1.value(v,cache) - f2.value(v,cache);
+				}
+				
 				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).S(f2._d(varName)).setVarNames(this.varNames);
@@ -238,6 +278,12 @@ public abstract class AbstractFunction implements Function {
 				@Override
 				public double value(Variable v) {
 					return f1.value(v) * f2.value(v);
+				}
+				
+				@Override
+				public double value(Variable v, Map<Object,Object> cache) {
+					return f1.value(v,cache) * f2.value(v,cache);
+
 				}
 				@Override
 				public Function _d(String varName) {
@@ -289,6 +335,12 @@ public abstract class AbstractFunction implements Function {
 				public double value(Variable v) {
 					return f1.value(v) / f2.value(v);
 				}
+				
+				@Override
+				public double value(Variable v, Map<Object,Object> cache) {
+					return f1.value(v,cache) / f2.value(v,cache);
+				}
+				
 				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).M(f2).S(f1.M(f2._d(varName)))

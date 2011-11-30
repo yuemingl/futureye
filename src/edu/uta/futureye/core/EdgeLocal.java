@@ -19,10 +19,10 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 	//边局部索引（编号）
 	public int localIndex;
 	//global edge shared with all elements that containing the edge
-	protected Edge globalEdge = null; 
+	protected Edge globalEdge = null;
 	public Element owner = null;
 	
-	//局部单位（外）法相量
+	//局部单位（外）法向量
 	private Vector localUnitNormVector = null;
 	
 	public EdgeLocal(int localIndex, Element owner) {
@@ -132,51 +132,51 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 		return edge;
     }
     
-	/**
-	 * Edge自己变为一个单元，用于边界积分（线积分）
-	 * @return
-	 */
-	public Element changeToElement2() {
-		//要使用全局边(Edge)，局部边(EdgeLocal)的结点编号不一定是正确的。
-		Element be = new Element(this.buildEdge());
-		
-		DOFList eDOFList = owner.getNodeDOFList(this.vertices.at(1).localNode().localIndex);
-		for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
-			DOF dof = new DOF(
-						1,
-						eDOFList.at(j).globalIndex,
-						eDOFList.at(j).getSSF().restrictTo(1)
-					);
-			be.addNodeDOF(1, dof);
-		}
-		eDOFList = owner.getNodeDOFList(this.vertices.at(2).localNode().localIndex);
-		for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
-			DOF dof = new DOF(
-						2,
-						eDOFList.at(j).globalIndex,
-						eDOFList.at(j).getSSF().restrictTo(2)
-					);
-			be.addNodeDOF(2, dof);
-		}	
-		
-		ObjList<NodeLocal> edgeNodes = this.getEdgeNodes();
-		if(edgeNodes != null && edgeNodes.size()>0) {
-			int dofIndex = 3;
-			for(int i=1;i<=edgeNodes.size();i++) {
-				eDOFList = owner.getNodeDOFList(edgeNodes.at(i).localIndex);
-				for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
-					int localIndex = dofIndex++;
-					DOF dof = new DOF(
-						localIndex,
-						eDOFList.at(j).globalIndex,
-						eDOFList.at(j).getSSF().restrictTo(localIndex)
-					);
-					be.addNodeDOF(localIndex, dof);
-				}
-			}
-		}
-		return be;
-	}
+//	/**
+//	 * Edge自己变为一个单元，用于边界积分（线积分）
+//	 * @return
+//	 */
+//	public Element changeToElement() {
+//		//要使用全局边(Edge)，局部边(EdgeLocal)的结点编号不一定是正确的。
+//		Element be = new Element(this.buildEdge());
+//		
+//		DOFList eDOFList = owner.getNodeDOFList(this.vertices.at(1).localNode().localIndex);
+//		for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
+//			DOF dof = new DOF(
+//						1,
+//						eDOFList.at(j).globalIndex,
+//						eDOFList.at(j).getSSF().restrictTo(1)
+//					);
+//			be.addNodeDOF(1, dof);
+//		}
+//		eDOFList = owner.getNodeDOFList(this.vertices.at(2).localNode().localIndex);
+//		for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
+//			DOF dof = new DOF(
+//						2,
+//						eDOFList.at(j).globalIndex,
+//						eDOFList.at(j).getSSF().restrictTo(2)
+//					);
+//			be.addNodeDOF(2, dof);
+//		}	
+//		
+//		ObjList<NodeLocal> edgeNodes = this.getEdgeNodes();
+//		if(edgeNodes != null && edgeNodes.size()>0) {
+//			int dofIndex = 3;
+//			for(int i=1;i<=edgeNodes.size();i++) {
+//				eDOFList = owner.getNodeDOFList(edgeNodes.at(i).localIndex);
+//				for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
+//					int localIndex = dofIndex++;
+//					DOF dof = new DOF(
+//						localIndex,
+//						eDOFList.at(j).globalIndex,
+//						eDOFList.at(j).getSSF().restrictTo(localIndex)
+//					);
+//					be.addNodeDOF(localIndex, dof);
+//				}
+//			}
+//		}
+//		return be;
+//	}
 	
 	public Element changeToElement() {
 		//要使用全局边(Edge)，局部边(EdgeLocal)的结点编号不一定是正确的。
@@ -191,6 +191,7 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 			nNode =  vertices.size();
 		}
 		
+		//为两个端点赋予自由度
 		int dofIndex = 1;
 		DOFList eDOFList = owner.getNodeDOFList(this.vertices.at(1).localNode().localIndex);
 		for(int j=1;eDOFList!=null && j<=eDOFList.size();j++) {
@@ -216,6 +217,7 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 			dofIndex += nNode;
 		}
 		
+		//边界上的结点赋予自由度（如果有）
 		if(edgeNodes != null) {
 			for(int i=1; i<=edgeNodes.size(); i++) {
 				dofIndex = i;

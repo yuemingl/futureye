@@ -26,8 +26,10 @@ import edu.uta.futureye.util.Constant;
  */
 public class Variable {
 	//LinkedHashMap 遍历时保证变量顺序
-	protected Map<String,Double> values = new LinkedHashMap<String,Double>();
+	protected Map<String,Double> valMap = new LinkedHashMap<String,Double>();
 
+	protected double[] valArray = new double[9];
+	protected boolean[] useArray = {false,false,false,false,false,false,false,false,false};
 	//protected boolean bApplyRestirct = false;
 	
 	//Node Index
@@ -44,7 +46,8 @@ public class Variable {
 	 * 构造一维自变量并赋值
 	 */
 	public Variable(double val) {
-		values.put(Constant.x, val);
+		valArray[0] = val;
+		useArray[0] = true;
 	}
 	
 	/**
@@ -52,20 +55,36 @@ public class Variable {
 	 * @return
 	 */
 	public double get() {
-		//TODO Need check values.size==1 ?
-		return values.values().iterator().next();
+		return valArray[0];
 	}
 	
 	////////////////////////////////////////////////
 
 	public Variable(String name, double val) {
-		values.put(name, val);
+		int id = VN.getID(name);
+		if(id != -1) {
+			valArray[id] = val;
+			useArray[id] = true;
+		}
+		else
+			valMap.put(name, val);
 	}
 	
-	public Variable(VarPair fitst, VarPair ...pairs) {
-		values.put(fitst.name, fitst.value);
-		for(int i=0;i<pairs.length;i++)
-			values.put(pairs[i].name, pairs[i].value);
+	public Variable(VarPair first, VarPair ...pairs) {
+		int id = first.getVarID();
+		if(id != -1) {
+			valArray[id] = first.value;
+			useArray[id] = true;
+		} else
+			valMap.put(first.name, first.value);
+		for(int i=0;i<pairs.length;i++) {
+			id = pairs[i].getVarID();
+			if(id != -1) {
+				valArray[id] = pairs[i].value;
+				useArray[id] = true;
+			} else
+				valMap.put(pairs[i].name, pairs[i].value);
+		}
 	}
 	
 	/**
@@ -74,7 +93,14 @@ public class Variable {
 	 * @return
 	 */
 	public double get(String name) {
-		return values.get(name);
+		int id = VN.getID(name);
+		if(id != -1)
+			return valArray[id];
+		else
+			return valMap.get(name);
+	}
+	public double get(VN name) {
+		return valArray[name.getID()];
 	}
 	
 	/**
@@ -83,7 +109,11 @@ public class Variable {
 	 * @return
 	 */
 	public double get(VarPair pair) {
-		pair.value = values.get(pair.name);
+		int id = pair.getVarID();
+		if(id != -1)
+			valArray[id] = pair.value;
+		else
+			pair.value = valMap.get(pair.name);
 		return pair.value;
 	}
 	
@@ -97,17 +127,35 @@ public class Variable {
 	 * @return
 	 */
 	public Variable set(String name, double val) {
-		values.put(name, val);
+		int id = VN.getID(name);
+		if(id != -1) {
+			valArray[id] = val;
+			useArray[id] = true;
+		} else
+			valMap.put(name, val);
+		return this;
+	}
+	public Variable set(VN name, double val) {
+		int id = name.getID();
+		valArray[id] = val;
+		useArray[id] = true;
 		return this;
 	}
 	
 	public Variable set(VarPair pair) {
-		values.put(pair.name, pair.value);
+		int id = pair.getVarID();
+		if(id != -1) {
+			valArray[id] = pair.value;
+			useArray[id] = true;
+		} else
+			valMap.put(pair.name, pair.value);
 		return this;
 	}
 
 	public Map<String,Double> getValues() {
-		return values;
+		for(int i=0;i<9;i++)
+			if(useArray[i]) valMap.put(VN.names[i], valArray[i]);
+		return valMap;
 	}
 
 	
@@ -174,7 +222,7 @@ public class Variable {
 	}
 	
 	public String toString() {
-		return values.toString();
+		return this.getValues().toString();
 	}
 	
 	public static void main(String[] args) {
@@ -191,7 +239,9 @@ public class Variable {
 		System.out.println(v.get("y"));
 		v.setIndex(20);
 		System.out.println(v.getIndex());
-		v.setElement(new Element());
+		Element e = new Element();
+		e.globalIndex = 100;
+		v.setElement(e);
 		System.out.println(v.getElement());
 	}
 	
