@@ -1,7 +1,9 @@
 package edu.uta.futureye.algebra.intf;
 
 /**
+ * <blockquote><pre>
  * 为矩阵向量运算优化的矩阵接口
+ * </blockquote></pre>
  * 
  * @author liuyueming
  *

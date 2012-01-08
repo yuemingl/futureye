@@ -28,13 +28,22 @@ public class DOF {
 	protected ShapeFunction shapeFun;
 	protected GeoEntity owner;
 	
-	//component index of vector valued function
-	//e.g. Stokes: (u v p)
-	//vvfIndex=1: DOF of u
-	//vvfIndex=2: DOF of v
-	//vvfIndex=3: DOF of p
-	protected int vvfIndex;
+	/**
+	 * DOF belongs to component of vector valued function
+	 * 	e.g. 2D Stokes Problem: (u v p)
+	 *  nVVFComponent=1: DOF of u
+	 *  nVVFComponent=2: DOF of v
+	 *  nVVFComponent=3: DOF of p
+	 */
+	protected int nVVFComponent;
 	
+	/**
+	 * Construct a Degree of Freedom(DOF) object
+	 * 
+	 * @param localIndex Local index of DOF
+	 * @param globalIndex Global index of DOF
+	 * @param shape Shape function associated with DOF
+	 */
 	public DOF(int localIndex, int globalIndex, ShapeFunction shape) {
 		this.localIndex = localIndex;
 		this.globalIndex = globalIndex;
@@ -57,12 +66,12 @@ public class DOF {
 		this.globalIndex = globalIndex;
 	}
 	
-	public int getVvfIndex() {
-		return vvfIndex;
+	public int getVVFComponent() {
+		return nVVFComponent;
 	}
-	public void setVvfIndex(int vvfIndex) {
-		this.vvfIndex = vvfIndex;
-	}	
+	public void setVVFComponent(int nComponent) {
+		this.nVVFComponent = nComponent;
+	}
 	
 	/**
 	 * 返回形函数

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.intf.Function;
 
 /**
@@ -15,9 +16,9 @@ import edu.uta.futureye.function.intf.Function;
  */
 public class FC extends AbstractFunction{
 	//Predefined constant
-	public static FC c0 = new FC(0.0);
-	public static FC c1 = new FC(1.0);
-	public static FC cm1 = new FC(-1.0);
+	public static FC C0 = new FC(0.0);
+	public static FC C1 = new FC(1.0);
+	public static FC Cm1 = new FC(-1.0);
 	public static FC PI = new FC(Math.PI);
 	public static FC E = new FC(Math.E);
 	
@@ -49,18 +50,32 @@ public class FC extends AbstractFunction{
 	}
 	
 	@Override
-	public double value(Variable v) {
-		return val;
-	}
-
-	@Override
 	public double value() {
 		return val;
 	}
 	
 	@Override
+	public double value(Variable v) {
+		return val;
+	}
+	
+	@Override
+	public double value(Variable v, Map<Object,Object> cache) {
+		return val;
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		int len = v.length();
+		double[] rlt = new double[len];
+		for(int i=0;i<len;i++)
+			rlt[i] = val;
+		return rlt;
+	}
+	
+	@Override
 	public Function _d(String varName) {
-		return c0;
+		return C0;
 	}
 	
 	@Override

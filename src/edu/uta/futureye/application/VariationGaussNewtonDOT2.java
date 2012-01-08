@@ -4,29 +4,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseBlockMatrix;
-import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
-import edu.uta.futureye.algebra.intf.BlockMatrix;
-import edu.uta.futureye.algebra.intf.BlockVector;
+import no.uib.cipr.matrix.sparse.SparseVector;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.core.DOF;
-import edu.uta.futureye.core.DOFOrder;
-import edu.uta.futureye.core.Element;
+import edu.uta.futureye.algebra.solver.Solver;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;
-import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.DuDn;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
@@ -36,11 +22,6 @@ import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.element.FELinearTriangle;
-import edu.uta.futureye.lib.weakform.WeakFormL22D;
-import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
-import edu.uta.futureye.util.FutureyeException;
-import edu.uta.futureye.util.Utils;
-import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
 
@@ -314,7 +295,7 @@ public class VariationGaussNewtonDOT2 {
 
 		weakForm.setParam(
 				FC.c(-1.0),//注意，有负号!!!
-				FC.c0, 
+				FC.C0, 
 				FC.c(2.0).M(b1),
 				FC.c(2.0).M(b2)
 			);
@@ -329,7 +310,7 @@ public class VariationGaussNewtonDOT2 {
 		assembler.assemble();
 		Matrix stiff = assembler.getStiffnessMatrix();
 		Vector load = assembler.getLoadVector();
-		assembler.imposeDirichletCondition(FC.c0);
+		assembler.imposeDirichletCondition(FC.C0);
 		System.out.println("Assemble done!");
 
 		Equation eqn = new Equation();

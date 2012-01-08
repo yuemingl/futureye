@@ -3,17 +3,15 @@ package edu.uta.futureye.application;
 import java.io.File;
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
-import edu.uta.futureye.algebra.intf.BlockMatrix;
-import edu.uta.futureye.algebra.intf.BlockVector;
-import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.SparseMatrixRowMajor;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
 import edu.uta.futureye.core.Element;
@@ -98,7 +96,7 @@ public class VariationGaussNewton {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		Vector v = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	var.setIndex(node.globalIndex);
@@ -140,11 +138,11 @@ public class VariationGaussNewton {
 	 * 获取状态方程的余量
 	 * @return
 	 */
-	public Vector getResLlmd(Vector u, Vector q) {
+	public SparseVector getResLlmd(Vector u, Vector q) {
         //4.Weak form
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fq = new Vector2Function(q);
-        weakForm.setParam(fq, FC.c0, null, null);
+        weakForm.setParam(fq, FC.C0, null, null);
         //Right hand side(RHS): f(x) = -4.0
         weakForm.setF(FC.c(-4.0));
 
@@ -153,8 +151,8 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
         assembler.imposeDirichletCondition(diri);
         System.out.println("Assemble done!");
@@ -167,7 +165,7 @@ public class VariationGaussNewton {
         }
         
         //Residual
-        Vector res = new SparseVector(u.getDim());
+        SparseVector res = new SparseVectorHashMap(u.getDim());
         stiff.mult(u, res);
         res.add(-1.0, load);
         plotVector(mesh,res,"Res_Llambda.dat");
@@ -181,11 +179,11 @@ public class VariationGaussNewton {
 	 * 
 	 * @return
 	 */
-	public Vector getResLu(Vector u, Vector lambda, Vector q) {
+	public SparseVector getResLu(Vector u, Vector lambda, Vector q) {
         //4.Weak form
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fq = new Vector2Function(q);
-        weakForm.setParam(fq, FC.c0, null, null);
+        weakForm.setParam(fq, FC.C0, null, null);
         //Right hand side(RHS): f(x) = - (u - z)
         Function z_u = z.S(new Vector2Function(u));
         plotFunction(mesh, z_u, String.format("z_u%02d.dat",this.iterNum));
@@ -196,10 +194,10 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
-        assembler.imposeDirichletCondition(FC.c0);
+        assembler.imposeDirichletCondition(FC.C0);
         System.out.println("Assemble done!");
 
         if(debug) {
@@ -210,7 +208,7 @@ public class VariationGaussNewton {
         }
         
         //Residual
-        Vector res = new SparseVector(lambda.getDim());
+        SparseVector res = new SparseVectorHashMap(lambda.getDim());
         stiff.mult(lambda, res);
         res.add(-1.0, load);
         plotVector(mesh,res,"Res_Lu.dat");
@@ -227,10 +225,10 @@ public class VariationGaussNewton {
 	 * @param q
 	 * @return
 	 */
-	public Vector getResLq(Vector u, Vector lambda, Vector q) {
+	public SparseVector getResLq(Vector u, Vector lambda, Vector q) {
         //4.Weak form
         WeakFormL22D weakForm = new WeakFormL22D();
-        weakForm.setParam(FC.c0, FC.c1);
+        weakForm.setParam(FC.C0, FC.C1);
         //Right hand side(RHS): f(x) = -(1.0/\beta)\nabla{u}\cdot\nabla{v}
         Function fu = new Vector2Function(u,mesh,"x","y");
         Function flmd = new Vector2Function(lambda,mesh,"x","y");
@@ -245,8 +243,8 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
         assembler.imposeDirichletCondition(FC.c(8.0));
         System.out.println("Assemble done!");
@@ -259,7 +257,7 @@ public class VariationGaussNewton {
         }
         
         //Residual
-        Vector res = new SparseVector(q.getDim());
+        SparseVector res = new SparseVectorHashMap(q.getDim());
         stiff.mult(q, res);
         res.add(-1.0, load);
         plotVector(mesh,res,"Res_Lq.dat");
@@ -278,19 +276,19 @@ public class VariationGaussNewton {
 	 * 
 	 * @return
 	 */
-	public Matrix getM() {
+	public SparseMatrix getM() {
         //4.Weak form: (du,\phi)
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c1, null, null);
+        weakForm.setParam(FC.C0, FC.C1, null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //5.Assembly process
         AssemblerScalar assembler =
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition 
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -299,20 +297,20 @@ public class VariationGaussNewton {
         return stiff;
     }
 	
-	public Matrix getA(Vector qk) {
+	public SparseMatrix getA(Vector qk) {
         //4.Weak form: (\nabla{dl},qk*\nabla{\phi})
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fqk = new Vector2Function(qk);
-        weakForm.setParam(fqk, FC.c0, null, null);
+        weakForm.setParam(fqk, FC.C0, null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //5.Assembly process
         AssemblerScalar assembler =
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -321,7 +319,7 @@ public class VariationGaussNewton {
         return stiff;
 	}
 	
-	public Matrix getC(Vector uk) {
+	public SparseMatrix getC(Vector uk) {
         //4.Weak form: (\nabla{\phi},dq\nabla{uk})
         WeakFormGCM weakForm = new WeakFormGCM();
         
@@ -330,16 +328,16 @@ public class VariationGaussNewton {
         Function u_y = fuk._d("y");
         plotFunction(mesh, u_x, "u_x.dat");
         plotFunction(mesh, u_y, "u_y.dat");
-        weakForm.setParam(FC.c0, FC.c0, u_x, u_y);
+        weakForm.setParam(FC.C0, FC.C0, u_x, u_y);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //5.Assembly process
         AssemblerScalar assembler =
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -348,19 +346,19 @@ public class VariationGaussNewton {
         return stiff;
 	}
 	
-	public Matrix getBR() {
+	public SparseMatrix getBR() {
         //4.Weak form: (dq,\chi)
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c(beta), null, null);
+        weakForm.setParam(FC.C0, FC.c(beta), null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //5.Assembly process
         AssemblerScalar assembler =
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -373,7 +371,7 @@ public class VariationGaussNewton {
         //4.Weak form
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         plotFunction(mesh,coef_q,"qReal.dat");
-        weakForm.setParam(coef_q, FC.c0, null, null);
+        weakForm.setParam(coef_q, FC.C0, null, null);
         //Right hand side(RHS): f(x) = -4.0
         weakForm.setF(FC.c(-4.0));
 
@@ -382,8 +380,8 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
         assembler.imposeDirichletCondition(diri);
         System.out.println("Assemble done!");
@@ -403,7 +401,7 @@ public class VariationGaussNewton {
         //4.Weak form
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fq = new Vector2Function(q);
-        weakForm.setParam(fq, FC.c0, null, null);
+        weakForm.setParam(fq, FC.C0, null, null);
         //Right hand side(RHS): f(x) = -4.0
         weakForm.setF(FC.c(-4.0));
 
@@ -412,8 +410,8 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         
         //Boundary condition
         assembler.imposeDirichletCondition(diri);//???给定一个初始猜测q,边界条件是什么？
@@ -430,7 +428,7 @@ public class VariationGaussNewton {
         //4.Weak form
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fq = new Vector2Function(q);
-        weakForm.setParam(fq, FC.c0, null, null);
+        weakForm.setParam(fq, FC.C0, null, null);
         //Right hand side(RHS): f(x) = - (u - z)
         weakForm.setF(z.S(new Vector2Function(u)));
 
@@ -439,10 +437,10 @@ public class VariationGaussNewton {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
-        assembler.imposeDirichletCondition(FC.c0);
+        assembler.imposeDirichletCondition(FC.C0);
         System.out.println("Assemble done!");
 
         //6.Solve linear system
@@ -452,7 +450,7 @@ public class VariationGaussNewton {
         return lmd_solve;
     }
 	
-	protected void setDirichlet(BlockMatrix BM, BlockVector BV,
+	protected void setDirichlet(SparseBlockMatrix BM, SparseBlockVector BV,
 			int matIndex, double value) {
 		int row = matIndex;
 		int col = matIndex;
@@ -471,7 +469,7 @@ public class VariationGaussNewton {
 		}
 	}
 	
-	public void imposeDirichletCondition(BlockMatrix BM, BlockVector BV,
+	public void imposeDirichletCondition(SparseBlockMatrix BM, SparseBlockVector BV,
 			Function diri) {
 		ElementList eList = mesh.getElementList();
 		int nNode = mesh.getNodeList().size();
@@ -494,18 +492,18 @@ public class VariationGaussNewton {
 		}
 	}
 	
-	public BlockMatrix getSearchDirectionMatrix(Vector uk, Vector qk) {
-		BlockMatrix BM = new SparseBlockMatrix(3,3);
-		Matrix M = this.getM();
-		Matrix A = this.getA(qk);
-		Matrix AT = A.copy().trans();
-		Matrix C = this.getC(uk);
-		Matrix CT = C.copy().trans();
-		Matrix R = this.getBR();
+	public SparseBlockMatrix getSearchDirectionMatrix(Vector uk, Vector qk) {
+		SparseBlockMatrix BM = new SparseBlockMatrix(3,3);
+		SparseMatrix M = this.getM();
+		SparseMatrix A = this.getA(qk);
+		SparseMatrix AT = A.copy().trans();
+		SparseMatrix C = this.getC(uk);
+		SparseMatrix CT = C.copy().trans();
+		SparseMatrix R = this.getBR();
 		
-		Matrix BM13 = new SparseMatrix(M.getRowDim(),R.getColDim());
-		Matrix BM22 = new SparseMatrix(A.getRowDim(),A.getColDim());
-		Matrix BM31 = new SparseMatrix(R.getRowDim(),M.getColDim());
+		SparseMatrix BM13 = new SparseMatrixRowMajor(M.getRowDim(),R.getColDim());
+		SparseMatrix BM22 = new SparseMatrixRowMajor(A.getRowDim(),A.getColDim());
+		SparseMatrix BM31 = new SparseMatrixRowMajor(R.getRowDim(),M.getColDim());
 		
 		BM.setBlock(1, 1, M);
 		BM.setBlock(1, 2, AT);
@@ -530,11 +528,11 @@ public class VariationGaussNewton {
 	 * @param col2
 	 * @return
 	 */
-	public BlockMatrix changeBlockColumn(BlockMatrix BM, int col1, int col2) {
+	public SparseBlockMatrix changeBlockColumn(SparseBlockMatrix BM, int col1, int col2) {
 		int blockRow = BM.getRowBlockDim();
 		int blockCol = BM.getColBlockDim();
 		
-		BlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
+		SparseBlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
 		for(int i=1;i<=blockRow;i++) {
 			for(int j=1;j<=blockCol;j++) {
 				newBM.setBlock(i, j, BM.getBlock(i, j));
@@ -553,8 +551,8 @@ public class VariationGaussNewton {
 		//初值
 		NodeList nodes = mesh.getNodeList();
 		//初始q=q0
-		Vector q0 = new SparseVector(nodes.size());
-		Vector q00 = new SparseVector(nodes.size());
+		Vector q0 = new SparseVectorHashMap(nodes.size());
+		Vector q00 = new SparseVectorHashMap(nodes.size());
 		for(int i=1;i<=nodes.size();i++) {
 			Node node = nodes.at(i);
 			if(node.getNodeType()==NodeType.Dirichlet)
@@ -589,17 +587,17 @@ public class VariationGaussNewton {
 		plotVector(mesh, lambda0, "lambda0.dat");
 		
 		//强制u0=0,lambda0=0
-		//q0 = new SparseVector(nodes.size(),1.0);
-		//u0 = new SparseVector(nodes.size(),0.0);
-		//lambda0 = new SparseVector(nodes.size(),0.0);
+		//q0 = new SparseVectorHashMap(nodes.size(),1.0);
+		//u0 = new SparseVectorHashMap(nodes.size(),0.0);
+		//lambda0 = new SparseVectorHashMap(nodes.size(),0.0);
 		
 		
-		BlockVector f = new SparseBlockVector(3);
+		SparseBlockVector f = new SparseBlockVector(3);
 		//迭代求解
 		for(int iter=0;iter<50;iter++) {
 			iterNum = iter;
 			
-			BlockMatrix BM = this.getSearchDirectionMatrix(u0,q0);
+			SparseBlockMatrix BM = this.getSearchDirectionMatrix(u0,q0);
 			
 			f.setBlock(1, this.getResLu(u0, lambda0, q0).scale(-1.0));
 			f.setBlock(2, this.getResLlmd(u0, q0).scale(-1.0));//bugfix lambda0->q0
@@ -613,9 +611,9 @@ public class VariationGaussNewton {
 			//	new SchurComplementLagrangianSolver(BM, f,mesh);
 			//BlockVector x = solver.solve();
 			
-			this.imposeDirichletCondition(BM, f, FC.c0);
+			this.imposeDirichletCondition(BM, f, FC.C0);
 			SolverJBLAS sol = new SolverJBLAS();
-			BlockVector x = (BlockVector)sol.solveDGESV(BM, f);
+			SparseBlockVector x = sol.solveDGESV(BM, f);
 			
 			plotVector(mesh, x.getBlock(1), String.format("delta_u%02d.dat",iter));
 			plotVector(mesh, x.getBlock(2), String.format("delta_lambda%02d.dat",iter));
@@ -688,10 +686,10 @@ public class VariationGaussNewton {
 	    VariationGaussNewton.plotFunction(vgn.mesh, vgn.qBar, "qBar.dat");
 		
 /*Test	    
-		Vector u0 = new SparseVector(vgn.mesh.getNodeList().size(),1.0);
+		Vector u0 = new SparseVectorHashMap(vgn.mesh.getNodeList().size(),1.0);
 		//u0 = uReal;
-		Vector lambda0 = new SparseVector(vgn.mesh.getNodeList().size(),1.0);
-		Vector q0 = new SparseVector(vgn.mesh.getNodeList().size(),1.0);
+		Vector lambda0 = new SparseVectorHashMap(vgn.mesh.getNodeList().size(),1.0);
+		Vector q0 = new SparseVectorHashMap(vgn.mesh.getNodeList().size(),1.0);
 		Vector resLlmd = vgn.getResLlmd(u0, q0);
 		Vector resLu = vgn.getResLu(u0, lambda0, q0);
 		Vector resLq = vgn.getResLq(u0, lambda0, q0);

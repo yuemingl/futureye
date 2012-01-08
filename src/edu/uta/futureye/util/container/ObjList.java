@@ -34,7 +34,7 @@ public class ObjList<T> implements Iterable<T>{
 	 */
 	public T at(int index) {
 		if(index < 1)
-			throw new FutureyeException("ERROR: ObjList index should >=1, index="+index);
+			throw new FutureyeException("ERROR: ObjList index should be >=1, index="+index);
 		return objs.get(index-1);
 	}
 
@@ -53,7 +53,7 @@ public class ObjList<T> implements Iterable<T>{
 	 */
 	public ObjList<T> set(int index,T e) {
 		if(index < 1)
-			throw new FutureyeException("ERROR: ObjList index should >=1, index="+index);
+			throw new FutureyeException("ERROR: ObjList index should be >=1, index="+index);
 		this.objs.set(index-1, e);
 		return this;
 	}

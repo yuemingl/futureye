@@ -79,7 +79,7 @@ public class SFQuadraticLocal1D extends AbstractFunction implements ScalarShapeF
 		else if(funIndex == 1)
 			funOuter = fr.M(new FAxpb("r",0.5,0.5));
 		else if(funIndex == 2)
-			funOuter = FC.c1.S(fr.M(fr));
+			funOuter = FC.C1.S(fr.M(fr));
 		
 		funCompose = funOuter.compose(fInners);
 	}

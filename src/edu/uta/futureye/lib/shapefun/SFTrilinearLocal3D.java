@@ -9,7 +9,7 @@ import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.VN;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.FAxpb;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
@@ -17,7 +17,6 @@ import edu.uta.futureye.function.intf.ShapeFunction;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
-import edu.uta.futureye.util.container.VertexList;
 
 /**
  * Shape function for Hexahedron Element
@@ -35,7 +34,7 @@ public class SFTrilinearLocal3D extends AbstractFunction implements ScalarShapeF
 	private double coef = 1.0;
 
 	protected CoordinateTransform trans = new CoordinateTransform(3);
-	public final double[][] vt = {
+	public final static double[][] vt = {
 			{ 1, 1, 1},
 			{ 1,-1, 1},
 			{-1,-1, 1},
@@ -116,6 +115,66 @@ public class SFTrilinearLocal3D extends AbstractFunction implements ScalarShapeF
 			}
 			throw new FutureyeException("");
 		}
+		
+		@Override
+		public double[] valueArray(VariableArray valAry, Map<Object,Object> cache) {
+			double[] detJ = null;
+			double[][][] J= null;
+			int len = valAry.length();
+			double[] rlt = new double[len];
+			if(cache != null) {
+				detJ = (double[])cache.get(1);
+				J = (double[][][])cache.get(2);
+			}
+			if(detJ == null || J == null) {
+				J = new double[3][3][len];
+				J[0][0] = x_r.valueArray(valAry,cache);
+				J[0][1] = x_s.valueArray(valAry,cache);
+				J[0][2] = x_t.valueArray(valAry,cache);
+				J[1][0] = y_r.valueArray(valAry,cache);
+				J[1][1] = y_s.valueArray(valAry,cache);
+				J[1][2] = y_t.valueArray(valAry,cache);
+				J[2][0] = z_r.valueArray(valAry,cache);
+				J[2][1] = z_s.valueArray(valAry,cache);
+				J[2][2] = z_t.valueArray(valAry,cache);
+				//@see ./doc/invA33.png
+				detJ = Utils.determinant(J);
+				if(cache != null) {
+					cache.put(1, detJ);
+					cache.put(2, J);
+				}
+			}
+
+			if("r".equals(rst)) {
+				if("x".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[1][1][i]*J[2][2][i]-J[1][2][i]*J[2][1][i])/detJ[i];
+				else if("y".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][2][i]*J[2][1][i]-J[0][1][i]*J[2][2][i])/detJ[i];
+				else if("z".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][1][i]*J[1][2][i]-J[0][2][i]*J[1][1][i])/detJ[i];
+			} else if("s".equals(rst)) {
+				if("x".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[1][2][i]*J[2][0][i]-J[1][0][i]*J[2][2][i])/detJ[i];
+				else if("y".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][0][i]*J[2][2][i]-J[0][2][i]*J[2][0][i])/detJ[i];
+				else if("z".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][2][i]*J[1][0][i]-J[0][0][i]*J[1][2][i])/detJ[i];
+			} else if("t".equals(rst)) {
+				if("x".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[1][0][i]*J[2][1][i]-J[1][1][i]*J[2][0][i])/detJ[i];
+				else if("y".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][1][i]*J[2][0][i]-J[0][0][i]*J[2][1][i])/detJ[i];
+				else if("z".equals(xyz))
+					for(int i=0;i<len;i++) rlt[i] = (J[0][0][i]*J[1][1][i]-J[0][1][i]*J[1][0][i])/detJ[i];
+			} else {
+				throw new FutureyeException();
+			}
+			return rlt;
+		}
+		@Override
+		public int getOpOrder() {
+			return OP_ORDER1;
+		}
 		@Override
 		public String toString() {
 			return rst+"_"+xyz;
@@ -123,37 +182,55 @@ public class SFTrilinearLocal3D extends AbstractFunction implements ScalarShapeF
 	}
 	
 	static class FOuter extends AbstractFunction {
-		double cr,cs,ct;
-		FOuter(double cr, double cs, double ct) {
-			this.cr = cr;
-			this.cs = cs;
-			this.ct = ct;
+		int funIndex;
+		FOuter(List<String> varNames, int funIndex) {
+			this.varNames = varNames;
+			this.funIndex = funIndex;
 		}
+		
 		@Override
 		public double value(Variable v) {
 			double r = v.get(VN.r);
 			double s = v.get(VN.s);
 			double t = v.get(VN.t);
 			
-			return (cr*r+1.0)*(cs*s+1.0)*(ct*t+1.0)/8.0;
+			return (vt[funIndex][0]*r+1.0)*(vt[funIndex][1]*s+1.0)*(vt[funIndex][2]*t+1.0)/8.0;
 		}
+		
+		@Override
+		public double[] valueArray(VariableArray valAry, Map<Object,Object> cache) {
+			int len = valAry.length();
+			double[] r = valAry.get("r");
+			double[] s = valAry.get("s");
+			double[] t = valAry.get("t");
+			double[] rlt = new double[len];
+			double cr = vt[funIndex][0];
+			double cs = vt[funIndex][1];
+			double ct = vt[funIndex][2];
+			for(int i=0;i<len;i++)
+				rlt[i] = (cr*r[i]+1.0)*(cs*s[i]+1.0)*(ct*t[i]+1.0)/8.0;
+			return rlt;
+		}
+		
 		@Override
 		public Function _d(String var) {
-			return new FOuter_d(var,cr,cs,ct).setVarNames(varNames);
+			return new FOuter_d(varNames,var,funIndex);
 		}
 		public String toString() {
-			return String.format("(%.1f*r+1.0)*(%.1f*s+1.0)*(%.1f*t+1.0)/8.0", 
-					cr,cs,ct);
+//			double cr = vt[funIndex][0];
+//			double cs = vt[funIndex][1];
+//			double ct = vt[funIndex][2];			
+//			return String.format("(%.1f*r+1.0)*(%.1f*s+1.0)*(%.1f*t+1.0)/8.0", 
+//					cr,cs,ct);
+			return String.format("N%d", funIndex+1);
 		}
 	}
 	
 	static class FOuter_d extends AbstractFunction {
-		double cr,cs,ct;
+		int funIndex;
 		String var;
-		FOuter_d(String var, double cr, double cs, double ct) {
-			this.cr = cr;
-			this.cs = cs;
-			this.ct = ct;
+		FOuter_d(List<String> varNames, String var, int funIndex) {
+			this.funIndex = funIndex;
 			this.var = var;
 		}
 		@Override
@@ -162,25 +239,52 @@ public class SFTrilinearLocal3D extends AbstractFunction implements ScalarShapeF
 			double s = v.get(VN.s);
 			double t = v.get(VN.t);
 			
-			if("r".equals(var))
-				return cr*(cs*s+1.0)*(ct*t+1.0)/8.0;
-			else if("s".equals(var))
-				return (cr*r+1.0)*cs*(ct*t+1.0)/8.0;
-			else if("t".equals(var))
-				return (cr*r+1.0)*(cs*s+1.0)*ct/8.0;
-			else
-				throw new FutureyeException("");
+			double cr = vt[funIndex][0];
+			double cs = vt[funIndex][1];
+			double ct = vt[funIndex][2];
+			
+			if("r".equals(var))      return cr*(cs*s+1.0)*(ct*t+1.0)/8.0;
+			else if("s".equals(var)) return (cr*r+1.0)*cs*(ct*t+1.0)/8.0;
+			else if("t".equals(var)) return (cr*r+1.0)*(cs*s+1.0)*ct/8.0;
+			else throw new FutureyeException("");
+		}
+		
+		@Override
+		public double[] valueArray(VariableArray valAry, Map<Object,Object> cache) {
+			int len = valAry.length();
+			double[] r = valAry.get("r");
+			double[] s = valAry.get("s");
+			double[] t = valAry.get("t");
+			double[] rlt = new double[len];
+			double cr = vt[funIndex][0];
+			double cs = vt[funIndex][1];
+			double ct = vt[funIndex][2];
+			if("r".equals(var))      for(int i=0;i<len;i++) rlt[i] = cr*(cs*s[i]+1.0)*(ct*t[i]+1.0)/8.0;
+			else if("s".equals(var)) for(int i=0;i<len;i++) rlt[i] = (cr*r[i]+1.0)*cs*(ct*t[i]+1.0)/8.0;
+			else if("t".equals(var)) for(int i=0;i<len;i++) rlt[i] = (cr*r[i]+1.0)*(cs*s[i]+1.0)*ct/8.0;
+			else throw new FutureyeException();
+			return rlt;
+		}
+		@Override
+		public int getOpOrder() {
+			return OP_ORDER1;
 		}
 		public String toString() {
+//			double cr = vt[funIndex][0];
+//			double cs = vt[funIndex][1];
+//			double ct = vt[funIndex][2];
 			if("r".equals(var))
-				return String.format("%.1f*(%.1f*s+1.0)*(%.1f*t+1.0)/8.0", 
-						cr,cs,ct);
+//				return String.format("%.1f*(%.1f*s+1.0)*(%.1f*t+1.0)/8.0", 
+//						cr,cs,ct);
+				return String.format("N%d_r", funIndex+1);
 			else if("s".equals(var))
-				return String.format("(%.1f*r+1.0)*%.1f*(%.1f*t+1.0)/8.0", 
-						cr,cs,ct);
+//				return String.format("(%.1f*r+1.0)*%.1f*(%.1f*t+1.0)/8.0", 
+//						cr,cs,ct);
+				return String.format("N%d_s", funIndex+1);
 			else if("t".equals(var))
-				return String.format("(%.1f*r+1.0)*(%.1f*s+1.0)*%.1f/8.0", 
-						cr,cs,ct);
+//				return String.format("(%.1f*r+1.0)*(%.1f*s+1.0)*%.1f/8.0", 
+//						cr,cs,ct);
+				return String.format("N%d_t", funIndex+1);
 			else
 				throw new FutureyeException("");
 		}
@@ -254,8 +358,8 @@ from the above 9 equations, we have:
 //		funOuter = new FAxpb("r",vt[funIndex][0]/2.0,0.5).M(
 //				   new FAxpb("s",vt[funIndex][1]/2.0,0.5)).M(
 //				   new FAxpb("t",vt[funIndex][2]/2.0,0.5));
-		//速度提高4倍	
-		funOuter = new FOuter(vt[funIndex][0],vt[funIndex][1],vt[funIndex][2]).setVarNames(varNames);
+		//速度提高1倍
+		funOuter = new FOuter(varNames,funIndex);
 
 		//使用复合函数构造形函数
 		this.coef = coef;
@@ -278,6 +382,11 @@ from the above 9 equations, we have:
 
 	public double value(Variable v) {
 		return funCompose.value(v);
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return funCompose.valueArray(v,cache);
 	}
 
 	@Override
@@ -316,12 +425,16 @@ from the above 9 equations, we have:
 		z_t = funs[8];
 	}
 
+	@Override
+	public int getOpOrder() {
+		return OP_ORDER1;
+	}
+	
 	public String toString() {
 		if(this.coef < 1.0)
-			return "N"+(funIndex+1)+": "+this.coef+"*"+funOuter.toString();
+			return this.coef+"*"+funOuter.toString();
 		else
-			return "N"+(funIndex+1)+": "+funOuter.toString();
-			
+			return funOuter.toString();
 	}
 
 	SFBilinearLocal2D[] faceSF = {

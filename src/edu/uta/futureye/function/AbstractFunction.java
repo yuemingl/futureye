@@ -52,6 +52,11 @@ public abstract class AbstractFunction implements Function {
 		//Ignore cache
 		return value(v);
 	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		throw new UnsupportedOperationException();
+	}
 
 	@Override
 	public double value() {
@@ -97,6 +102,30 @@ public abstract class AbstractFunction implements Function {
 							fOuter.varNames()+") and fInner("+fInners+").");
 				}
 			}
+			
+			@Override
+			public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+				//bugfix 增加或条件
+				if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
+						v.getValues().keySet().containsAll(fOuter.varNames())) {
+					return fOuter.valueArray(v,cache);
+				} else if(fOuter.varNames().size() == fInners.size()){
+					VariableArray newVar = new VariableArray();
+					for(String varName : fOuter.varNames()) {
+						Function fInner = fInners.get(varName);
+						if(fInner != null )
+							newVar.set(varName, fInner.valueArray(v,cache));
+						else
+							throw new FutureyeException("\nERROR:\n Can not find "+varName+" in fInners.");
+					}
+					return fOuter.valueArray(newVar,cache);
+				} else {
+					throw new FutureyeException(
+							"\nERROR:\n Variable number mismatch of fOuter("+
+							fOuter.varNames()+") and fInner("+fInners+").");
+				}
+			}
+			
 			/**
 			 * 链式求导
 			 * f( x(r,s),y(r,s) )_r = f_x * x_r + f_y * y_r
@@ -188,6 +217,17 @@ public abstract class AbstractFunction implements Function {
 				}
 				
 				@Override
+				public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+					int len = v.length();
+					double[] la = f1.valueArray(v,cache);
+					double[] ra = f2.valueArray(v,cache);
+					for(int i=0;i<len;i++) {
+						la[i] += ra[i];
+					}
+					return la;
+				}
+				
+				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).A(f2._d(varName)).setVarNames(this.varNames);
 				}
@@ -232,6 +272,17 @@ public abstract class AbstractFunction implements Function {
 				}
 				
 				@Override
+				public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+					int len = v.length();
+					double[] la = f1.valueArray(v,cache);
+					double[] ra = f2.valueArray(v,cache);
+					for(int i=0;i<len;i++) {
+						la[i] -= ra[i];
+					}
+					return la;
+				}
+				
+				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).S(f2._d(varName)).setVarNames(this.varNames);
 				}
@@ -268,7 +319,7 @@ public abstract class AbstractFunction implements Function {
 			return new FC(f1.value() * f2.value());
 		} else if( (f1 instanceof FC && Math.abs(f1.value()) < Constant.eps) ||
 				f2 instanceof FC && Math.abs(f2.value()) < Constant.eps)
-			return FC.c0;
+			return FC.C0;
 		else if(f1 instanceof FC && Math.abs(f1.value()-1.0) < Constant.eps)
 			return f2;
 		else if(f2 instanceof FC && Math.abs(f2.value()-1.0) < Constant.eps)
@@ -285,6 +336,18 @@ public abstract class AbstractFunction implements Function {
 					return f1.value(v,cache) * f2.value(v,cache);
 
 				}
+				
+				@Override
+				public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+					int len = v.length();
+					double[] la = f1.valueArray(v,cache);
+					double[] ra = f2.valueArray(v,cache);
+					for(int i=0;i<len;i++) {
+						la[i] *= ra[i];
+					}
+					return la;
+				}
+				
 				@Override
 				public Function _d(String varName) {
 					return 	f1._d(varName).M(f2).A(
@@ -324,7 +387,7 @@ public abstract class AbstractFunction implements Function {
 			return new FC(f1.value() / f2.value());
 		} else if(f1 instanceof FC && Double.compare(f1.value(),0.0)==0) {
 			//Math.abs(f1.value())<Constant.eps will not work properly
-			return FC.c0;
+			return FC.C0;
 		} else if(f2 instanceof FC && Double.compare(f2.value(),0.0)==0) {
 			return FC.c(Double.POSITIVE_INFINITY);
 		}  else if(f2 instanceof FC && Math.abs(f2.value()-1.0) < Constant.eps) {
@@ -339,6 +402,17 @@ public abstract class AbstractFunction implements Function {
 				@Override
 				public double value(Variable v, Map<Object,Object> cache) {
 					return f1.value(v,cache) / f2.value(v,cache);
+				}
+				
+				@Override
+				public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+					int len = v.length();
+					double[] la = f1.valueArray(v,cache);
+					double[] ra = f2.valueArray(v,cache);
+					for(int i=0;i<len;i++) {
+						la[i] /= ra[i];
+					}
+					return la;
 				}
 				
 				@Override

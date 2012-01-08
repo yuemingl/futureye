@@ -1,7 +1,10 @@
 package edu.uta.futureye.function.basic;
 
+import java.util.Map;
+
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.util.Constant;
 
@@ -28,27 +31,37 @@ public class FX extends AbstractFunction{
 	public final static FX fs = new FX(Constant.s); 
 	public final static FX ft = new FX(Constant.t); 
 	
-	protected String activeName = null;
+	protected String varName = null;
 	
 	/**
 	 * Use this to construct f(varName)
 	 */
 	public FX(String varName) {
 		super(varName);
-		this.activeName = varName;
+		this.varName = varName;
 	}
 
 	@Override
 	public Function _d(String varName) {
-		if(this.activeName.equals(varName))
-			return FC.c1;
+		if(this.varName.equals(varName))
+			return FC.C1;
 		else
-			return FC.c0;
+			return FC.C0;
 	}
 
 	@Override
 	public double value(Variable v) {
-		return v.get(activeName);
+		return v.get(varName);
+	}
+	
+	@Override
+	public double value(Variable v, Map<Object,Object> cache) {
+		return v.get(varName);
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return v.get(varName);
 	}
 	
 	@Override
@@ -58,11 +71,11 @@ public class FX extends AbstractFunction{
 	
 	@Override
 	public Function copy() {
-		return new FX(this.activeName);
+		return new FX(this.varName);
 	}
 	
 	@Override
 	public String toString() {
-		return activeName;
+		return varName;
 	}
 }

@@ -51,7 +51,7 @@ public class FXY extends AbstractFunction{
 		else if(varNames.get(1).equals(varName)) {
 			return new FC(c2);
 		}
-		return FC.c0;
+		return FC.C0;
 	}
 
 	@Override

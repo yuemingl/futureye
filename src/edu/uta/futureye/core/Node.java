@@ -180,18 +180,18 @@ public class Node implements Point {
 	}
 	
 	/**
-	 * Get node type for vector valued function problems
+	 * Get node type at component <tt>nVVFComponent</tt> for vector valued function problems 
 	 * 
 	 * 对于向量值问题，每个函数分量在同一结点上的类型（例如速度各个分量、压强的边界类型）不一定相同，
-	 * 该函数返回函数分量<tt>vvfIndex</tt>对应的边界结点类型
+	 * 该函数返回函数分量<tt>nVVFComponent</tt>对应的边界结点类型
 	 * 
-	 * @param vvfIndex: vector valued function dim index
+	 * @param nVVFComponent: Component of vector valued functions
 	 * @return
 	 */
-	public NodeType getNodeType(int vvfIndex) {
+	public NodeType getNodeType(int nVVFComponent) {
 		if(nodeTypes == null) 
 			return null;
-		return nodeTypes.at(vvfIndex);
+		return nodeTypes.at(nVVFComponent);
 	}
 	
 	/**
@@ -207,20 +207,20 @@ public class Node implements Point {
 	}
 	
 	/**
-	 * Set node type for vector valued function problems
+	 * Set node type at component <tt>nVVFComponent<tt> for vector valued function problems
 	 * 
-	 * @param vvfIndex: vector valued function dim index
-	 * @param nodeType: node type
+	 * @param nVVFComponent: Component of vector valued function
+	 * @param nodeType: Node type
 	 */
-	public void setNodeType(int vvfIndex, NodeType nodeType) {
+	public void setNodeType(int nVVFComponent, NodeType nodeType) {
 		if(nodeTypes == null) 
 			nodeTypes = new ObjVector<NodeType>();
-		if(vvfIndex<=0) {
-			throw new FutureyeException("vvfIndex should be greater than 1!");
+		if(nVVFComponent<=0) {
+			throw new FutureyeException("nVVFComponent should be greater than 1!");
 		}
-		if(nodeTypes.size()<vvfIndex)
-			nodeTypes.setSize(vvfIndex);
-		nodeTypes.set(vvfIndex,nodeType);
+		if(nodeTypes.size()<nVVFComponent)
+			nodeTypes.setSize(nVVFComponent);
+		nodeTypes.set(nVVFComponent,nodeType);
 	}
 	
 	/**

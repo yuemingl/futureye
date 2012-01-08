@@ -1,9 +1,11 @@
 package edu.uta.futureye.function.basic;
 
 import java.util.List;
+import java.util.Map;
 
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.util.Constant;
 
@@ -32,12 +34,26 @@ public class FAxpb extends AbstractFunction {
 		if(this.varName.equals(varName))
 			return new FC(a);
 		else
-			return FC.c0;
+			return FC.C0;
 	}
 
 	@Override
 	public double value(Variable v) {
-		double rlt = a*v.get(varName)+b;
+		return a*v.get(varName)+b;
+	}
+	
+	@Override
+	public double value(Variable v, Map<Object,Object> cache) {
+		return a*v.get(varName)+b;
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		int len = v.length();
+		double[] rlt = new double[len];
+		double[] vs = v.get(varName);
+		for(int i=0;i<len;i++)
+			rlt[i] = a*vs[i]+b;
 		return rlt;
 	}
 	

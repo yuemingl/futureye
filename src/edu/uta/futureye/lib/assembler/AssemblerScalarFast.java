@@ -1,9 +1,9 @@
 package edu.uta.futureye.lib.assembler;
 
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
-import edu.uta.futureye.algebra.intf.Matrix;
-import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.SparseMatrixRowMajor;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeRefined;
@@ -19,7 +19,7 @@ import edu.uta.futureye.util.container.NodeList;
 public class AssemblerScalarFast implements Assembler{
 	protected Mesh mesh;
 	protected WeakForm weakForm;
-	protected Matrix globalStiff;
+	protected SparseMatrix globalStiff;
 	protected SparseVector globalLoad;
 
 	public AssemblerScalarFast(Mesh mesh, WeakForm weakForm) {
@@ -27,8 +27,8 @@ public class AssemblerScalarFast implements Assembler{
 		this.weakForm = weakForm;
 		
 		int dim = mesh.getNodeList().size();
-		globalStiff = new SparseMatrix(dim,dim);
-		globalLoad = new SparseVector(dim);
+		globalStiff = new SparseMatrixRowMajor(dim,dim);
+		globalLoad = new SparseVectorHashMap(dim);
 
 	}
 	
@@ -49,14 +49,15 @@ public class AssemblerScalarFast implements Assembler{
 	}
 	
 	@Override
-	public Matrix getStiffnessMatrix() {
+	public SparseVector getLoadVector() {
+		return globalLoad;
+	}
+
+	@Override
+	public SparseMatrix getStiffnessMatrix() {
 		return globalStiff;
 	}
 	
-	@Override
-	public Vector getLoadVector() {
-		return globalLoad;
-	}
 	@Override
 	public void imposeDirichletCondition(Function diri) {
 		NodeList nList = mesh.getNodeList();

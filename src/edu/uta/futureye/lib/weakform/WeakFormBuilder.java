@@ -3,18 +3,26 @@ package edu.uta.futureye.lib.weakform;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.intf.WeakForm;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FX;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.function.intf.ShapeFunction;
 import edu.uta.futureye.function.intf.VectorShapeFunction;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 
 public class WeakFormBuilder {
+	protected DOF _trialDOF = null;
+	protected DOF _testDOF = null;
+	protected ScalarShapeFunction _u = null;
+	protected ScalarShapeFunction _v = null;
+	protected VectorShapeFunction _uu = null;
+	protected VectorShapeFunction _vv = null;
+	protected int _uDOFLocalIndex;
+	protected int _vDOFLocalIndex;
 	
 	public static enum Type {
 		LHS_Domain, //Left Hand Side, integration on domain
@@ -22,12 +30,6 @@ public class WeakFormBuilder {
 		RHS_Domain, //Right Hand Side, integration on domain
 		RHS_Border  //Right Hand Side, integration on Border
 		};
-	
-	protected ScalarShapeFunction _u = null;
-	protected ScalarShapeFunction _v = null;
-	
-	protected VectorShapeFunction _uu = null;
-	protected VectorShapeFunction _vv = null;
 	
 	Map<String, Function> param = new HashMap<String, Function>();
 	
@@ -72,6 +74,21 @@ public class WeakFormBuilder {
 		return _vv;
 	}
 	
+	public int getTrialDOFLocalIndex() {
+		return _uDOFLocalIndex;
+	}
+	
+	public int getTestDOFLocalIndex() {
+		return _vDOFLocalIndex;
+	}
+	public DOF getTrialDOF() {
+		return _trialDOF;
+	}
+	
+	public DOF getTestDOF() {
+		return _testDOF;
+	}
+	
 	/**
 	 * Implement yourself weak form here
 	 * <p><blockquote><pre>
@@ -106,7 +123,7 @@ public class WeakFormBuilder {
 	 * @return
 	 */
 	public Function makeExpression(Element e, Type type) {
-		throw new FutureyeException("Implement your weak form here!");
+		throw new FutureyeException("Override this function to implement your Weak Form!");
 	}
 	
 	public WeakForm getScalarWeakForm() {
@@ -137,14 +154,19 @@ public class WeakFormBuilder {
 			}
 			
 			@Override
-			public void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
-					ShapeFunction test, int testDofLocalIndex) {
-				WeakFormBuilder.this._u = (ScalarShapeFunction)trial;
-				WeakFormBuilder.this._v = (ScalarShapeFunction)test;
-				this.uDOFLocalIndex = trialDofLocalIndex;
-				this.vDOFLocalIndex = testDofLocalIndex;
+			public void setDOF(DOF trialDOF, DOF testDOF) {
+				super.setDOF(trialDOF, testDOF);
+				if(trialDOF != null) {
+					_trialDOF = trialDOF;
+					_u = trialDOF.getSSF();
+					_uDOFLocalIndex = trialDOF.getLocalIndex();
+				} 
+				if(testDOF != null) {
+					_testDOF = testDOF;
+					_v = testDOF.getSSF();
+					_vDOFLocalIndex = testDOF.getLocalIndex();
+				}
 			}
-			
 		};
 		return wf;
 	}
@@ -177,12 +199,18 @@ public class WeakFormBuilder {
 			}		
 			
 			@Override
-			public void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
-					ShapeFunction test, int testDofLocalIndex) {
-				WeakFormBuilder.this._uu = (VectorShapeFunction)trial;
-				WeakFormBuilder.this._vv = (VectorShapeFunction)test;
-				this.uDOFLocalIndex = trialDofLocalIndex;
-				this.vDOFLocalIndex = testDofLocalIndex;
+			public void setDOF(DOF trialDOF, DOF testDOF) {
+				super.setDOF(trialDOF, testDOF);
+				if(trialDOF != null) {
+					_trialDOF = trialDOF;
+					_uu = trialDOF.getVSF();
+					_uDOFLocalIndex = trialDOF.getLocalIndex();
+				} 
+				if(testDOF != null) {
+					_testDOF = testDOF;
+					_vv = testDOF.getVSF();
+					_vDOFLocalIndex = testDOF.getLocalIndex();
+				}
 			}
 		};
 		return wf;
@@ -222,12 +250,13 @@ public class WeakFormBuilder {
 				}
 			}			
 		};
-		wfb.addParamters(FC.c1, "k");
-		wfb.addParamters(FC.c0, "c");
-		wfb.addParamters(FC.c1, "d");
+		wfb.addParamters(FC.C1, "k");
+		wfb.addParamters(FC.C0, "c");
+		wfb.addParamters(FC.C1, "d");
 		wfb.addParamters(FX.fx.M(FX.fx), "f");
-		wfb.addParamters(FC.c0, "q");
+		wfb.addParamters(FC.C0, "q");
 		WeakForm wf = wfb.getScalarWeakForm();
+		System.out.println(wf.getTrialDOF());
 
 	}
 

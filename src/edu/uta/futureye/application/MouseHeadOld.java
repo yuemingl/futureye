@@ -7,11 +7,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -121,14 +123,14 @@ public class MouseHeadOld {
 		
 		// *** u + u_n = 0, on boundary ***
 		weakForm.setParam(
-				this.k, this.mu_a, FC.c0, this.k //d==k,q=0 (鍗筹細u_n + u =0)
+				this.k, this.mu_a, FC.C0, this.k //d==k,q=0 (鍗筹細u_n + u =0)
 			);
 		
 		Assembler assembler = new AssemblerScalar(mesh, weakForm);
 		System.out.println("Begin Assemble...solveForwardNeumann");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		assembler.imposeDirichletCondition(new FC(0.0));
 		System.out.println("Assemble done!");
 
@@ -150,8 +152,8 @@ public class MouseHeadOld {
 		Assembler assembler = new AssemblerScalarFast(mesh, weakForm);
 		System.out.println("Begin Assemble...solveForwardDirichlet");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		//Dirichlet condition
 		assembler.imposeDirichletCondition(diri);
 		
@@ -200,7 +202,7 @@ public class MouseHeadOld {
 	public Vector extractData(Mesh meshFrom, Mesh meshTo, Vector u) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = new SparseVectorHashMap(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -384,7 +386,7 @@ public class MouseHeadOld {
 	 */	
 	public Vector computeTailLeft(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega2);
 		ObjList<Node> u1LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega1);
@@ -463,7 +465,7 @@ public class MouseHeadOld {
 	
 	public Vector computeTailRight(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2RightNodes = this.getBorderNodes_Omega2(TailType.right, omega2);
 		ObjList<Node> u1RightNodes = this.getBorderNodes_Omega2(TailType.right, omega1);
@@ -545,7 +547,7 @@ public class MouseHeadOld {
 	 */
 	public Vector computeTailBottom(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega2);
 		ObjList<Node> u1BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega1);
@@ -628,7 +630,7 @@ public class MouseHeadOld {
 	 */
 	public Vector computeTailTop(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2TopNodes = this.getBorderNodes_Omega2(TailType.top, omega2);
 		ObjList<Node> u1TopNodes = this.getBorderNodes_Omega2(TailType.top, omega1);

@@ -2,10 +2,9 @@ package edu.uta.futureye.application;
 
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.intf.Assembler;
@@ -19,7 +18,6 @@ import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FEBilinearRectangle;
-import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
 import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
@@ -151,7 +149,7 @@ public class ModelDOTPlus {
 
 		//Model: \nabla{1/(3*mu_s'+3*mu_a)*\nabla{u}} + mu_a*u = \delta
 		weakForm.setParam(
-				FC.c1.D(mu_s.A(mu_a).M(3.0)), 
+				FC.C1.D(mu_s.A(mu_a).M(3.0)), 
 				this.mu_a, 
 				robinQ, 
 				robinD //FC.c1.D(mu_s.A(mu_a).M(3.0)) : d==k,q=0 (即：u_n + u =0)
@@ -180,7 +178,7 @@ public class ModelDOTPlus {
 	}
 	
 	public Vector solveNeumann(Mesh mesh) {
-		return solveMixedBorder(mesh,null,null,null, FC.c1.D(mu_s.A(mu_a).M(3.0)));
+		return solveMixedBorder(mesh,null,null,null, FC.C1.D(mu_s.A(mu_a).M(3.0)));
 	}
 	
 	public Vector solveDirichlet(Mesh mesh, Function diri) {
@@ -294,7 +292,7 @@ public class ModelDOTPlus {
 			}
 		};
 		Vector uMix = model.solveMixedBorder(meshSmall, diriBoundaryMark, 
-				new Vector2Function(uSmallExtract), null, FC.c1.D(model.mu_s.A(model.mu_a).M(3.0)));
+				new Vector2Function(uSmallExtract), null, FC.C1.D(model.mu_s.A(model.mu_a).M(3.0)));
 		Tools.plotVector(meshSmall, outputFolder, "u_mix.dat", uMix);
 	}
 

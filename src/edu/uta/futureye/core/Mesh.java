@@ -3,10 +3,10 @@ package edu.uta.futureye.core;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
@@ -145,12 +145,12 @@ public class Mesh {
 	}
 	
 	/**
-	 * 对于向量值问题，可以为每个分量<tt>vvfIndex</tt>分别标记边界类型
+	 * 对于向量值问题，可以为每个分量<tt>nVVFComponent</tt>分别标记边界类型
 	 * 
-	 * @param vvfIndex
+	 * @param nVVFComponent
 	 * @param mapNTF
 	 */
-	public void markBorderNode(int vvfIndex, Map<NodeType,Function> mapNTF) {
+	public void markBorderNode(int nVVFComponent, Map<NodeType,Function> mapNTF) {
 		if(debug)
 			System.out.println("markBorderNode...");
 		this.mapNTF = mapNTF;
@@ -161,10 +161,10 @@ public class Mesh {
 				throw new FutureyeException("ERROR: Call computeNodesBelongToElement() first!");
 			} else if(node instanceof NodeRefined && ((NodeRefined) node).isHangingNode()) {
 				//TODO Hanging 结点设置为内点，还有其他办法吗？
-				node.setNodeType(vvfIndex, NodeType.Inner); 
+				node.setNodeType(nVVFComponent, NodeType.Inner); 
 			} else {
 				if(node.isInnerNode()) {
-					node.setNodeType(vvfIndex, NodeType.Inner); 
+					node.setNodeType(nVVFComponent, NodeType.Inner); 
 				} else { //否则是边界结点
 					//System.out.println("Border Node:"+node.globalIndex);
 					for(Entry<NodeType,Function> entry : mapNTF.entrySet()) {
@@ -176,10 +176,10 @@ public class Mesh {
 							for(String vn : fun.varNames())
 								v.set(vn, node.coord(ic++));
 							if(fun.value(v) > 0)
-								node.setNodeType(vvfIndex, nodeType);
+								node.setNodeType(nVVFComponent, nodeType);
 						} else {
-							if(node.getNodeType(vvfIndex) == null)
-								node.setNodeType(vvfIndex, nodeType);
+							if(node.getNodeType(nVVFComponent) == null)
+								node.setNodeType(nVVFComponent, nodeType);
 						}
 					}
 				}
@@ -188,8 +188,8 @@ public class Mesh {
 		if(debug)
 			System.out.println("markBorderNode done!");
 	}	
-	public void markBorderNode(ObjIndex vvfIndexSet, Map<NodeType,Function> mapNTF) {
-		for(int i:vvfIndexSet)
+	public void markBorderNode(ObjIndex setVVFComponent, Map<NodeType,Function> mapNTF) {
+		for(int i:setVVFComponent)
 			markBorderNode(i,mapNTF);
 	}
 	public Map<NodeType, Function> getMarkBorderMap() {
@@ -200,11 +200,11 @@ public class Mesh {
 		clearBorderNodeMark(1);
 	}
 	
-	public void clearBorderNodeMark(int vvfIndex) {
+	public void clearBorderNodeMark(int nVVFComponent) {
 		for(int i=1;i<=nodeList.size();i++) {
 			Node node = nodeList.at(i);
 			if(node.getNodeType() != NodeType.Inner)
-				node.setNodeType(vvfIndex, null);
+				node.setNodeType(nVVFComponent, null);
 		}
 	}
 	public void clearBorderNodeMark(ObjIndex set) {
@@ -305,7 +305,7 @@ public class Mesh {
 		}
 		for(int i=1;i<=nodeList.size();i++) {
 			Node node = nodeList.at(i);
-			if(node.belongToElements.size()==0) {
+			if(node.belongToElements==null || node.belongToElements.size()==0) {
 				Exception e = new Exception("Call computeNodesBelongToElement() first!");
 				e.printStackTrace();
 				return;
@@ -528,18 +528,18 @@ public class Mesh {
 	public void writeNodesInfo(String fileName) {
 		writeNodesInfo(fileName,1);
 	}
-	public void writeNodesInfo(String fileName, int vvfIndex) {
+	public void writeNodesInfo(String fileName, int nVVFComponent) {
 		int N = nodeList.size();
-		Vector v = new SparseVector(N,20);
+		Vector v = new SparseVectorHashMap(N,20);
 		for(int i=1;i<=N;i++) {
 			Node node = nodeList.at(i);
-			if(node.getNodeType(vvfIndex) == NodeType.Inner) 
+			if(node.getNodeType(nVVFComponent) == NodeType.Inner) 
 				v.set(i, 5.0);
-			else if(node.getNodeType(vvfIndex) == NodeType.Dirichlet)
+			else if(node.getNodeType(nVVFComponent) == NodeType.Dirichlet)
 				v.set(i, 1);
-			else if(node.getNodeType(vvfIndex) == NodeType.Neumann)
+			else if(node.getNodeType(nVVFComponent) == NodeType.Neumann)
 				v.set(i,2);
-			else if(node.getNodeType(vvfIndex) == NodeType.Robin)
+			else if(node.getNodeType(nVVFComponent) == NodeType.Robin)
 				v.set(i, 3);
 			if(node instanceof NodeRefined) {
 				NodeRefined nr = (NodeRefined)node;

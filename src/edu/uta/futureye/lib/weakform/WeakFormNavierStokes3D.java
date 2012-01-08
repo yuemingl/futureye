@@ -1,9 +1,6 @@
 package edu.uta.futureye.lib.weakform;
 
 import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.core.DOF;
-import edu.uta.futureye.core.DOFOrder;
-import edu.uta.futureye.core.Edge;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Face;
 import edu.uta.futureye.core.Node;
@@ -16,7 +13,6 @@ import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.lib.shapefun.SFConstant0;
 import edu.uta.futureye.util.MathEx;
 import edu.uta.futureye.util.Utils;
-import edu.uta.futureye.util.container.DOFList;
 
 /**
  * <blockquote><pre>
@@ -106,10 +102,8 @@ public class WeakFormNavierStokes3D extends AbstractVectorWeakForm {
 			ScalarShapeFunction q  = (ScalarShapeFunction)v.get(4);
 			
 			//upwind
-			DOFList dofs = e.getAllDOFList(DOFOrder.NEFV);
-			DOF dof = dofs.at(this.vDOFLocalIndex);
 			if(this.vDOFLocalIndex<=24) {
-				Node node1 = dof.getNodeOwner();
+				Node node1 = testDOF.getNodeOwner();
 				//\tidle{v} = v + \tidle{k}*\hat{U}*v,j/\norm{U}
 				Vector valU = g_U.value(new Variable().setIndex(node1.globalIndex));
 				double normU = valU.norm2();
@@ -207,5 +201,11 @@ public class WeakFormNavierStokes3D extends AbstractVectorWeakForm {
 			return borderIntegrand;
 		}
 		return null;
+	}
+	
+	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
+		if(nComponent1 == nComponent2) return true;
+		else if(nComponent1 == 4 || nComponent2 == 4) return true;
+		else return false;
 	}
 }

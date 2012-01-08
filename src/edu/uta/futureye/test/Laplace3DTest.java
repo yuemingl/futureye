@@ -4,13 +4,13 @@ import java.util.HashMap;
 
 import edu.uta.futureye.algebra.CompressedRowMatrix;
 import edu.uta.futureye.algebra.FullVector;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
 import edu.uta.futureye.algebra.intf.AlgebraMatrix;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -24,7 +24,6 @@ import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FELinearTetrahedron;
-import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.element.FETrilinearHexahedron;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal3D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace;
@@ -94,8 +93,8 @@ public class Laplace3DTest {
 		System.out.println("Assemble...");
 		long begin = System.currentTimeMillis();
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		long end = System.currentTimeMillis();
 		System.out.println("Assemble done!");
 		System.out.println("Assemble time:"+(end-begin));
@@ -105,17 +104,17 @@ public class Laplace3DTest {
 		System.out.println("Impose Dirichlet condition done!");
 
 		//Initial value for iteration solvers
-		SparseVector u = new SparseVector(load.getDim(),0.0003);
-		
+		SparseVector u = load.copy();
+		u.setAll(0.0003);
 		
 		Solver solver = new Solver();
 		begin = System.currentTimeMillis();
 		
 		//CG
 		System.out.println("begin construct AlgebraMatrix...");
-		AlgebraMatrix algStiff = new CompressedRowMatrix((SparseMatrix)stiff,true);
+		AlgebraMatrix algStiff = new CompressedRowMatrix(stiff,true);
 		System.out.println("end construct AlgebraMatrix!");
-		FullVector algLoad = new FullVector((SparseVector)load);
+		FullVector algLoad = new FullVector(load);
 		FullVector algU = new FullVector(u);
 		solver.solveCG(algStiff, algLoad, algU);
 		double[] data = algU.getData();
@@ -213,9 +212,9 @@ public class Laplace3DTest {
 	}
 	
 	public static void hexahedronTest_WeakFormxD() {
-		//String meshName = "human_phantom3D";
+		String meshName = "human_phantom3D";
 		//String meshName = "stokes_cavity3d";
-		String meshName = "stokes_cavity3d2";
+		//String meshName = "stokes_cavity3d2";
 		MeshReader reader = new MeshReader(meshName+".grd");
 		Mesh mesh = reader.read3DMesh(); //3D
 		mesh.computeNodeBelongsToElements(); //worked in 3D
@@ -262,13 +261,20 @@ public class Laplace3DTest {
 		System.out.println("Assemble done!");
 		long end = System.currentTimeMillis();
 		System.out.println("Time used:"+(end-begin));
-		assembler.imposeDirichletCondition(FC.c0);
+		System.out.println("imposeDirichletCondition()...");
+		begin = System.currentTimeMillis();
+		assembler.imposeDirichletCondition(FC.C0);
+		end = System.currentTimeMillis();
+		System.out.println("imposeDirichletCondition() time used:"+(end-begin));
 		
 		SolverJBLAS solver = new SolverJBLAS();
+		begin = System.currentTimeMillis();
 		Vector u = solver.solveDGESV(stiff, load);
+		end = System.currentTimeMillis();
 	    System.out.println("u=");
 	    for(int i=1;i<=u.getDim();i++)
 	        System.out.println(String.format("%.3f", u.get(i)));	
+		System.out.println("SolverJBLAS time used:"+(end-begin));
 	    
 	    MeshWriter writer = new MeshWriter(mesh);
 	    writer.writeTechplot(meshName+"_out.dat", u);

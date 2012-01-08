@@ -1,22 +1,13 @@
 package edu.uta.futureye.lib.weakform;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
-import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.FAxpb;
-import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FXY;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.tutorial.Tools;
 import edu.uta.futureye.util.Utils;
-import edu.uta.futureye.util.container.DOFList;
 
 /**
  * 系数反问题

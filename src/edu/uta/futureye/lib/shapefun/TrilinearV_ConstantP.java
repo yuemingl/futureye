@@ -1,9 +1,12 @@
 package edu.uta.futureye.lib.shapefun;
 
+import java.util.Map;
+
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractVectorFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.SpaceVectorFunction;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
@@ -265,6 +268,11 @@ public class TrilinearV_ConstantP extends AbstractVectorFunction
 	@Override
 	public Vector value(Variable v) {
 		return (Vector) this.sf.value(v);
+	}
+	
+	@Override
+	public Vector[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return (Vector[]) this.sf.valueArray(v,cache);
 	}
 	
 	public String toString() {

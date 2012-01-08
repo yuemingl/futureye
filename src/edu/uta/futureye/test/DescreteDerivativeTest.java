@@ -2,10 +2,9 @@ package edu.uta.futureye.test;
 
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.application.ModelDOT;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.intf.Assembler;

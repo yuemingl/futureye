@@ -4,16 +4,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.application.MouseHead.TailType;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;
-import edu.uta.futureye.function.AbstractFunction;
-import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.util.Constant;
@@ -219,7 +216,7 @@ public class MouseHead20110908 extends MouseHead {
 	 */	
 	public Vector computeTailLeft(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega2);
 		ObjList<Node> u1LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega1);
@@ -307,7 +304,7 @@ public class MouseHead20110908 extends MouseHead {
 	
 	public Vector computeTailRight(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2RightNodes = this.getBorderNodes_Omega2(TailType.right, omega2);
 		ObjList<Node> u1RightNodes = this.getBorderNodes_Omega2(TailType.right, omega1);
@@ -390,7 +387,7 @@ public class MouseHead20110908 extends MouseHead {
 	 */
 	public Vector computeTailBottom(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega2);
 		ObjList<Node> u1BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega1);
@@ -482,7 +479,7 @@ public class MouseHead20110908 extends MouseHead {
 	 */
 	public Vector computeTailTop(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2TopNodes = this.getBorderNodes_Omega2(TailType.top, omega2);
 		ObjList<Node> u1TopNodes = this.getBorderNodes_Omega2(TailType.top, omega1);

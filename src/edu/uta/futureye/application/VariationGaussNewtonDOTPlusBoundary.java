@@ -9,20 +9,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
+import no.uib.cipr.matrix.sparse.SparseVector;
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
 import edu.uta.futureye.algebra.intf.BlockMatrix;
 import edu.uta.futureye.algebra.intf.BlockVector;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.application.VariationGaussNewtonDOTPlus.ParamOfLightSource;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
 import edu.uta.futureye.core.Element;
@@ -32,14 +28,11 @@ import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
 import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.DuDn;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
@@ -48,9 +41,7 @@ import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
-import edu.uta.futureye.lib.weakform.WeakFormL22D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
-import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.PairDoubleInteger;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.DOFList;
@@ -376,10 +367,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
 		//自然边界(u_n+u=0)+边界测量(-(u-g,\psi)_\Gamma)
 		//
 		weakForm.setParam(
-				FC.c1.D(fa.A(model_k)),
+				FC.C1.D(fa.A(model_k)),
 				fa.D(3.0),
 				fu_g.M(-1.0), //q=-(u-g) //bugfix: q=-(u-g)/(1/(a+k))=(g-u)*(a+k)
-				FC.c1.D(fa.A(model_k)) //d=k
+				FC.C1.D(fa.A(model_k)) //d=k
 			);
 		
 //Error:		
@@ -406,7 +397,7 @@ public class VariationGaussNewtonDOTPlusBoundary {
 		Matrix stiff = assembler.getStiffnessMatrix();
 		Vector load = assembler.getLoadVector();
 		if(bTestWholdDomain)
-			assembler.imposeDirichletCondition(FC.c0);
+			assembler.imposeDirichletCondition(FC.C0);
 		System.out.println("Assemble done!");
 
 		Equation eqn = new Equation();
@@ -445,10 +436,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
 		//	weakForm.setF(FC.c(0.0));
 		
 		weakForm.setParam(
-				FC.c1.D(fa.A(model_k)),
+				FC.C1.D(fa.A(model_k)),
 				fa.D(3.0),
 				null,
-				FC.c1.D(fa.A(model_k)));
+				FC.C1.D(fa.A(model_k)));
 		
 		_mesh.clearBorderNodeMark();
 		HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
@@ -516,7 +507,7 @@ public class VariationGaussNewtonDOTPlusBoundary {
 			Vector ak, Vector _aGlob, 
 			Function diri) {
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c1, null, null);
+        weakForm.setParam(FC.C0, FC.C1, null, null);
         //stabilize
         //weakForm.setParam(FC.c(0.01), FC.c1, null, null);
         
@@ -759,10 +750,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
         		FC.c(0.0), //null==(k=1)
         		FC.c(0.0), 
         		null, //q=0
-        		FC.c1 //d=1
+        		FC.C1 //d=1
         		);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -806,10 +797,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
 		else
 			weakForm.setF(f);
 		weakForm.setParam(
-				FC.c1.D(fa.A(model_k)),
+				FC.C1.D(fa.A(model_k)),
 				fa.D(3.0),
 				null,
-				FC.c1.D(fa.A(model_k)));
+				FC.C1.D(fa.A(model_k)));
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -868,10 +859,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
         Function b2 = new Vector2Function(Tools.computeDerivative(mesh, uk, "y"));
         Function _apk_2 = FMath.pow(fa.A(model_k),-2).M(-1.0);
         
-        weakForm.setParam(FC.c0, fuk, b1.M(_apk_2), b2.M(_apk_2));
+        weakForm.setParam(FC.C0, fuk, b1.M(_apk_2), b2.M(_apk_2));
         //stabilize
         //weakForm.setParam(FC.c(0.0001), fuk, b1.M(_apk_2), b2.M(_apk_2));
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
        //??? weakForm.setRobin(q, d)
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
@@ -917,10 +908,10 @@ public class VariationGaussNewtonDOTPlusBoundary {
         Function b2 = new Vector2Function(Tools.computeDerivative(mesh, uk, "y"));
         Function _apk_2 = FMath.pow(fa.A(model_k),-2).M(-1.0);
         
-        weakForm.setParam(FC.c0, fuk, b1.M(_apk_2), b2.M(_apk_2));
+        weakForm.setParam(FC.C0, fuk, b1.M(_apk_2), b2.M(_apk_2));
         //stabilize
         //weakForm.setParam(FC.c(0.0001), fuk, b1.M(_apk_2), b2.M(_apk_2));
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
         //??? weakForm.setRobin(q, d)
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
@@ -954,11 +945,11 @@ public class VariationGaussNewtonDOTPlusBoundary {
 	 */
 	public Matrix getBR() {
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c(beta), null, null);
+        weakForm.setParam(FC.C0, FC.c(beta), null, null);
         //stabilize
         //weakForm.setParam(FC.c(0.01), FC.c(beta), null, null);
         
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -1031,7 +1022,7 @@ public class VariationGaussNewtonDOTPlusBoundary {
 	 * @return
 	 */
 	public Vector solveDeltaU(Vector ak, Vector _resLlmd_da, Vector uk) {
-		Equation eq = getA(ak,new Vector2Function(_resLlmd_da),FC.c0,true);
+		Equation eq = getA(ak,new Vector2Function(_resLlmd_da),FC.C0,true);
         Solver sol = new Solver();
         Vector x = sol.solveCGS(eq.A, eq.f);
         return x;

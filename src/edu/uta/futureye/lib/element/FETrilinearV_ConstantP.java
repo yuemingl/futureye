@@ -49,21 +49,21 @@ public class FETrilinearV_ConstantP implements FiniteElementType {
 					e.nodes.at(j).globalIndex,
 					shapeFun[j-1]//Shape function 
 					         );
-			dof_u1.setVvfIndex(1);
+			dof_u1.setVVFComponent(1);
 			DOF dof_u2 = new DOF(
 					nNode+j,//Local DOF index
 					//Global DOF index, take this.nTotalNodes + global node index
 					this.nTotalNodes+e.nodes.at(j).globalIndex,
 					shapeFun[nNode+j-1]//Shape function 
 					         );
-			dof_u2.setVvfIndex(2);
+			dof_u2.setVVFComponent(2);
 			DOF dof_u3 = new DOF(
 					nNode*2+j,//Local DOF index
 					//Global DOF index, take this.nTotalNodes*2 + global node index
 					this.nTotalNodes*2+e.nodes.at(j).globalIndex,
 					shapeFun[nNode*2+j-1]//Shape function 
 					         );
-			dof_u3.setVvfIndex(3);
+			dof_u3.setVVFComponent(3);
 			e.addNodeDOF(j, dof_u1);
 			e.addNodeDOF(j, dof_u2);
 			e.addNodeDOF(j, dof_u3);
@@ -76,7 +76,7 @@ public class FETrilinearV_ConstantP implements FiniteElementType {
 					shapeFun[nNode*3] //Shape function 
 					);
 		this.nDOF_p++;
-		dof.setVvfIndex(4);	
+		dof.setVVFComponent(4);	
 		e.addVolumeDOF(dof);
 	}
 	

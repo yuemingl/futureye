@@ -1,13 +1,13 @@
 package edu.uta.futureye.lib.shapefun;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import edu.uta.futureye.core.CoordinateTransform;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FAxpb;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
@@ -95,10 +95,10 @@ from the above 4 equations, we have:
 						if(var.equals("x")) //r_x
 							return y_s.D(jac);
 						else //r_y
-							return FC.c0.S(x_s.D(jac));
+							return FC.C0.S(x_s.D(jac));
 					} else if(varName.equals("s")) {
 						if(var.equals("x")) //s_x
-							return FC.c0.S(y_r.D(jac));
+							return FC.C0.S(y_r.D(jac));
 						else //s_y
 							return x_r.D(jac);
 					}
@@ -141,6 +141,11 @@ from the above 4 equations, we have:
 
 	public double value(Variable v) {
 		return funCompose.value(v);
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return funCompose.valueArray(v,cache);
 	}
 
 	@Override

@@ -2,9 +2,9 @@ package edu.uta.futureye.application;
 
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.Solver;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;

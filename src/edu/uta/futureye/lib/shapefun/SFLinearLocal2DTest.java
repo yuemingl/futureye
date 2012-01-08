@@ -93,7 +93,7 @@ public class SFLinearLocal2DTest  extends AbstractFunction
 		else if(funIndex == 1)
 			funOuter = new FX("s"); //N2=s
 		else 
-			funOuter = FC.c1.S(FX.fr).S(FX.fs); //N3=1-r-s, (N3=t)
+			funOuter = FC.C1.S(FX.fr).S(FX.fs); //N3=1-r-s, (N3=t)
 		funOuter.setVarNames(varNames);
 		
 		this.coef = coef;

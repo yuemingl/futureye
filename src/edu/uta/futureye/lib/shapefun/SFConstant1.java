@@ -1,7 +1,6 @@
 package edu.uta.futureye.lib.shapefun;
 
 import edu.uta.futureye.core.Element;
-import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.ShapeFunction;

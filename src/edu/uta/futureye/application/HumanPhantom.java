@@ -10,7 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
@@ -48,7 +49,7 @@ public class HumanPhantom {
 		double width = 5.6;
 		Point lPos = model.getLightPosition();
 		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
-		SparseVector rlt = new SparseVector(u.getDim());
+		SparseVector rlt = new SparseVectorHashMap(u.getDim());
 		
 		for(int i=1;i<=nodes.size();i++) {
 			Node node = nodes.at(i);
@@ -76,7 +77,7 @@ public class HumanPhantom {
 		double width = 5.6;
 		Point lPos = model.getLightPosition();
 		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
-		SparseVector rlt = new SparseVector(u.getDim());
+		SparseVector rlt = new SparseVectorHashMap(u.getDim());
 		
 		for(int i=1;i<=nodes.size();i++) {
 			Node node = nodes.at(i);
@@ -195,7 +196,7 @@ public class HumanPhantom {
 				model.getDelta(), model.k,FC.c(0.1));
 		if(debug) Tools.plotVector(mesh, outputFolder, "aLeft0.dat", aLeft0);
 
-		Vector leftTest = new SparseVector(uLeft.getDim());
+		Vector leftTest = new SparseVectorHashMap(uLeft.getDim());
 		for(int i=pad;i<leftData.length-pad;i++) {
 			Node node = topList.at(i+1);
 			uLeft.set(node.globalIndex,uLeft.get(node.globalIndex)+ampFactor*leftData[i]);
@@ -227,7 +228,7 @@ public class HumanPhantom {
 				model.getDelta(), model.k,FC.c(0.1));
 		if(debug) Tools.plotVector(mesh, outputFolder, "aRight0.dat", aRight0);
 		
-		Vector rightTest = new SparseVector(uLeft.getDim());
+		Vector rightTest = new SparseVectorHashMap(uLeft.getDim());
 		for(int i=pad;i<rightData.length-pad;i++) {
 			Node node = topList.at(i+1);
 			uRight.set(node.globalIndex,uRight.get(node.globalIndex)+ampFactor*rightData[i]);
@@ -263,7 +264,7 @@ public class HumanPhantom {
 	public Mesh read3DMesh(String file) {
 		MeshReader reader = new MeshReader(file);
 		Mesh mesh = reader.read3DMesh();
-		//Vector v = new SparseVector(mesh.getNodeList().size());
+		//Vector v = new SparseVectorHashMap(mesh.getNodeList().size());
 		//Tools.plotVector(mesh, outputFolder, "3D.dat", v);
 		return mesh;
 	}
@@ -280,7 +281,7 @@ public class HumanPhantom {
 	public Map<String,List<double[]>> readAllData(String dataFolder) {
 		String[] all = {"L","R","T","B"};
 		Map<String,List<double[]>> rlt = new HashMap<String,List<double[]>>();
-		for(int j=0;j<4;j++) {
+		for(int j=0;j<all.length;j++) {
 			List<double[]> list = new ArrayList<double[]>();
 			for(int i=1;i<=NN;i++) {
 				String file = String.format("./HumanPhantom/%s/HumanPhantom_%s%d.txt", 
@@ -324,7 +325,7 @@ public class HumanPhantom {
 	 */
 	public void buildResult3D(List<Vector> alphaList,String rltFile) {
 		Mesh mesh3D = read3DMesh("human_phantom3D.grd");
-		Vector v3D = new SparseVector(mesh3D.getNodeList().size());
+		Vector v3D = new SparseVectorHashMap(mesh3D.getNodeList().size());
 		NodeList nodes = mesh3D.getNodeList();
 		double dz = 5.8/NN;
 		List<Vector2Function> faList = new ArrayList<Vector2Function>();
