@@ -7,11 +7,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -20,7 +22,6 @@ import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.intf.Assembler;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.DiscreteIndexFunction;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FDelta;
 import edu.uta.futureye.function.basic.Vector2Function;
@@ -28,8 +29,6 @@ import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
-import edu.uta.futureye.lib.assembler.AssemblerScalarFast;
-import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.element.FEBilinearRectangleRegular;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.weakform.WeakFormL22D;
@@ -167,14 +166,14 @@ public class MouseHead {
 		
 		// *** u + u_n = 0, on boundary ***
 		weakForm.setParam(
-				this.k, this.mu_a, FC.c0, this.k //d==k,q=0 (即：u_n + u =0)
+				this.k, this.mu_a, FC.C0, this.k //d==k,q=0 (即：u_n + u =0)
 			);
 		
 		Assembler assembler = new AssemblerScalar(mesh, weakForm);
 		System.out.println("Begin Assemble...solveForwardNeumann");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		//assembler.imposeDirichletCondition(new FC(0.0));
 		System.out.println("Assemble done!");
 
@@ -190,7 +189,7 @@ public class MouseHead {
 		weakForm.setF(this.delta);
 
 		weakForm.setParam(
-				this.k, this.mu_a, FC.c0, this.k //d==k,q=0 (即：u_n + u =0)
+				this.k, this.mu_a, FC.C0, this.k //d==k,q=0 (即：u_n + u =0)
 			);
 		
 		//!!!AssemblerScalar与AssemblerScalarFast有很大区别，问题？？？ 20110921
@@ -198,8 +197,8 @@ public class MouseHead {
 		Assembler assembler = new AssemblerScalar(mesh, weakForm);
 		System.out.println("Begin Assemble...solveForwardDirichlet");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		//Dirichlet condition
 		assembler.imposeDirichletCondition(diri);
 		
@@ -282,7 +281,7 @@ public class MouseHead {
 	public Vector extractData(Mesh meshFrom, Mesh meshTo, Vector u) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = new SparseVectorHashMap(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -479,7 +478,7 @@ public class MouseHead {
 	 */	
 	public Vector computeTailLeft(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega2);
 		ObjList<Node> u1LeftNodes = this.getBorderNodes_Omega2(TailType.left, omega1);
@@ -567,7 +566,7 @@ public class MouseHead {
 	
 	public Vector computeTailRight(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2RightNodes = this.getBorderNodes_Omega2(TailType.right, omega2);
 		ObjList<Node> u1RightNodes = this.getBorderNodes_Omega2(TailType.right, omega1);
@@ -650,7 +649,7 @@ public class MouseHead {
 	 */
 	public Vector computeTailBottom(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega2);
 		ObjList<Node> u1BottomNodes = this.getBorderNodes_Omega2(TailType.bottom, omega1);
@@ -740,7 +739,7 @@ public class MouseHead {
 	 */
 	public Vector computeTailTop(Mesh omega2,Vector u2_bk,
 			Mesh omega1,Vector u1) {
-		Vector tail = new SparseVector(u2_bk.getDim());
+		Vector tail = new SparseVectorHashMap(u2_bk.getDim());
 		NodeList nodes2 = omega2.getNodeList(); 
 		ObjList<Node> u2TopNodes = this.getBorderNodes_Omega2(TailType.top, omega2);
 		ObjList<Node> u1TopNodes = this.getBorderNodes_Omega2(TailType.top, omega1);
@@ -1233,7 +1232,7 @@ public class MouseHead {
 		//输出Omega1的Dirichlet边界数据
 		if(outputMiddleData) {
 			NodeList nodesOmega1 = meshOmega1.getNodeList();
-			Vector u1Border = new SparseVector(u1.getDim());
+			Vector u1Border = new SparseVectorHashMap(u1.getDim());
 			for(int i=1;i<=nodesOmega1.size();i++) {
 				Node node = nodesOmega1.at(i);
 				//if(o1_nodes.at(i).getNodeType()==NodeType.Dirichlet) {
@@ -1256,8 +1255,8 @@ public class MouseHead {
 		//在规则矩形区域Omega2上，输出用来构造tail的边界上的光强度，测量值延拓后和背景光强
 		ObjList<Node> u2BorderNodes = this.getBorderNodes_Omega2(tailType, meshOmega2);
 		ObjList<Node> u1BorderNodes = this.getBorderNodes_Omega2(tailType, meshOmega1);
-		Vector u2Border = new SparseVector(u2_bk.getDim());
-		Vector u1Border = new SparseVector(u1.getDim());
+		Vector u2Border = new SparseVectorHashMap(u2_bk.getDim());
+		Vector u1Border = new SparseVectorHashMap(u1.getDim());
 		for(int i=1;i<=u2BorderNodes.size();i++) {
 			int idx = u2BorderNodes.at(i).globalIndex;
 			u2Border.set(idx,u2_bk.get(idx));

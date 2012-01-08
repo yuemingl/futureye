@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 
 /**
  * Function interface
@@ -23,12 +24,29 @@ public interface Function {
 	double value(Variable v);
 	
 	/**
+	 * Return function value at variable v with cache enabled
+	 * <p>
+	 * 返回自变量v对应的函数值，支持缓存。在一个复杂的函数表达式中，
+	 * 对于同一函数多次求值的情况，使用缓存可以提高计算速度。例如在
+	 * 有限元问题的数值积分中，Jacobian在被积函数中可能多处出现，
+	 * 此时可以利用缓存对象在第一次求值后将其缓存起来，后续的求值调用
+	 * 只需要从缓存中获取即可，不需要反复求值。
 	 * 
 	 * @param v
 	 * @param cache
 	 * @return
 	 */
 	double value(Variable v, Map<Object,Object> cache);
+	
+	/**
+	 * For more efficiency, this interface can be used to return function values
+	 * at an array of variables at once.
+	 * 
+	 * @param valAry VariableArray object which represents an array of variable values
+	 * @param cache Cache for efficient evaluation of functions. <tt>null</tt> parameter will disable the cache mechanism
+	 * @return Function values evaluated at array of variables <tt>valAry</tt> 
+	 */
+	double[] valueArray(VariableArray valAry, Map<Object, Object> cache);
 	
 	/**
 	 * Set function variable names
@@ -123,14 +141,17 @@ public interface Function {
 	 * Function fr = new FX("r");
 	 * Function fOut = fx.M(fx).S(FC.c1);
 	 * System.out.println(fOut); //x*x - 1.0
+	 * 
 	 * Function fIn = fr.M(fr).A(FC.c1);
 	 * System.out.println(fIn); //r*r + 1.0
+	 * 
 	 * //Construct a map to define variable mapping
 	 * Map<String,Function> map = new HashMap<String,Function>();
 	 * map.put("x", fIn); //x=r*r + 1.0
 	 * Function fComp = fOut.compose(map);
 	 * System.out.println(fComp); //x(r)*x(r) - 1.0, where x=r*r + 1.0
 	 * </pre></blockquote>
+	 * 
 	 * @param fInners: Variable map e.g.[ x = x(r,s), y = y(r,s) ]
 	 * @return composed function e.g. f = f(x,y) = f( x(r,s),y(r,s) )
 	 */
@@ -193,10 +214,10 @@ public interface Function {
 	 */
 	Function setFName(String name);
 	
-	static int OP_ORDER0 = 0;
-	static int OP_ORDER1 = 1;
-	static int OP_ORDER2 = 2;
-	static int OP_ORDER3 = 3;
+	static int OP_ORDER0 = 0; //Brackets first
+	static int OP_ORDER1 = 1; //Exponents next
+	static int OP_ORDER2 = 2; //Multiply and Divide next
+	static int OP_ORDER3 = 3; //Add and Subtract last of all
 	
 	/**
 	 * Get order of operations (Priority Rules for Arithmetic)

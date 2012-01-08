@@ -5,23 +5,17 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
+import no.uib.cipr.matrix.sparse.SparseVector;
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
 import edu.uta.futureye.algebra.intf.BlockMatrix;
 import edu.uta.futureye.algebra.intf.BlockVector;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
 import edu.uta.futureye.core.Element;
@@ -31,29 +25,19 @@ import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
 import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.DuDn;
 import edu.uta.futureye.function.basic.DuDx;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
-import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.element.FEBilinearRectangleRegular;
 import edu.uta.futureye.lib.element.FELinearTriangle;
-import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
-import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
-import edu.uta.futureye.lib.weakform.WeakFormL22D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
-import edu.uta.futureye.util.FutureyeException;
-import edu.uta.futureye.util.PairDoubleInteger;
-import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
@@ -453,22 +437,22 @@ public class VariationGaussNewtonDOTMult {
 		//采用自然边界：u_n + u = 0
 		if(bTestWholdDomain) {
 			weakForm.setParam(
-					FC.c1.D(fa.M(model_k)),
-					FC.c1,
+					FC.C1.D(fa.M(model_k)),
+					FC.C1,
 					null,//q=0
 					//FC.c0
 					//***
-					FC.c1.D(fa.M(model_k))//d=k
+					FC.C1.D(fa.M(model_k))//d=k
 				);
 		} else {
 			//d*u + k*u_n = q
 			//自然边界(u_n+u=0)+边界测量(-(u-g,\psi)_\Gamma)
 			//
 			weakForm.setParam(
-					FC.c1.D(fa.M(model_k)),
-					FC.c1,
+					FC.C1.D(fa.M(model_k)),
+					FC.C1,
 					fu_g.M(-1.0), //q=-(u-g)
-					FC.c1.D(fa.M(model_k)) //d=k
+					FC.C1.D(fa.M(model_k)) //d=k
 				);
 		}
 		mesh.clearBorderNodeMark();
@@ -485,7 +469,7 @@ public class VariationGaussNewtonDOTMult {
 		Matrix stiff = assembler.getStiffnessMatrix();
 		Vector load = assembler.getLoadVector();
 		if(bTestWholdDomain && bTestWholeDomainDirichletBoundary)
-			assembler.imposeDirichletCondition(FC.c0);
+			assembler.imposeDirichletCondition(FC.C0);
 		System.out.println("Assemble done!");
 
 		Equation eqn = new Equation();
@@ -526,10 +510,10 @@ public class VariationGaussNewtonDOTMult {
 		DuDn du0dn = new DuDn(new Vector2Function(u0_x),new Vector2Function(u0_y),null);
 		
 		weakForm.setParam(
-				FC.c1.D(fa.M(model_k)),
-				FC.c1,
+				FC.C1.D(fa.M(model_k)),
+				FC.C1,
 				null,
-				FC.c1.D(fa.M(model_k)));
+				FC.C1.D(fa.M(model_k)));
 		
 //		weakForm.setParam(
 //				FC.c1.D(fa.M(model_k)),
@@ -672,11 +656,11 @@ public class VariationGaussNewtonDOTMult {
         //***
         //weakForm.setRobin(akmk_2mk.M(FMath.sum(fumfl)), FC.c0);
         //plotFunction(mesh, akmk_2mk.M(FMath.sum(fumfl)), "La_robin.dat");
-        weakForm.setRobin(FC.c0, FC.c0);
+        weakForm.setRobin(FC.C0, FC.C0);
         //weakForm.setRobin(akmk_2mk.M(FMath.sum(du0dnmfl)).M(-1.0), FC.c0);
         
         weakForm.setF(faGlob,//.A(ak_2.M(FMath.sum(fl)).M(modelReal.delta)) 
-        		akmk_2mk, FC.c0,
+        		akmk_2mk, FC.C0,
         		fu, fl
         	);
 		
@@ -857,12 +841,12 @@ public class VariationGaussNewtonDOTMult {
         		FC.c(0.0), //null==(k=1)
         		FC.c(0.0), 
         		null, //q=0
-        		FC.c1 //d=1
+        		FC.C1 //d=1
         		);
         }
 
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -918,11 +902,11 @@ public class VariationGaussNewtonDOTMult {
 			weakForm.setF(f);
 		
 		weakForm.setParam(
-				FC.c1.D(fa.M(model_k)),
-				FC.c1,
+				FC.C1.D(fa.M(model_k)),
+				FC.C1,
 				null,
 				//***
-				FC.c1.D(fa.M(model_k))
+				FC.C1.D(fa.M(model_k))
 				//FC.c0
 				);
 
@@ -1002,7 +986,7 @@ public class VariationGaussNewtonDOTMult {
         Function fu = new Vector2Function(uk);
         Function _amk_2mk = FMath.pow(fa.M(model_k),-2).M(model_k).M(-1.0);
         
-        weakForm.setParam(_amk_2mk, FC.c0, fu);
+        weakForm.setParam(_amk_2mk, FC.C0, fu);
         //weakForm.setParam(_amk_2mk, fu, fu);
         
         //***
@@ -1013,11 +997,11 @@ public class VariationGaussNewtonDOTMult {
         		new Vector2Function(uk_y),
         		null);
         //weakForm.setRobin(FC.c0, _amk_2mk.M(du0dn).M(-1.0));
-        weakForm.setRobin(FC.c0, FC.c0);
+        weakForm.setRobin(FC.C0, FC.C0);
         
         //stabilize
         //weakForm.setParam(FC.c(0.0001), FC.c0, b1.M(_apk_2), b2.M(_apk_2));
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -1078,7 +1062,7 @@ public class VariationGaussNewtonDOTMult {
         Function fu = new Vector2Function(uk);
         Function _amk_2mk = FMath.pow(fa.M(model_k),-2).M(model_k).M(-1.0);
         
-        weakForm.setParam(_amk_2mk, FC.c0, fu);
+        weakForm.setParam(_amk_2mk, FC.C0, fu);
         //weakForm.setParam(_amk_2mk, fu, fu);
         
         //***
@@ -1090,11 +1074,11 @@ public class VariationGaussNewtonDOTMult {
         		null);
         //2011/1/18 这两个条件结果差不多（bugfix:是因为没有标记边界条件：忘记调用mesh.markBorderNode(mapNTF);）
         //weakForm.setRobin(FC.c0, _amk_2mk.M(du0dn).M(-1.0));
-        weakForm.setRobin(FC.c0, FC.c0);
+        weakForm.setRobin(FC.C0, FC.C0);
         
         //stabilize
         //weakForm.setParam(FC.c(0.0001), FC.c0, b1.M(_apk_2), b2.M(_apk_2));
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -1138,11 +1122,11 @@ public class VariationGaussNewtonDOTMult {
       		null);
       //2011/1/18 这两个条件结果差不多（bugfix:是因为没有标记边界条件：忘记调用mesh.markBorderNode(mapNTF);）
       //weakForm.setRobin(FC.c0, _amk_2mk.M(du0dn).M(-1.0));
-      weakForm.setRobin(FC.c0, FC.c0);
+      weakForm.setRobin(FC.C0, FC.C0);
 
       //stabilize
       //weakForm.setParam(FC.c(0.0001), FC.c0, b1.M(_apk_2), b2.M(_apk_2));
-	  weakForm.setF(FC.c0);
+	  weakForm.setF(FC.C0);
 
       
       //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
@@ -1183,9 +1167,9 @@ public class VariationGaussNewtonDOTMult {
         }
         WeakFormLa weakForm = new WeakFormLa();
         
-        weakForm.setRobin(FC.c0, FC.c0);
-        weakForm.setF(FC.c0,
-        		akmk_2mk, FC.c1,
+        weakForm.setRobin(FC.C0, FC.C0);
+        weakForm.setF(FC.C0,
+        		akmk_2mk, FC.C1,
         		fu, fl
         	);
 		
@@ -1230,11 +1214,11 @@ public class VariationGaussNewtonDOTMult {
 	 */
 	public Matrix getBR() {
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c(beta), null, null);
+        weakForm.setParam(FC.C0, FC.c(beta), null, null);
         //stabilize
         //weakForm.setParam(FC.c(1000), FC.c(beta), null, null);
         
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -1321,7 +1305,7 @@ public class VariationGaussNewtonDOTMult {
 	 * @return
 	 */
 	public Vector solveDeltaU(Vector ak, Vector _resLlmd_da, Vector uk) {
-		Equation eq = getA(ak,new Vector2Function(_resLlmd_da),FC.c0,true);
+		Equation eq = getA(ak,new Vector2Function(_resLlmd_da),FC.C0,true);
         //Solver sol = new Solver();
         //Vector x = sol.solveCGS(eq.A, eq.f);
         SolverJBLAS sol = new SolverJBLAS();
@@ -1692,7 +1676,7 @@ public class VariationGaussNewtonDOTMult {
 		//************************************************************
 		//**************************TEST***************************
 		Matrix stiff = this.testGetCT(a0, u0[0], u0_x[0], u0_y[0]);
-		Equation load  = this.testGetCTLoad(u0,u0_x,u0_y,lambda0,a0,FC.c0);
+		Equation load  = this.testGetCTLoad(u0,u0_x,u0_y,lambda0,a0,FC.C0);
         SolverJBLAS sol2 = new SolverJBLAS();
 		Vector testLambda = sol2.solveDGESV(stiff, load.f);
 		plotVector(mesh, testLambda, String.format("testLambda.dat"));
@@ -1760,7 +1744,7 @@ public class VariationGaussNewtonDOTMult {
 
 			//this.imposeDirichletCondition(BM, f, FC.c0);
 	        if(this.bTestWholeDomainDirichletBoundary)
-	        	this.imposeDirichletCondition(BM, f, nDataBlock,FC.c0);
+	        	this.imposeDirichletCondition(BM, f, nDataBlock,FC.C0);
 //	        else {
 //	        	Function [] fu0 = new Function[nDataBlock];
 //	        	Function [] fg = new Function[nDataBlock];

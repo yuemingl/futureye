@@ -5,11 +5,10 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import edu.uta.futureye.algebra.SpaceVector;
-import edu.uta.futureye.algebra.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.CoordinateTransform;
 import edu.uta.futureye.core.Element;
@@ -173,7 +172,7 @@ public class Utils {
 	 * @param weight
 	 * @return
 	 */
-	public static Vector gaussSmooth(Mesh mesh, Vector u, int neighborBand, double weight) {
+	public static <Vec extends Vector> Vec gaussSmooth(Mesh mesh, Vec u, int neighborBand, double weight) {
 		NodeList list = mesh.getNodeList();
 		int nNode = list.size();
 		if(nNode != u.getDim()) {
@@ -181,7 +180,9 @@ public class Utils {
 					"nNode="+nNode+"  dim(u)="+u.getDim());
 		}
 		
-	    Vector su = new SparseVector(nNode);
+	    @SuppressWarnings("unchecked")
+		Vec su = (Vec)u.copy();
+	    su.setAll(0.0);
 	    
 	    if(neighborBand == 1) {
 		    for(int i=1;i<=nNode;i++) {
@@ -197,7 +198,7 @@ public class Utils {
 		    		}
 		    	}
 		    	nbList.addAll(node.neighbors);
-		    	if(nbList.size() == 0) {
+		    	if(nbList==null || nbList.size() == 0) {
 					throw new FutureyeException("No beighbors of Node "+node.globalIndex+
 							", call mesh.computeNeiborNode() first!");
 		    	}
@@ -217,7 +218,7 @@ public class Utils {
 		    	map.put(node, 0);
 
 		    	NodeList nbList = node.neighbors;
-		    	if(nbList.size() == 0) {
+		    	if(nbList==null || nbList.size() == 0) {
 					throw new FutureyeException("No beighbors of Node "+node.globalIndex+
 							", call mesh.computeNeiborNode() first!");
 		    	}
@@ -269,7 +270,9 @@ public class Utils {
 					"nNode="+nNode+"  dim(u)="+u.getDim());
 		}
 		
-	    Vector su = new SparseVector(nNode);
+	    Vector su = u.copy();
+	    su.setAll(0.0);
+	    
 	    for(int i=1;i<=nNode;i++) {
 	    	NodeList nbList = new NodeList();
 	    	Node node = list.at(i);
@@ -748,6 +751,29 @@ public class Utils {
 					+ A[0][2]*(A[0][0]*A[1][1] - A[0][1]*A[0][1]);
 		}
 		throw new FutureyeException("NOT Supported!");
+	}
+
+	/**
+	 * 
+	 * @param A A[2][2][len] or A[3][3][len]
+	 * @return
+	 */
+	public static double[] determinant(double[][][] A) {
+		int len = A[0][0].length;
+		double[] rlt = new double[len];
+		if(A.length == 2) {
+			for(int i=0;i<len;i++) {
+					rlt[i] = A[0][0][i]*A[1][1][i] - A[0][1][i]*A[1][0][i];
+			}
+		} else if(A.length == 3) {
+			for(int i=0;i<len;i++) {
+				rlt[i] = A[0][0][i]*(A[1][1][i]*A[2][2][i] - A[1][2][i]*A[2][1][i]) 
+						- A[0][1][i]*(A[1][0][i]*A[2][2][i] - A[1][2][i]*A[2][0][i]) 
+						+ A[0][2][i]*(A[0][0][i]*A[1][1][i] - A[0][1][i]*A[0][1][i]);
+			}
+		} else 
+			throw new FutureyeException("NOT Supported!");
+		return rlt;
 	}
 	
 }

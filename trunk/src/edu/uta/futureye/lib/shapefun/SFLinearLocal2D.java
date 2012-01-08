@@ -6,6 +6,7 @@ import java.util.Map;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
@@ -49,14 +50,14 @@ public class SFLinearLocal2D  extends AbstractFunction
 				//d(N1)/dr = 1.0
 				//d(N2)/ds = 1.0
 				//d(N3)/dt = 1.0
-				return FC.c1;
+				return FC.C1;
 			} else if(funIndex == 2){ 
 				//N3 = r = 1 - s - t, not free variable
 				//d(N3)/ds = -1.0
 				//d(N3)/dt = -1.0
-				return FC.cm1;
+				return FC.Cm1;
 			} else {
-				return FC.c0;
+				return FC.C0;
 			}
 		}
 		@Override
@@ -141,6 +142,11 @@ public class SFLinearLocal2D  extends AbstractFunction
 	@Override
 	public double value(Variable v) {
 		return funCompose.value(v);
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return funCompose.valueArray(v,cache);
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import edu.uta.futureye.core.geometry.topology.TetrahedronTp;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
@@ -350,8 +351,69 @@ public class CoordinateTransform {
 		 *            |f0 f1|
 		 *  det(Jac)= |f2 f3| = f0*f3-f1*f2
 		 */
-		this.Jacobian = funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
+		//this.Jacobian = funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
+		this.Jacobian = new Jacobian2D(funs);
 	}
+	
+	public static class Jacobian2D extends AbstractFunction {
+		Function[] funs = null;
+		public Jacobian2D(Function[] funs) {
+			this.funs = funs;
+		}
+		
+		@Override
+		public double value(Variable v) {
+			return value(v,null);
+		}
+		
+		@Override
+		public double value(Variable v, Map<Object,Object> cache) {
+			Double detJ = null;
+			if(cache != null) {
+				detJ = (Double)cache.get(1);
+			}
+			if(detJ == null) {
+				double J11 = funs[0].value(v);
+				double J12 = funs[1].value(v);
+				double J21 = funs[2].value(v);
+				double J22 = funs[3].value(v);
+				detJ = J11*J22-J12*J21;
+				if(cache != null) {
+					cache.put(1, detJ);
+				}
+			}
+			return detJ;
+		}
+		
+		@Override
+		public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+			double[] detJ = null;
+			int len = v.length();
+			if(cache != null) {
+				detJ = (double[])cache.get(1);
+			}
+			if(detJ == null) {
+				double[][][] J = new double[2][2][len];
+				J[0][0] = funs[0].valueArray(v,cache);
+				J[0][1] = funs[1].valueArray(v,cache);
+				J[1][0] = funs[2].valueArray(v,cache);
+				J[1][1] = funs[3].valueArray(v,cache);
+				//@see ./doc_ex/invA22.png
+				detJ = Utils.determinant(J);
+				if(cache != null) {
+					cache.put(1, detJ);
+					cache.put(2, J);
+				}
+			}
+			return detJ;
+		}
+		
+		public String toString() {
+			return "Jacobian2D";
+		}
+	}
+	
+	
 	
 	/**
 	 *  Compute 3D determinant of Jacobian matrix
@@ -422,6 +484,34 @@ public class CoordinateTransform {
 				J[2][0] = funs[6].value(v);
 				J[2][1] = funs[7].value(v);
 				J[2][2] = funs[8].value(v);	
+				//@see ./doc_ex/invA33.png
+				detJ = Utils.determinant(J);
+				if(cache != null) {
+					cache.put(1, detJ);
+					cache.put(2, J);
+				}
+			}
+			return detJ;
+		}
+		
+		@Override
+		public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+			double[] detJ = null;
+			int len = v.length();
+			if(cache != null) {
+				detJ = (double[])cache.get(1);
+			}
+			if(detJ == null) {
+				double[][][] J = new double[3][3][len];
+				J[0][0] = funs[0].valueArray(v,cache);
+				J[0][1] = funs[1].valueArray(v,cache);
+				J[0][2] = funs[2].valueArray(v,cache);
+				J[1][0] = funs[3].valueArray(v,cache);
+				J[1][1] = funs[4].valueArray(v,cache);
+				J[1][2] = funs[5].valueArray(v,cache);
+				J[2][0] = funs[6].valueArray(v,cache);
+				J[2][1] = funs[7].valueArray(v,cache);
+				J[2][2] = funs[8].valueArray(v,cache);
 				//@see ./doc/invA33.png
 				detJ = Utils.determinant(J);
 				if(cache != null) {
@@ -433,7 +523,7 @@ public class CoordinateTransform {
 		}
 		
 		public String toString() {
-			return "Jacobian";
+			return "Jacobian3D";
 		}
 	}
 	

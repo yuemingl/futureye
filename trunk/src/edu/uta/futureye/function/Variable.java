@@ -6,7 +6,6 @@ import java.util.Map;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.util.Constant;
 
 /**
  * Function arguments (Independent variables of a function)
@@ -35,7 +34,7 @@ public class Variable {
 	//Node Index
 	protected int index = 0;
 	
-	//变量中可以携带element，见class DuDn
+	//Element 变量中可以携带单元对象，见class DuDn
 	protected Element element = null;
 	
 	public Variable() {

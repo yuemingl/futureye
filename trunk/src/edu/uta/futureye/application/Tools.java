@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -21,9 +21,7 @@ import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.core.intf.Assembler;
-import edu.uta.futureye.core.intf.WeakForm.ItemType;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FXY;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
@@ -38,7 +36,6 @@ import edu.uta.futureye.lib.weakform.WeakFormL22D;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.PairDoubleInteger;
 import edu.uta.futureye.util.Utils;
-import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
 
@@ -91,7 +88,8 @@ public class Tools {
 	public static Vector computeDerivativeFast(Mesh mesh, Vector U, String varName) {
 		Map<Integer, Double[]> map = new HashMap<Integer, Double[]>();
 		ElementList eList = mesh.getElementList();
-		Vector rltVector = new SparseVector(mesh.getNodeList().size());
+		Vector rltVector = U.copy();
+		rltVector.setAll(0.0);
 		
 		Function fU = new Vector2Function(U);
 		for(int i=1;i<=eList.size();i++) {
@@ -226,7 +224,8 @@ public class Tools {
 	public static Vector extendData(Mesh meshFrom, Mesh meshTo, Vector u, double deaultValue) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = u.copy();
+		rlt.setDim(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -247,7 +246,8 @@ public class Tools {
 	public static Vector extractData(Mesh meshFrom, Mesh meshTo, Vector u) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = u.copy();
+		rlt.setDim(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -314,7 +314,7 @@ public class Tools {
 	
 	public static Vector function2vector(Mesh mesh, Function f) {
 		NodeList nodes = mesh.getNodeList();
-		Vector v = new SparseVector(nodes.size());
+		Vector v = new SparseVectorHashMap(nodes.size());
 		for(int j=1;j<=nodes.size();j++) {
 			v.set(j, f.value(Variable.createFrom(f, nodes.at(j), j)));
 		}
@@ -335,7 +335,7 @@ public class Tools {
 		for(int i=1;i<=eList.size();i++) {
 			Element e = eList.at(i);
 			//L2Norm(v-v_smooth) on element e
-			Vector v1 = new SparseVector(e.nodes.size());
+			Vector v1 = new SparseVectorHashMap(e.nodes.size());
 			for(int j=1;j<=e.nodes.size();j++) {
 				Node node = e.nodes.at(j);
 				v1.set(j, v.get(node.globalIndex)-v_smooth.get(node.globalIndex));
@@ -397,7 +397,7 @@ public class Tools {
 		for(int i=1;i<=eList.size();i++) {
 			Element e = eList.at(i);
 			//sum(indicator) on element e
-			Vector v1 = new SparseVector(e.nodes.size());
+			Vector v1 = new SparseVectorHashMap(e.nodes.size());
 			for(int j=1;j<=e.nodes.size();j++) {
 				v1.set(j, indicator.get(e.nodes.at(j).globalIndex));
 			}
@@ -524,7 +524,7 @@ public class Tools {
 	public static Vector interplateFrom(Mesh oldMesh, Mesh newMesh, Vector2Function vecFun) {
 		int nNode = newMesh.getNodeList().size();
 		NodeList nodes = newMesh.getNodeList();
-		Vector rlt = new SparseVector(nNode);
+		Vector rlt = new SparseVectorHashMap(nNode);
 		for(int i=1;i<=nNode;i++) {
 			Variable v = new Variable();
 			v.set("x",nodes.at(i).coord(1));

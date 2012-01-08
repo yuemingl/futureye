@@ -2,9 +2,9 @@ package edu.uta.futureye.application;
 
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.intf.Assembler;
@@ -14,7 +14,6 @@ import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FEBilinearRectangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
-import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ElementList;
 
 /**
@@ -33,8 +32,8 @@ public class ModelPoissonEx {
 	public Function f = null;
 	
 	//Coefficient
-	public Function k = FC.c1;
-	public Function c = FC.c0;
+	public Function k = FC.C1;
+	public Function c = FC.C0;
 	
 	public ModelPoissonEx(Mesh mesh) {
 		this.mesh = mesh;
@@ -105,7 +104,7 @@ public class ModelPoissonEx {
 	}
 	
 	public Vector solveNeumann() {
-		return solveMixedBorder(null,null,null,FC.c1);
+		return solveMixedBorder(null,null,null,FC.C1);
 	}
 
 	public Vector solveDirichlet(Function diri) {

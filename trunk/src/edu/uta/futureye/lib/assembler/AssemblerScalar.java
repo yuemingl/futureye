@@ -3,9 +3,11 @@ package edu.uta.futureye.lib.assembler;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseMatrixRowMajor;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
@@ -26,19 +28,17 @@ import edu.uta.futureye.core.intf.Assembler;
 import edu.uta.futureye.core.intf.WeakForm;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
-import edu.uta.futureye.util.container.NodeList;
 import edu.uta.futureye.util.container.VertexList;
 
 public class AssemblerScalar implements Assembler {
 	private int status = 0;
 	protected Mesh mesh;
 	protected WeakForm weakForm;
-	protected Matrix globalStiff;
+	protected SparseMatrix globalStiff;
 	protected SparseVector globalLoad;
 
 	public AssemblerScalar(Mesh mesh, WeakForm weakForm) {
@@ -46,20 +46,20 @@ public class AssemblerScalar implements Assembler {
 		this.weakForm = weakForm;
 		
 		int dim = mesh.getNodeList().size();
-		globalStiff = new SparseMatrix(dim,dim);
-		globalLoad = new SparseVector(dim);
+		globalStiff = new SparseMatrixRowMajor(dim,dim);
+		globalLoad = new SparseVectorHashMap(dim);
 
 	}
 	
 	@Override
-	public Matrix getStiffnessMatrix() {
+	public SparseMatrix getStiffnessMatrix() {
 		if(status == 0)
 			throw new FutureyeException("Call assemble() function first!");
 		return this.globalStiff;
 	}
 	
 	@Override
-	public Vector getLoadVector() {
+	public SparseVector getLoadVector() {
 		if(status == 0)
 			throw new FutureyeException("Call assemble() function first!");
 		return this.globalLoad;
@@ -67,38 +67,39 @@ public class AssemblerScalar implements Assembler {
 	
 	@Override
 	public void assemble() {
-		status = 1;
-		ElementList eList = mesh.getElementList();
-		int nEle = eList.size();
-		for(int i=1; i<=nEle; i++) {
-			eList.at(i).adjustVerticeToCounterClockwise();
-			assembleGlobal(eList.at(i),	globalStiff,globalLoad);
-			if(i%100==0)
-				System.out.println("Assemble..."+
-						String.format("%.0f%%", 100.0*i/nEle));
-		}
-		
-		procHangingNode(mesh);
+		assemble(true);
 	}
 	
 	public void assemble(boolean procHangingNode) {
 		status = 1;
 		ElementList eList = mesh.getElementList();
 		int nEle = eList.size();
+		int nProgress = 20;
+		System.out.print("Assemble[0%");
+		for(int i=0;i<nProgress-6;i++)
+			System.out.print("-");
+		System.out.println("100%]");
+		
+		System.out.print("Progress[");
+		int nPS = nEle/nProgress;
+		int nProgressPrint = 0;
 		for(int i=1; i<=nEle; i++) {
 			if(eList.at(i).adjustVerticeToCounterClockwise()) {
 				throw new FutureyeException("adjustVerticeToCounterClockwise");
 			}
 			assembleGlobal(eList.at(i),	globalStiff,globalLoad);
-			if(i%1000==0)
-				System.out.println("Assemble..."+
-						String.format("%.0f%%", 100.0*i/nEle));
+			if(i%nPS==0) {
+				nProgressPrint++;
+				System.out.print("*");
+			}
 		}
+		if(nProgressPrint<nProgress)
+			System.out.print("*");
+		System.out.println("]Done!");
+		
 		if(procHangingNode)
 			procHangingNode(mesh);
 	}
-
-
 
 	
 	protected void setDirichlet(int matIndex, double value) {
@@ -231,26 +232,19 @@ public class AssemblerScalar implements Assembler {
 		//所有自由度双循环
 		for(int i=1;i<=nDOFs;i++) {
 			DOF dofI = DOFs.at(i);
-			ScalarShapeFunction sfI = dofI.getSSF();
-			int nLocalRow = dofI.getLocalIndex();
 			int nGlobalRow = dofI.getGlobalIndex();
-			//int nGlobalRow2 = ((Node)dofI.getOwner()).getIndex();
-			
 			for(int j=1;j<=nDOFs;j++) {
 				DOF dofJ = DOFs.at(j);
-				ScalarShapeFunction sfJ = dofJ.getSSF();
-				int nLocalCol = dofJ.getLocalIndex();
 				int nGlobalCol = dofJ.getGlobalIndex();
-				//int nGlobalCol = ((Node)dofJ.getOwner()).getIndex();
 				//Local stiff matrix
 				//注意顺序，内循环test基函数不变，trial基函数循环
-				weakForm.setShapeFunction(sfJ,nLocalCol, sfI,nLocalRow); 
+				weakForm.setDOF(dofJ, dofI); 
 				Function lhs = weakForm.leftHandSide(e, WeakForm.ItemType.Domain);
 				double lhsVal = weakForm.integrate(e, lhs);
 				stiff.add(nGlobalRow, nGlobalCol, lhsVal);
 			}
 			//Local load vector
-			weakForm.setShapeFunction(null,0,sfI,nLocalRow);
+			weakForm.setDOF(null,dofI);
 			Function rhs = weakForm.rightHandSide(e, WeakForm.ItemType.Domain);
 			double rhsVal = weakForm.integrate(e, rhs);
 			load.add(nGlobalRow, rhsVal);
@@ -275,25 +269,19 @@ public class AssemblerScalar implements Assembler {
 					//所有自由度双循环
 					for(int i=1;i<=nBeDOF;i++) {
 						DOF dofI = beDOFs.at(i);
-						ScalarShapeFunction sfI = dofI.getSSF();
-						int nLocalRow = dofI.getLocalIndex();
 						int nGlobalRow = dofI.getGlobalIndex();
-						//int nGlobalRow2 = ((Node)dofI.getOwner()).getIndex();
 						for(int j=1;j<=nBeDOF;j++) {
 							DOF dofJ = beDOFs.at(j);
-							ScalarShapeFunction sfJ = dofJ.getSSF();
-							int nLocalCol = dofJ.getLocalIndex();
 							int nGlobalCol = dofJ.getGlobalIndex();
-							//int nGlobalCol = ((Node)dofJ.getOwner()).getIndex();
 							//Local stiff matrix for border
 							//注意顺序，内循环test函数不变，trial函数循环
-							weakForm.setShapeFunction(sfJ,nLocalCol, sfI,nLocalRow);
+							weakForm.setDOF(dofJ, dofI);
 							Function lhsBr = weakForm.leftHandSide(be, WeakForm.ItemType.Border);
 							double lhsBrVal = weakForm.integrate(be, lhsBr);
 							stiff.add(nGlobalRow, nGlobalCol, lhsBrVal);
 						}
 						//Local load vector for border
-						weakForm.setShapeFunction(null,0,sfI,nLocalRow);
+						weakForm.setDOF(null, dofI);
 						Function rhsBr = weakForm.rightHandSide(be, WeakForm.ItemType.Border);
 						double rhsBrVal = weakForm.integrate(be, rhsBr);
 						load.add(nGlobalRow, rhsBrVal);
@@ -318,12 +306,12 @@ public class AssemblerScalar implements Assembler {
 	 *   local load vector for border
 	 */
 	public void assembleLocal(Element e, 
-			Matrix localStiff, Matrix localStiffBorder, 
-			Vector localLoad, Vector localLoadBorder) {
+			SparseMatrix localStiff, SparseMatrix localStiffBorder, 
+			SparseVector localLoad, SparseVector localLoadBorder) {
 		status = 4;
 		
-		localStiff.clear();
-		localLoad.clear();
+		localStiff.clearAll();
+		localLoad.clearAll();
 		
 		DOFList DOFs = e.getAllDOFList(DOFOrder.NEFV);
 		int nDOFs = DOFs.size();
@@ -343,21 +331,19 @@ public class AssemblerScalar implements Assembler {
 		//所有自由度双循环
 		for(int i=1;i<=nDOFs;i++) {
 			DOF dofI = DOFs.at(i);
-			ScalarShapeFunction sfI = dofI.getSSF();
 			int nLocalRow = dofI.getLocalIndex();
 			for(int j=1;j<=nDOFs;j++) {
 				DOF dofJ = DOFs.at(j);
-				ScalarShapeFunction sfJ = dofJ.getSSF();
 				int nLocalCol = dofJ.getLocalIndex();
 				//Local stiff matrix
 				//注意顺序，内循环test函数不变，trial函数循环
-				weakForm.setShapeFunction(sfJ,nLocalCol, sfI,nLocalRow);
+				weakForm.setDOF(dofJ, dofI);
 				Function lhs = weakForm.leftHandSide(e, WeakForm.ItemType.Domain);
 				double lhsVal = weakForm.integrate(e, lhs);
 				localStiff.add(nLocalRow, nLocalCol, lhsVal);
 			}
 			//Local load vector
-			weakForm.setShapeFunction(null,0,sfI,nLocalRow);
+			weakForm.setDOF(null, dofI);
 			Function rhs = weakForm.rightHandSide(e, WeakForm.ItemType.Domain);
 			double rhsVal = weakForm.integrate(e, rhs);
 			localLoad.add(nLocalRow, rhsVal);
@@ -384,21 +370,19 @@ public class AssemblerScalar implements Assembler {
 					//所有自由度双循环
 					for(int i=1;i<=nBeDOF;i++) {
 						DOF dofI = beDOFs.at(i);
-						ScalarShapeFunction sfI = dofI.getSSF();
 						int nLocalRow = dofI.getLocalIndex();
 						for(int j=1;j<=nBeDOF;j++) {
 							DOF dofJ = beDOFs.at(j);
-							ScalarShapeFunction sfJ = dofJ.getSSF();
 							int nLocalCol = dofJ.getLocalIndex();
 							//Local stiff matrix for border
 							//注意顺序，内循环test函数不变，trial函数循环
-							weakForm.setShapeFunction(sfJ,nLocalCol, sfI,nLocalRow);
+							weakForm.setDOF(dofJ, dofI);
 							Function lhsBr = weakForm.leftHandSide(be, WeakForm.ItemType.Border);
 							double lhsBrVal = weakForm.integrate(be, lhsBr);
 							localStiffBorder.add(nLocalRow, nLocalCol, lhsBrVal);
 						}
 						//Local load vector for border
-						weakForm.setShapeFunction(null,0,sfI,nLocalRow);
+						weakForm.setDOF(null, dofI);
 						Function rhsBr = weakForm.rightHandSide(be, WeakForm.ItemType.Border);
 						double rhsBrVal = weakForm.integrate(be, rhsBr);
 						localLoadBorder.add(nLocalRow, rhsBrVal);						
@@ -435,7 +419,7 @@ public class AssemblerScalar implements Assembler {
 		}
 	}
 	
-	public void plusToGlobalStriff(Element e, Matrix local) {
+	public void plusToGlobalStriff(Element e, SparseMatrix local) {
 		Map<Integer,Map<Integer,Double>> m = local.getAll();
 		for(Entry<Integer,Map<Integer,Double>> er : m.entrySet()) {
 			int nRow = er.getKey();

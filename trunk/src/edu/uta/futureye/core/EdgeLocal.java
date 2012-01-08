@@ -58,22 +58,24 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
     }
     
 	/**
+	 * For vector valued problems, return boundary type of component <tt>nVVFComponent</tt>
+	 * <p>
 	 * 对于向量值问题，每个分量在同一边界上的类型不一定相同，
-	 * 该函数返回分量<tt>vvfIndex</tt>对应的边界类型
-	 * Vector valued function (vvf)
-	 * @param vvfIndex
+	 * 该函数返回分量<tt>nVVFComponent</tt>对应的边界类型
+	 * 
+	 * @param nVVFComponent
 	 * @return
 	 */
-    public NodeType getBorderType(int vvfIndex) {
-    	NodeType nt1 = this.beginNode().getNodeType(vvfIndex);
-    	NodeType nt2 = this.endNode().getNodeType(vvfIndex);                       
+    public NodeType getBorderType(int nVVFComponent) {                 
+    	NodeType nt1 = this.beginNode().getNodeType(nVVFComponent);
+    	NodeType nt2 = this.endNode().getNodeType(nVVFComponent);                       
     	if(nt1 == nt2) return nt1;
     	else {
     		//TODO Exception?
     		return null;
     	}
     }
-   
+    
 	/**
 	 * 是否位于区域边界，不依赖于是否计算过全局边界
 	 * @return
@@ -200,7 +202,7 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 						eDOFList.at(j).globalIndex,
 						eDOFList.at(j).getSF().restrictTo(dofIndex)
 					);
-			dof.setVvfIndex(eDOFList.at(j).getVvfIndex());
+			dof.setVVFComponent(eDOFList.at(j).getVVFComponent());
 			be.addNodeDOF(1, dof);//DOFs on first node
 			dofIndex += nNode;
 		}
@@ -212,7 +214,7 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 						eDOFList.at(j).globalIndex,
 						eDOFList.at(j).getSF().restrictTo(dofIndex)
 					);
-			dof.setVvfIndex(eDOFList.at(j).getVvfIndex());
+			dof.setVVFComponent(eDOFList.at(j).getVVFComponent());
 			be.addNodeDOF(2, dof);//DOFs on second node
 			dofIndex += nNode;
 		}
@@ -229,7 +231,7 @@ public class EdgeLocal extends GeoEntity1D<NodeLocal> {
 						eDOFList.at(j).globalIndex,
 						eDOFList.at(j).getSF().restrictTo(dofIndex)
 					);
-					dof.setVvfIndex(eDOFList.at(j).getVvfIndex());
+					dof.setVVFComponent(eDOFList.at(j).getVVFComponent());
 					be.addNodeDOF(edge.getEdgeNodes().at(i).localIndex, dof);//DOFs on nodes 3th,4th,5th...
 					//dofIndex += DOFMatrix.rowDim()
 					dofIndex += nNode;

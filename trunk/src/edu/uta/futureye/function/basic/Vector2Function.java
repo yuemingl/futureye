@@ -15,9 +15,9 @@ import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
-import edu.uta.futureye.util.container.NodeList;
 
 /**
+ * <blockquote><pre>
  * Vector to Function
  * Evaluate function values based on vector indices in Variable v
  * 
@@ -29,6 +29,7 @@ import edu.uta.futureye.util.container.NodeList;
  * 
  * 2011/10/17
  * + defaultFunction
+ * </blockquote></pre>
  * 
  * @author liuyueming
  *
@@ -55,6 +56,7 @@ public class Vector2Function extends AbstractFunction {
 	}
 	
 	/**
+	 * <blockquote><pre>
 	 * 该构造方法支持导数计算和函数插值，当需要插值计算时，必须指定自变量的坐标值
 	 * 
 	 * 注意，如果仅需要计算索引值对应的函数值，请使用构造函数public Vector2Function(Vector u)，速度会更快。
@@ -64,7 +66,7 @@ public class Vector2Function extends AbstractFunction {
 	 *     当使用该构造函数生成的对象作为方程系数进行“整体合成”时，特别是不同网格的插值计算，
 	 *     速度会相当慢，建议使用该构造函数构造的对象先插值计算出一个新网格上的Vector，再调用
 	 *     构造函数public Vector2Function(Vector u)，构造一个与方程所使用的网格一致的函数对象。
-	 * 
+	 * </blockquote></pre>
 	 * @param u
 	 * @param mesh
 	 * @param varName

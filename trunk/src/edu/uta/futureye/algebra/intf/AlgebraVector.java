@@ -1,7 +1,9 @@
 package edu.uta.futureye.algebra.intf;
 
 /**
+ * <blockquote><pre>
  * 为矩阵向量运算优化的向量接口
+ * </blockquote></pre>
  * 
  * @author liuyueming
  *
@@ -81,7 +83,9 @@ public interface AlgebraVector {
 	
 	/**
 	 * <code>x = a*x+y</code>
+	 * <p>
 	 * Notice: Different from <code>add(double a, AlgebraVector y)</code>
+	 * <p>
 	 * 注意：与<code>add(double a, AlgebraVector y)</code>有区别
 	 * 
 	 * @param a

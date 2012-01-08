@@ -81,10 +81,10 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 						if(var.equals("x"))
 							return y_s.D(jac);
 						if(var.equals("y"))
-							return FC.c0.S(x_s.D(jac));
+							return FC.C0.S(x_s.D(jac));
 					} else if(varName.equals("s")) {
 						if(var.equals("x"))
-							return FC.c0.S(y_r.D(jac));
+							return FC.C0.S(y_r.D(jac));
 						if(var.equals("y"))
 							return x_r.D(jac);
 					}
@@ -110,13 +110,13 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 		else if(funIndex == 3)
 			funOuter = FC.c(-0.25).M(f1mx).M(f1py).M(f1px.S(fy));
 		else if(funIndex == 4)
-			funOuter = FC.c(0.5).M(f1my).M(FC.c1.S(fx.M(fx)));
+			funOuter = FC.c(0.5).M(f1my).M(FC.C1.S(fx.M(fx)));
 		else if(funIndex == 5)
-			funOuter = FC.c(0.5).M(f1px).M(FC.c1.S(fy.M(fy)));
+			funOuter = FC.c(0.5).M(f1px).M(FC.C1.S(fy.M(fy)));
 		else if(funIndex == 6)
-			funOuter = FC.c(0.5).M(f1py).M(FC.c1.S(fx.M(fx)));
+			funOuter = FC.c(0.5).M(f1py).M(FC.C1.S(fx.M(fx)));
 		else if(funIndex == 7)
-			funOuter = FC.c(0.5).M(f1mx).M(FC.c1.S(fy.M(fy)));
+			funOuter = FC.c(0.5).M(f1mx).M(FC.C1.S(fy.M(fy)));
 
 		//使用复合函数构造形函数
 		funCompose = funOuter.compose(fInners);		

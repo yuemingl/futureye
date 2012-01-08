@@ -5,6 +5,7 @@ import java.util.Map;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 
 public interface VectorFunction {
 	/**
@@ -16,6 +17,15 @@ public interface VectorFunction {
 	 * @return
 	 */
 	Vector value(Variable v);
+	
+	/**
+	 * Returns the array of value of vector function at <tt>valAry</tt>
+	 * 
+	 * @param v
+	 * @param cache
+	 * @return
+	 */
+	Vector[] valueArray(VariableArray valAry, Map<Object,Object> cache);
 	
 	/**
 	 * Set variable names of the vector function

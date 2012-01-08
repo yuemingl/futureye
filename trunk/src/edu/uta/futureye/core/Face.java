@@ -59,16 +59,18 @@ public class Face extends GeoEntity2D<EdgeLocal,NodeLocal> {
     }
     
 	/**
+	 * For vector valued problems, return boundary type of component <tt>nVVFComponent</tt>
+	 * <p>
 	 * 对于向量值问题，每个分量在同一边界上的类型不一定相同，
-	 * 该函数返回分量<tt>vvfIndex</tt>对应的边界类型
-	 * Vector valued function (vvf)
-	 * @param vvfIndex
+	 * 该函数返回分量<tt>nVVFComponent</tt>对应的边界类型
+	 * 
+	 * @param nVVFComponent
 	 * @return
 	 */
-    public NodeType getBorderType(int vvfIndex) {
-    	NodeType nt1 = this.vertices.at(1).globalNode().getNodeType(vvfIndex);
+    public NodeType getBorderType(int nVVFComponent) {
+    	NodeType nt1 = this.vertices.at(1).globalNode().getNodeType(nVVFComponent);
     	for(int i=2;i<this.vertices.size();i++) {
-    		NodeType nt2 = this.vertices.at(2).globalNode().getNodeType(vvfIndex);
+    		NodeType nt2 = this.vertices.at(2).globalNode().getNodeType(nVVFComponent);
     	   	if(nt1 != nt2) return null;                  
     	}
     	return nt1;                  

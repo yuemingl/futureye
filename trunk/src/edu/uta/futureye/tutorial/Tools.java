@@ -2,10 +2,11 @@ package edu.uta.futureye.tutorial;
 
 import java.io.File;
 
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.function.Variable;
@@ -38,10 +39,10 @@ public class Tools {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		Vector v = new SparseVectorHashMap(nNode);
 		Vector[] vs = new SparseVector[funs.length];
 		for(int i=0;i<funs.length;i++) {
-			vs[i] = new SparseVector(nNode);
+			vs[i] = new SparseVectorHashMap(nNode);
 		}
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
@@ -93,7 +94,7 @@ public class Tools {
         plotFunction(mesh,".","testPlotFunGrad.dat",
         			gradFun.get(1),gradFun.get(2));
         
-        Laplace model = new Laplace();
+        T02Laplace model = new T02Laplace();
         model.run();
         Vector u = model.u;
         Vector ux = computeDerivative(model.mesh, u, "x");
@@ -122,7 +123,7 @@ public class Tools {
 		if(v.getDim()==mesh.getElementList().size() && v.getDim() != mesh.getNodeList().size()) {
 		    Vector pOnElement = v;
 		    ElementList eList = mesh.getElementList();
-		    Vector pOnNode = new SparseVector(mesh.getNodeList().size());
+		    Vector pOnNode = new SparseVectorHashMap(mesh.getNodeList().size());
 		    for(int i=1;i<=eList.size();i++) {
 		    	NodeList nList = eList.at(i).nodes;
 		    	for(int j=1;j<=nList.size();j++) {

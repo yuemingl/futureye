@@ -20,7 +20,6 @@ import edu.uta.futureye.core.geometry.topology.RectangleTp;
 import edu.uta.futureye.core.geometry.topology.TetrahedronTp;
 import edu.uta.futureye.core.geometry.topology.Topology3D;
 import edu.uta.futureye.core.geometry.topology.TriangleTp;
-import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorShapeFunction;
 import edu.uta.futureye.util.Constant;
@@ -34,6 +33,7 @@ import edu.uta.futureye.util.container.ObjVector;
 import edu.uta.futureye.util.container.VertexList;
 
 /**
+ * <blockquote><pre>
  * Element of a triangulation
  * 剖分单元类
  * 
@@ -45,8 +45,7 @@ import edu.uta.futureye.util.container.VertexList;
  * (5)体：全局对象，代表
  * 局部对象都有局部索引（编号），通过局部索引来操作相关的局部对象，例如关联自由度、获取自由度
  * 
- * 
- * 
+ * </blockquote></pre>
  * 
  * @author liuyueming
  *
@@ -71,7 +70,7 @@ public class Element {
 	public ElementList neighbors = new ElementList();
 	
 	/**
-	 * A map between local index of a node and it's corresponding DOFList
+	 * A map between local index of a node,edge,face or volume and their corresponding DOFList
 	 * 与单元结点对应的DOFList
 	 */
 	protected Map<Integer,DOFList> nodeDOFList;
@@ -126,6 +125,7 @@ public class Element {
 	}
 	
 	/**
+	 * <blockquote><pre>
 	 * 构造一个简单Element，参数结点默认按照以下编号：
 	 * 
 	 * 一维单元：
@@ -201,8 +201,8 @@ public class Element {
 	 * | /      | /
 	 * 5--------6
 	 *
-	 *
-	 * @param node
+	 *</blockquote></pre>
+	 * @param nodes an object of NodeList
 	 */
 	public Element(NodeList nodes) {
 		buildElement(nodes);
@@ -770,67 +770,115 @@ public class Element {
 	}
 	
 	/**
-	 * 获取单元上所有的自由度
-	 * 默认规则：
-	 * 按照点、边、面、体的顺序将局部自由度编号从小到大排列
-	 * @param 自由度排序方式
+	 * 获取单元上所有的自由度，自由度的排列顺序由order指定
+	 * 注意：该顺序与按照自由度局部编号从小到大排列的顺序不一定相同
+	 * 
+	 * @param order 自由度排序方式：NEFV-点、边、面、体； VFEN-体、面、边、点
 	 * @return
 	 */
 	public DOFList getAllDOFList(DOFOrder order) {
 		DOFList rlt = new DOFList();
-		if(nodeDOFList != null) {
-			for(Entry<Integer,DOFList> entry : nodeDOFList.entrySet()) {
-				rlt.addAll(entry.getValue());
+		switch (order) {
+		case NEFV: 
+			if(nodeDOFList != null) {
+				for(Entry<Integer,DOFList> entry : nodeDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
 			}
-		}
-		if(edgeDOFList != null) {
-			for(Entry<Integer,DOFList> entry : edgeDOFList.entrySet()) {
-				rlt.addAll(entry.getValue());
+			if(edgeDOFList != null) {
+				for(Entry<Integer,DOFList> entry : edgeDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
 			}
-		}
-		if(faceDOFList != null) {
-			for(Entry<Integer,DOFList> entry : faceDOFList.entrySet()) {
-				rlt.addAll(entry.getValue());
+			if(faceDOFList != null) {
+				for(Entry<Integer,DOFList> entry : faceDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
 			}
+			if(volumeDOFList != null) {
+				rlt.addAll(volumeDOFList);
+			}
+			break;
+		case VFEN:
+			if(volumeDOFList != null) {
+				rlt.addAll(volumeDOFList);
+			}			
+			if(faceDOFList != null) {
+				for(Entry<Integer,DOFList> entry : faceDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
+			}
+			if(edgeDOFList != null) {
+				for(Entry<Integer,DOFList> entry : edgeDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
+			}
+			if(nodeDOFList != null) {
+				for(Entry<Integer,DOFList> entry : nodeDOFList.entrySet()) {
+					rlt.addAll(entry.getValue());
+				}
+			}
+			break;
+		default:
+			throw new FutureyeException();	
 		}
-		if(volumeDOFList != null) {
-			rlt.addAll(volumeDOFList);
-		}
+
 		return rlt;
 	}
 	
+	/**
+	 * Get all DOF in a DOFList, sorted by localIndex of DOF object ascending.
+	 * 
+	 * @return
+	 */
+	public DOFList getAllDOFListSortedByLocalIndex() {
+		DOFList list = this.getAllDOFList(DOFOrder.NEFV);
+		Collections.sort(list.toList(), new Comparator<DOF>() {
+
+			@Override
+			public int compare(DOF o1, DOF o2) {
+				if(o1.getLocalIndex()>o2.getLocalIndex())
+					return 1;
+				else 
+					return -1;
+			}
+			
+		});
+		return list;
+	}
 
 	/**
 	 * 对于向量值问题，在某个几何实体上的自由度也是一个向量，
-	 * 例如：二维Stokes问题的速度、压强向量：(u1,u2,p)，在结点上
-	 * 对应的自由度为list： [DOFu1 DOFu2 DOFp]
+	 * 例如：二维Stokes问题的速度、压强向量：(u,v,p)，在结点上
+	 * 对应的自由度为list： [DOFu DOFv DOFp]
+	 * 
 	 * @param order
 	 * @param vectorDim: 自由度list index  
 	 * @return
 	 */
-	public DOFList getAllDOFListByVvfIndex(DOFOrder order,int vvfIndex) {
+	public DOFList getAllDOFListByVVFComponent(DOFOrder order,int nVVFComponent) {
 		DOFList rlt = new DOFList();
 		if(nodeDOFList != null) {
 			for(Entry<Integer,DOFList> entry : nodeDOFList.entrySet()) {
-				if(entry.getValue().size()>=vvfIndex)
-					rlt.add(entry.getValue().at(vvfIndex));
+				if(entry.getValue().size()>=nVVFComponent)
+					rlt.add(entry.getValue().at(nVVFComponent));
 			}
 		}
 		if(edgeDOFList != null) {
 			for(Entry<Integer,DOFList> entry : edgeDOFList.entrySet()) {
-				if(entry.getValue().size()>=vvfIndex)
-					rlt.add(entry.getValue().at(vvfIndex));
+				if(entry.getValue().size()>=nVVFComponent)
+					rlt.add(entry.getValue().at(nVVFComponent));
 			}
 		}
 		if(faceDOFList != null) {
 			for(Entry<Integer,DOFList> entry : faceDOFList.entrySet()) {
-				if(entry.getValue().size()>=vvfIndex)
-					rlt.add(entry.getValue().at(vvfIndex));
+				if(entry.getValue().size()>=nVVFComponent)
+					rlt.add(entry.getValue().at(nVVFComponent));
 			}
 		}
 		if(volumeDOFList != null) {
-			if(volumeDOFList.size()>=vvfIndex)
-				rlt.add(volumeDOFList.at(vvfIndex));
+			if(volumeDOFList.size()>=nVVFComponent)
+				rlt.add(volumeDOFList.at(nVVFComponent));
 		}
 		return rlt;
 	}
@@ -1286,23 +1334,25 @@ public class Element {
 	}
 	
 	/**
+	 * For vector valued problems, return boundary type of component <tt>nVVFComponent</tt>
+	 * <p>
 	 * 对于向量值问题，每个分量在同一边界上的类型不一定相同，
-	 * 该函数返回分量<tt>vvfIndex</tt>对应的边界类型
-	 * Vector valued function (vvf)
-	 * @param vvfIndex
+	 * 该函数返回分量<tt>nVVFComponent</tt>对应的边界类型
+	 * 
+	 * @param nVVFComponent
 	 * @return
 	 */
-	public NodeType getBorderNodeType(int vvfIndex) {
+	public NodeType getBorderNodeType(int nVVFComponent) {
 		if(this.eleDim == 2) {
 			//从一个三维单元的面构造而来的Element对象的几何实体
 			//是一个边全局面象，获取该面对象的边界类型
 			Face face = (Face)this.geoEntity;
-			return face.getBorderType(vvfIndex);
+			return face.getBorderType(nVVFComponent);
 		} else if(this.eleDim == 1) {
 			//从一个二维单元的边构造而来的Element对象的几何实体
 			//是一个边全局对象，获取该边对象的边界类型
 			Edge edge = (Edge)this.geoEntity;
-			return edge.getBorderType(vvfIndex);
+			return edge.getBorderType(nVVFComponent);
 		} else {
 			throw new FutureyeException("this.eleDim="+this.eleDim);
 		}
@@ -1411,20 +1461,22 @@ public class Element {
 		for(int i=1;i<=nodes.size();i++) {
 			String st = "";
 			ObjVector<NodeType> nodeTypes = nodes.at(i).nodeTypes;
-			if(nodeTypes.size()==0)
+			if(nodeTypes==null || nodeTypes.size()==0)
 				st="_";
-			for(int j=1;j<=nodeTypes.size();j++) {
-				NodeType nodeType = nodeTypes.at(j);
-				if(nodeType == NodeType.Inner)
-					st += "I";
-				else if(nodeType == NodeType.Dirichlet)
-					st += "D";
-				else if(nodeType == NodeType.Neumann)
-					st += "N";
-				else if(nodeType == NodeType.Robin)
-					st += "R";
-				else
-					st += "_";
+			else {
+				for(int j=1;j<=nodeTypes.size();j++) {
+					NodeType nodeType = nodeTypes.at(j);
+					if(nodeType == NodeType.Inner)
+						st += "I";
+					else if(nodeType == NodeType.Dirichlet)
+						st += "D";
+					else if(nodeType == NodeType.Neumann)
+						st += "N";
+					else if(nodeType == NodeType.Robin)
+						st += "R";
+					else
+						st += "_";
+				}
 			}
 			s += nodes.at(i).globalIndex + st + " ";
 		}

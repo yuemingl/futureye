@@ -1,23 +1,12 @@
 package edu.uta.futureye.function.basic;
 
-import java.lang.reflect.Array;
-
-import edu.uta.futureye.algebra.intf.Vector;
-import edu.uta.futureye.application.Tools;
-import edu.uta.futureye.core.Edge;
 import edu.uta.futureye.core.Element;
-import edu.uta.futureye.core.Face;
 import edu.uta.futureye.core.Mesh;
-import edu.uta.futureye.core.Node;
-import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.ElementDependentFunction;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.util.FutureyeException;
-import edu.uta.futureye.util.Utils;
 
 /**
  * Compute derivative u_xx of a vector u that defined on a mesh

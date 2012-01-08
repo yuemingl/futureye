@@ -23,7 +23,7 @@ public class FAx extends AbstractFunction {
 		if(this.varNames().contains(varName))
 			return new FC(a);
 		else
-			return FC.c0;
+			return FC.C0;
 	}
 
 	@Override

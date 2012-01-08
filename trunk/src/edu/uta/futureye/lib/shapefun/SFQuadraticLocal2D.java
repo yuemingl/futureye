@@ -108,10 +108,10 @@ public class SFQuadraticLocal2D extends AbstractFunction implements ScalarShapeF
 						if(var.equals("x"))
 							return y_s.D(jac);
 						if(var.equals("y"))
-							return FC.c0.S(x_s.D(jac));
+							return FC.C0.S(x_s.D(jac));
 					} else if(varName.equals("s")) {
 						if(var.equals("x"))
-							return FC.c0.S(y_r.D(jac));
+							return FC.C0.S(y_r.D(jac));
 						if(var.equals("y"))
 							return x_r.D(jac);
 					} 
@@ -136,13 +136,13 @@ public class SFQuadraticLocal2D extends AbstractFunction implements ScalarShapeF
 		Function fr = new FX("r");
 		Function fs = new FX("s");
 		Function ft = //new FX("t");
-				FC.c1.S(fr.A(fs));
+				FC.C1.S(fr.A(fs));
 				
 				
 		Function f2rm1 = new FAxpb("r",2.0,-1.0);
 		Function f2sm1 = new FAxpb("s",2.0,-1.0);
 		Function f2tm1 = //new FAxpb("t",2.0,-1.0);
-				FC.c1.S(FMath.linearCombination(2.0, fr, 2.0, fs));
+				FC.C1.S(FMath.linearCombination(2.0, fr, 2.0, fs));
 
 
 //		Map<String, Function> fInner_t = new HashMap<String, Function>(4);

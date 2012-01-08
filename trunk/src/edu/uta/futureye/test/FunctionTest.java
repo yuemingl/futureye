@@ -3,7 +3,7 @@ package edu.uta.futureye.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.application.Tools;
 import edu.uta.futureye.core.Element;
@@ -11,6 +11,7 @@ import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.function.AbstractVectorFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.DuDx;
 import edu.uta.futureye.function.basic.FAx;
 import edu.uta.futureye.function.basic.FAxpb;
@@ -29,8 +30,8 @@ import edu.uta.futureye.util.container.NodeList;
 public class FunctionTest {
 	
 	public static void constantTest() {
-		Function c0 = FC.c0;
-		Function c1 = FC.c1;
+		Function c0 = FC.C0;
+		Function c1 = FC.C1;
 		Function fx = FX.fx;
 		
 		System.out.println(c0.A(c0));
@@ -163,7 +164,7 @@ public class FunctionTest {
 	public static void severalVariableFunctions() {
 		Function fx = FX.fx;
 		Function fy = FX.fy;
-		Function f = FC.c(0.25).M(FC.c1.S(fx)).M(FC.c1.S(fy));
+		Function f = FC.c(0.25).M(FC.C1.S(fx)).M(FC.C1.S(fy));
 		System.out.println(f);
 		Variable v = new Variable("x",0.5).set("y", 0.5);
 		System.out.println(f.value(v));
@@ -183,7 +184,7 @@ public class FunctionTest {
 	    
 	    Vector[] a = new Vector[4];
 	    for(int i=0;i<4;i++)
-	    	a[i] = new SparseVector(mesh.getNodeList().size());
+	    	a[i] = new SparseVectorHashMap(mesh.getNodeList().size());
 	    ElementList eList = mesh.getElementList();
 	    for(int i=1;i<=eList.size();i++) {
 	    	Element e  = eList.at(i);
@@ -234,6 +235,38 @@ public class FunctionTest {
 		System.out.println(f.getExpression());
 	}
 	
+	public static void testLinearCombination() {
+		double[] cs = new double[3];
+		Function[] fs = new Function[3];
+		cs[0] = 1;
+		cs[1] = 2;
+		cs[2] = 3;
+		fs[0] = FX.fx;
+		fs[1] = FX.fy;
+		fs[2] = FX.fz;
+		Function lc = FMath.linearCombination(cs, fs);
+		System.out.println(lc);
+		Function lcd = lc._d("x");
+		System.out.println(lcd);
+		VariableArray va = new VariableArray();
+		double[] x = {10, 10};
+		double[] y = {20, 20};
+		double[] z = {30, 30};
+		va.set("x", x);
+		va.set("y", y);
+		va.set("z", z);
+		
+		printArray(lc.valueArray(va, null));
+		printArray(lcd.valueArray(va, null));
+		
+	}
+	
+	public static void printArray(double[] ary) {
+		for(int i=0;i<ary.length;i++)
+			System.out.print(ary[i]+" ");
+		System.out.println();
+	}
+	
 	public static void main(String[] args) {
 //		test();
 //		constantTest();
@@ -241,7 +274,9 @@ public class FunctionTest {
 //		
 //		severalVariableFunctions();
 		//testDuDx();
-		testFunctionExpression();
+//		testFunctionExpression();
+		
+		testLinearCombination();
 	}
 
 		

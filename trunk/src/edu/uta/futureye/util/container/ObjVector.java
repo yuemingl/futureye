@@ -25,6 +25,7 @@ public class ObjVector<T> {
 		objs.setSize(size);
 	}
 	
+	@SafeVarargs
 	public ObjVector(T ...es) {
 		for(T e : es) this.add(e);
 	}

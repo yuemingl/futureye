@@ -6,19 +6,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import edu.uta.futureye.algebra.SchurComplementLagrangianSolver;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SolverJBLAS;
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
-import edu.uta.futureye.algebra.intf.BlockMatrix;
-import edu.uta.futureye.algebra.intf.BlockVector;
-import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.SparseMatrixRowMajor;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.SchurComplementLagrangianSolver;
+import edu.uta.futureye.algebra.solver.Solver;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.DOFOrder;
 import edu.uta.futureye.core.Element;
@@ -28,7 +26,6 @@ import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
 import edu.uta.futureye.core.geometry.GeoEntity;
-import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.DuDn;
 import edu.uta.futureye.function.basic.FC;
@@ -100,7 +97,7 @@ public class VariationGaussNewtonDOT {
     //3*mu_a*mu_s' = 
     // background: 3*0.1*50
     // inclusion:  3*1.0*50
-    Vector aGlob = null;//GCM方法得到的a_glob(x)
+    SparseVector aGlob = null;//GCM方法得到的a_glob(x)
     double model_k = 0.02;//=1.0/mu_s'
     double aBkSquare = 0.1/model_k;//back ground of a(x)
     
@@ -193,7 +190,7 @@ public class VariationGaussNewtonDOT {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		SparseVector v = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	var.setIndex(node.globalIndex);
@@ -349,7 +346,7 @@ public class VariationGaussNewtonDOT {
 		Vector2Function param_c = new Vector2Function(
 				FMath.axpy(-2.0, laplace_lnu0,
 				FMath.ax(1.0,FMath.axpy(-1, a, 
-						new SparseVector(a.getDim(),aBkSquare)))));
+						new SparseVectorHashMap(a.getDim(),aBkSquare)))));
 		
 		//\nabla{lnu0}
 		Function b1 = new Vector2Function(lnu0_x);
@@ -395,9 +392,9 @@ public class VariationGaussNewtonDOT {
 		AssemblerScalar assembler = new AssemblerScalar(mesh, weakForm);
 		System.out.println("Begin Assemble...lambda");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
-		assembler.imposeDirichletCondition(FC.c0);
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
+		assembler.imposeDirichletCondition(FC.C0);
 		System.out.println("Assemble done!");
 
 		Equation eqn = new Equation();
@@ -432,7 +429,7 @@ public class VariationGaussNewtonDOT {
 	public Equation getEqnV(Vector lnu0_x, Vector lnu0_y, 
 			Vector a, Vector g_tidle) {
 		//-( a(x)-k^2 ) = k^2-a(x)
-		Vector v_c = FMath.axpy(-1.0, a, new SparseVector(a.getDim(),aBkSquare));
+		Vector v_c = FMath.axpy(-1.0, a, new SparseVectorHashMap(a.getDim(),aBkSquare));
 		//plotVector(mesh, v_c, "param_c"+s_i+".dat");
 		Vector2Function param_c = new Vector2Function(v_c);
 		
@@ -463,8 +460,8 @@ public class VariationGaussNewtonDOT {
 		AssemblerScalar assembler = new AssemblerScalar(mesh, weakForm);
 		System.out.println("Begin Assemble...v");
 		assembler.assemble();
-		Matrix stiff = assembler.getStiffnessMatrix();
-		Vector load = assembler.getLoadVector();
+		SparseMatrix stiff = assembler.getStiffnessMatrix();
+		SparseVector load = assembler.getLoadVector();
 		if(g_tidle != null)
 			assembler.imposeDirichletCondition(new Vector2Function(g_tidle));
 		System.out.println("Assemble done!");
@@ -494,7 +491,7 @@ public class VariationGaussNewtonDOT {
 	public Equation getEqnA(Vector v, Vector lambda, Vector a_glob, Function diri) {
         //4.Weak form
         WeakFormL22D weakForm = new WeakFormL22D();
-        weakForm.setParam(FC.c0, FC.c1);
+        weakForm.setParam(FC.C0, FC.C1);
         //Right hand side(RHS): f(x) = -\frac{1.0}{\beta}*v*\lambda + a_glob
         Function fv = new Vector2Function(v);
         Function flmd = new Vector2Function(lambda);
@@ -517,8 +514,8 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...a(x)");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
         assembler.imposeDirichletCondition(diri);
         System.out.println("Assemble done!");
@@ -539,7 +536,7 @@ public class VariationGaussNewtonDOT {
         //weakForm.setParam(FC.c0, FC.c1);
 		
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c1, null, null);
+        weakForm.setParam(FC.C0, FC.C1, null, null);
         
         //Right hand side(RHS): f(x) = -\frac{1.0}{\beta}*v*\lambda + a_glob
         Function fa_glob = new Vector2Function(a_glob);
@@ -584,8 +581,8 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...a(x)");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
         assembler.imposeDirichletCondition(diri);
         System.out.println("Assemble done!");
@@ -603,11 +600,11 @@ public class VariationGaussNewtonDOT {
 	 * 获取状态方程的余量
 	 * @return
 	 */
-	public Vector getResLlmd(Vector lnu0_x, Vector lnu0_y, 
+	public SparseVector getResLlmd(Vector lnu0_x, Vector lnu0_y, 
 			Vector a, Vector v, Vector g_tidle) {
 		Equation eq = this.getEqnV(lnu0_x, lnu0_y, a, g_tidle);
         //Residual
-        Vector res = new SparseVector(eq.f.getDim());
+        SparseVector res = new SparseVectorHashMap(eq.f.getDim());
         eq.A.mult(v, res);
         res.add(-1.0, eq.f);
         return res;
@@ -618,13 +615,13 @@ public class VariationGaussNewtonDOT {
 	 * 
 	 * @return
 	 */
-	public Vector getResLu(int s_i,  
+	public SparseVector getResLu(int s_i,  
 			Vector lnu0_x, Vector lnu0_y, Vector laplace_lnu0,
 			Vector a, Vector v, Vector g_tidle,
 			Vector lambda) {
 		Equation eq = this.getEqnLambda(s_i, lnu0_x, lnu0_y, laplace_lnu0, a, v, g_tidle);
         //Residual
-        Vector res = new SparseVector(eq.f.getDim());
+        SparseVector res = new SparseVectorHashMap(eq.f.getDim());
         eq.A.mult(lambda, res);
         res.add(-1.0, eq.f);
         return res;
@@ -638,12 +635,12 @@ public class VariationGaussNewtonDOT {
 	 * @param a_glob
 	 * @return
 	 */
-	public Vector getResLq(Vector a_glob, 
+	public SparseVector getResLq(Vector a_glob, 
 			Vector v, Vector lambda, Vector a, 
 			Function diri) {
 		Equation eq = this.getEqnA(v, lambda, a_glob, diri);
         //Residual
-        Vector res = new SparseVector(eq.f.getDim());
+        SparseVector res = new SparseVectorHashMap(eq.f.getDim());
         eq.A.mult(a, res);
         res.add(-1.0, eq.f);
         plotVector(mesh,res,String.format("Res_La%02d.dat",this.iterNum));
@@ -656,12 +653,12 @@ public class VariationGaussNewtonDOT {
         return res;
 	}
 	
-	public Vector getResLq(Vector a_glob, 
+	public SparseVector getResLq(Vector a_glob, 
 			Vector[] v, Vector[] lambda, Vector a, 
 			Function diri) {
 		Equation eq = this.getEqnA(v, lambda, a_glob, diri);
         //Residual
-        Vector res = new SparseVector(eq.f.getDim());
+        SparseVector res = new SparseVectorHashMap(eq.f.getDim());
         eq.A.mult(a, res);
         res.add(-1.0, eq.f);
         plotVector(mesh,res,String.format("Res_La%02d.dat",this.iterNum));
@@ -686,12 +683,12 @@ public class VariationGaussNewtonDOT {
 	 * 
 	 * @return
 	 */
-	public Matrix getM() {
+	public SparseMatrix getM() {
         //4.Weak form: (du,\phi)
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c1, null, null);
+        weakForm.setParam(FC.C0, FC.C1, null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -705,7 +702,7 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...M");
         assembler.assemble(false);
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition 
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -719,7 +716,7 @@ public class VariationGaussNewtonDOT {
 	 * where 
 	 *   dl=\delta\lambda
 	 */
-	public Matrix getA(Vector ak, Vector lnu0_x, Vector lnu0_y) {
+	public SparseMatrix getA(Vector ak, Vector lnu0_x, Vector lnu0_y) {
         //4.Weak form:
         WeakFormGCM weakForm = new WeakFormGCM();
         Function fak = new Vector2Function(ak);
@@ -727,10 +724,10 @@ public class VariationGaussNewtonDOT {
         Function flnu0_x = new Vector2Function(lnu0_x);
         Function flnu0_y = new Vector2Function(lnu0_y);
         //weakForm.setParam(FC.c(k), fak.S(k*k), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
-        weakForm.setParam(FC.c1, fak.S(aBkSquare), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
+        weakForm.setParam(FC.C1, fak.S(aBkSquare), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
         
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -744,7 +741,7 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...A");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -773,7 +770,7 @@ public class VariationGaussNewtonDOT {
         Function flnu0_x = new Vector2Function(lnu0_x);
         Function flnu0_y = new Vector2Function(lnu0_y);
         //weakForm.setParam(FC.c(k), fak.S(k*k), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
-        weakForm.setParam(FC.c1, fak.S(aBkSquare), 
+        weakForm.setParam(FC.C1, fak.S(aBkSquare), 
         		flnu0_x.M(-2.0), flnu0_y.M(-2.0));
         
         //Right hand side(RHS): f(x) = da*vk
@@ -793,10 +790,10 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...solveDeltaV");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
-        Vector load = assembler.getLoadVector();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
+        SparseVector load = assembler.getLoadVector();
         //Boundary condition
-        assembler.imposeDirichletCondition(FC.c0);
+        assembler.imposeDirichletCondition(FC.C0);
         System.out.println("Assemble done!");
         
         Solver sol = new Solver();
@@ -804,7 +801,7 @@ public class VariationGaussNewtonDOT {
         return x;
 	}
 	
-	public Matrix getAT(Vector ak, Vector lnu0_x, Vector lnu0_y) {
+	public SparseMatrix getAT(Vector ak, Vector lnu0_x, Vector lnu0_y) {
         //4.Weak form:
         WeakFormGCMDual weakForm = new WeakFormGCMDual();
         Function fak = new Vector2Function(ak);
@@ -812,10 +809,10 @@ public class VariationGaussNewtonDOT {
         Function flnu0_x = new Vector2Function(lnu0_x);
         Function flnu0_y = new Vector2Function(lnu0_y);
         //weakForm.setParam(FC.c(k), fak.S(k*k), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
-        weakForm.setParam(FC.c1, fak.S(aBkSquare), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
+        weakForm.setParam(FC.C1, fak.S(aBkSquare), flnu0_x.M(-2.0), flnu0_y.M(-2.0));
         
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -829,7 +826,7 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...AT");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -838,13 +835,13 @@ public class VariationGaussNewtonDOT {
         return stiff;
 	}
 	
-	public Matrix getC(Vector vk) {
+	public SparseMatrix getC(Vector vk) {
         //4.Weak form: (\phi,da*vk)
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
         Function fvk = new Vector2Function(vk);
-        weakForm.setParam(FC.c0, fvk, null, null);
+        weakForm.setParam(FC.C0, fvk, null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -858,7 +855,7 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...C");
         assembler.assemble(false);
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -867,12 +864,12 @@ public class VariationGaussNewtonDOT {
         return stiff;
 	}
 	
-	public Matrix getBR() {
+	public SparseMatrix getBR() {
         //4.Weak form: (dq,\chi)
         WeakFormLaplace2D weakForm = new WeakFormLaplace2D();
-        weakForm.setParam(FC.c0, FC.c(beta), null, null);
+        weakForm.setParam(FC.C0, FC.c(beta), null, null);
         //Right hand side(RHS): f(x) = 0
-        weakForm.setF(FC.c0);
+        weakForm.setF(FC.C0);
 
         //需要重新标记边界条件，否则在“整体合成”过程会出现错误。
         //虽然边界条件实在大矩阵中设置，这一步也是需要的。
@@ -886,7 +883,7 @@ public class VariationGaussNewtonDOT {
                 new AssemblerScalar(mesh, weakForm);
         System.out.println("Begin Assemble...R");
         assembler.assemble();
-        Matrix stiff = assembler.getStiffnessMatrix();
+        SparseMatrix stiff = assembler.getStiffnessMatrix();
         //Boundary condition
         //边界条件需要在大矩阵中设置
         //assembler.imposeDirichletCondition(FC.c0);
@@ -906,7 +903,7 @@ public class VariationGaussNewtonDOT {
 	 */
 	public Vector solveRealV(Vector lnu0_x, Vector lnu0_y) {
 		NodeList nodes = mesh.getNodeList();
-		Vector aReal = new SparseVector(nodes.size());
+		Vector aReal = new SparseVectorHashMap(nodes.size());
 		for(int i=1;i<=nodes.size();i++) {
 			Node node = nodes.at(i);
 			double mu_a = modelReal.getMu_a().value(Variable.createFrom(modelReal.getMu_a(), node, i));
@@ -956,7 +953,7 @@ public class VariationGaussNewtonDOT {
         return lmd_solve;
     }
 	
-	protected void setDirichlet(BlockMatrix BM, BlockVector BV,
+	protected void setDirichlet(SparseBlockMatrix BM, SparseBlockVector BV,
 			int matIndex, double value) {
 		int row = matIndex;
 		int col = matIndex;
@@ -975,7 +972,7 @@ public class VariationGaussNewtonDOT {
 		}
 	}
 	
-	public void imposeDirichletCondition(BlockMatrix BM, BlockVector BV,
+	public void imposeDirichletCondition(SparseBlockMatrix BM, SparseBlockVector BV,
 			Function diri) {
 		ElementList eList = mesh.getElementList();
 		int nNode = mesh.getNodeList().size();
@@ -998,7 +995,7 @@ public class VariationGaussNewtonDOT {
 		}
 	}
 	
-	public void imposeDirichletCondition(BlockMatrix BM, BlockVector BV,
+	public void imposeDirichletCondition(SparseBlockMatrix BM, SparseBlockVector BV,
 			int nDataBlock, Function diri) {
 		ElementList eList = mesh.getElementList();
 		int nNode = mesh.getNodeList().size();
@@ -1030,21 +1027,21 @@ public class VariationGaussNewtonDOT {
 	 *  (0  C'  R)
 	 * 
 	 */
-	public BlockMatrix getSearchDirectionMatrix(Vector ak, Vector vk,
+	public SparseBlockMatrix getSearchDirectionMatrix(Vector ak, Vector vk,
 			Vector lnu0_x, Vector lnu0_y) {
-		BlockMatrix BM = new SparseBlockMatrix(3,3);
-		Matrix M = this.getM();
+		SparseBlockMatrix BM = new SparseBlockMatrix(3,3);
+		SparseMatrix M = (SparseMatrix)this.getM();
 		//A <--> AT ?? fix
-		Matrix A = this.getA(ak, lnu0_x, lnu0_y);
+		SparseMatrix A = (SparseMatrix)this.getA(ak, lnu0_x, lnu0_y);
 		//Matrix AT = A.copy().trans();
-		Matrix AT = this.getAT(ak, lnu0_x, lnu0_y);
-		Matrix C = this.getC(vk);
-		Matrix CT = C.copy().trans();
-		Matrix R = this.getBR();
+		SparseMatrix AT = (SparseMatrix)this.getAT(ak, lnu0_x, lnu0_y);
+		SparseMatrix C = (SparseMatrix)this.getC(vk);
+		SparseMatrix CT = (SparseMatrix)C.copy().trans();
+		SparseMatrix R = (SparseMatrix)this.getBR();
 		
-		Matrix BM13 = new SparseMatrix(M.getRowDim(),R.getColDim());
-		Matrix BM22 = new SparseMatrix(A.getRowDim(),A.getColDim());
-		Matrix BM31 = new SparseMatrix(R.getRowDim(),M.getColDim());
+		SparseMatrix BM13 = new SparseMatrixRowMajor(M.getRowDim(),R.getColDim());
+		SparseMatrix BM22 = new SparseMatrixRowMajor(A.getRowDim(),A.getColDim());
+		SparseMatrix BM31 = new SparseMatrixRowMajor(R.getRowDim(),M.getColDim());
 		
 		BM.setBlock(1, 1, M);
 		BM.setBlock(1, 2, AT);
@@ -1076,23 +1073,23 @@ public class VariationGaussNewtonDOT {
 	 * (0 0 ... 0 |CT1 CT2 . CTN| R  )
 	 * 
 	 */	
-	public BlockMatrix getSearchDirectionMatrix(Vector ak, Vector[] vk,
+	public SparseBlockMatrix getSearchDirectionMatrix(Vector ak, Vector[] vk,
 			List<ParamOfLightSource> paramList) {
 		
 		int nDataBlock = vk.length;
-		BlockMatrix BM = new SparseBlockMatrix(nDataBlock*2+1,nDataBlock*2+1);
+		SparseBlockMatrix BM = new SparseBlockMatrix(nDataBlock*2+1,nDataBlock*2+1);
 		
-		Matrix R = this.getBR();
+		SparseMatrix R = this.getBR();
 		BM.setBlock(nDataBlock*2+1, nDataBlock*2+1, R.setName("R"));
 		
 		for(int i=1;i<=nDataBlock;i++) {
 			ParamOfLightSource param=paramList.get(i-1);
-			Matrix M = this.getM();
-			Matrix A = this.getA(ak, param.lnu0_x, param.lnu0_y);
-			//Matrix AT = A.copy().trans();
-			Matrix AT = this.getAT(ak, param.lnu0_x, param.lnu0_y);
-			Matrix C = this.getC(vk[i-1]);
-			Matrix CT = C.copy().trans();
+			SparseMatrix M = this.getM();
+			SparseMatrix A = this.getA(ak, param.lnu0_x, param.lnu0_y);
+			//SparseMatrix AT = A.copy().trans();
+			SparseMatrix AT = this.getAT(ak, param.lnu0_x, param.lnu0_y);
+			SparseMatrix C = this.getC(vk[i-1]);
+			SparseMatrix CT = C.copy().trans();
 			for(int j=1;j<=nDataBlock;j++) {
 				if(i==j) {
 					BM.setBlock(i, j, M.setName("M"+i));
@@ -1102,18 +1099,18 @@ public class VariationGaussNewtonDOT {
 					BM.setBlock(nDataBlock*2+1, nDataBlock+i, CT.setName("CT"+i));
 					
 					BM.setBlock(nDataBlock+i, nDataBlock+i, 
-							new SparseMatrix(A.getRowDim(),AT.getColDim()));
+							new SparseMatrixRowMajor(A.getRowDim(),AT.getColDim()));
 					BM.setBlock(i, nDataBlock*2+1, 
-							new SparseMatrix(M.getRowDim(),R.getColDim()));
+							new SparseMatrixRowMajor(M.getRowDim(),R.getColDim()));
 					BM.setBlock(nDataBlock*2+1, i, 
-							new SparseMatrix(R.getRowDim(),M.getColDim()));
+							new SparseMatrixRowMajor(R.getRowDim(),M.getColDim()));
 					
 				} else {
 					
-					Matrix M0 = new SparseMatrix(M.getRowDim(),M.getColDim());
-					Matrix AT0 = new SparseMatrix(AT.getRowDim(),AT.getColDim());
-					Matrix A0 = new SparseMatrix(A.getRowDim(),A.getColDim());
-					Matrix ATA0 = new SparseMatrix(A.getRowDim(),AT.getColDim());
+					SparseMatrix M0 = new SparseMatrixRowMajor(M.getRowDim(),M.getColDim());
+					SparseMatrix AT0 = new SparseMatrixRowMajor(AT.getRowDim(),AT.getColDim());
+					SparseMatrix A0 = new SparseMatrixRowMajor(A.getRowDim(),A.getColDim());
+					SparseMatrix ATA0 = new SparseMatrixRowMajor(A.getRowDim(),AT.getColDim());
 					BM.setBlock(i, j, M0);
 					BM.setBlock(i, nDataBlock+j, AT0);
 					BM.setBlock(nDataBlock+i, j, A0);
@@ -1132,11 +1129,11 @@ public class VariationGaussNewtonDOT {
 	 * @param col2
 	 * @return
 	 */
-	public BlockMatrix changeBlockColumn(BlockMatrix BM, int col1, int col2) {
+	public SparseBlockMatrix changeBlockColumn(SparseBlockMatrix BM, int col1, int col2) {
 		int blockRow = BM.getRowBlockDim();
 		int blockCol = BM.getColBlockDim();
 		
-		BlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
+		SparseBlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
 		for(int i=1;i<=blockRow;i++) {
 			for(int j=1;j<=blockCol;j++) {
 				newBM.setBlock(i, j, BM.getBlock(i, j));
@@ -1150,11 +1147,11 @@ public class VariationGaussNewtonDOT {
 		return newBM;
 	}	
 	
-	public BlockMatrix changeBlockColumn(BlockMatrix BM, int nDataBlock) {
+	public SparseBlockMatrix changeBlockColumn(SparseBlockMatrix BM, int nDataBlock) {
 		int blockRow = BM.getRowBlockDim();
 		int blockCol = BM.getColBlockDim();
 		
-		BlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
+		SparseBlockMatrix newBM = new SparseBlockMatrix(blockRow, blockCol);
 		for(int i=1;i<=blockRow;i++) {
 			for(int j=1;j<=blockCol;j++) {
 				newBM.setBlock(i, j, BM.getBlock(i, j));
@@ -1278,7 +1275,7 @@ public class VariationGaussNewtonDOT {
 		List<PairDoubleInteger> list = new ArrayList<PairDoubleInteger>();
 		for(int i=1;i<=eList.size();i++) {
 			Element e = eList.at(i);
-			Vector v1 = new SparseVector(e.nodes.size());
+			Vector v1 = new SparseVectorHashMap(e.nodes.size());
 			for(int j=1;j<=e.nodes.size();j++) {
 				Node node = e.nodes.at(j);
 				v1.set(j, v.get(node.globalIndex)-v_smooth.get(node.globalIndex));
@@ -1353,23 +1350,23 @@ public class VariationGaussNewtonDOT {
 		//************************************************************
 		
 		//迭代求解
-		BlockVector f = new SparseBlockVector(3);
+		SparseBlockVector f = new SparseBlockVector(3);
 		for(int iter=0;iter<10;iter++) {
 			
 			this.iterNum = iter;
 			
-			BlockMatrix BM = this.getSearchDirectionMatrix(a0, v0,
+			SparseBlockMatrix BM = this.getSearchDirectionMatrix(a0, v0,
 					param.lnu0_x, param.lnu0_y);
 			
 			//状态方程余量
-			Vector resLlmd = this.getResLlmd(param.lnu0_x,  param.lnu0_y,  
+			SparseVector resLlmd = this.getResLlmd(param.lnu0_x,  param.lnu0_y,  
 					a0, v0,param.g_tidle).scale(-1.0);
 	        plotVector(mesh,resLlmd,
 	        		String.format("Res_Llambda%02d.dat",this.iterNum));
 			f.setBlock(2, resLlmd);			
 			
 			//伴随方程余量
-			Vector resLu = this.getResLu(param.s_i, 
+			SparseVector resLu = this.getResLu(param.s_i, 
 				param.lnu0_x, param.lnu0_y, param.laplace_lnu0,
 				a0, v0, param.g_tidle,lambda0).scale(-1.0);//？1.0
 	        plotVector(mesh,resLu,
@@ -1384,13 +1381,13 @@ public class VariationGaussNewtonDOT {
 
 			//设置边界条件并求解
 			//需要交换矩阵BM的第1, 2列，然后设置边界条件，这样使得矩阵A, A'可逆
-			BlockMatrix newBM = this.changeBlockColumn(BM, 1, 2);
-			this.imposeDirichletCondition(newBM, f, FC.c0);
+			SparseBlockMatrix newBM = this.changeBlockColumn(BM, 1, 2);
+			this.imposeDirichletCondition(newBM, f, FC.C0);
 			SchurComplementLagrangianSolver solver = 
 				new SchurComplementLagrangianSolver(BM, f,mesh);
-			BlockVector x = solver.solve();
+			SparseBlockVector x = solver.solve();
 			
-			this.imposeDirichletCondition(BM, f, FC.c0);
+			this.imposeDirichletCondition(BM, f, FC.C0);
 			//SolverJBLAS sol = new SolverJBLAS();
 			//BlockVector x = (BlockVector)sol.solveDGESV(BM, f);
 			
@@ -1440,9 +1437,9 @@ public class VariationGaussNewtonDOT {
 		plotVector(mesh, a0, "a0.dat");
 		
 		//v0: 求解状态方程得到
-		Vector[] v0 = new SparseVector[nDataBlock];
+		Vector[] v0 = new SparseVectorHashMap[nDataBlock];
 		//lambda0: 求解伴随方程得到
-		Vector[] lambda0 = new SparseVector[nDataBlock];
+		Vector[] lambda0 = new SparseVectorHashMap[nDataBlock];
 		
 		for(int i=0;i<nDataBlock;i++) {
 			ParamOfLightSource param =  paramList.get(i);
@@ -1459,26 +1456,26 @@ public class VariationGaussNewtonDOT {
 		
 		
 		//迭代求解
-		BlockVector f = new SparseBlockVector(nDataBlock*2+1);
+		SparseBlockVector f = new SparseBlockVector(nDataBlock*2+1);
 		for(int iter=0;iter<1;iter++) {
 			
 			this.iterNum = iter;
 			
 			//步长矩阵
-			BlockMatrix BM = this.getSearchDirectionMatrix(a0, v0, paramList);
+			SparseBlockMatrix BM = this.getSearchDirectionMatrix(a0, v0, paramList);
 			
 			//步长右端向量
 			for(int i=1;i<=nDataBlock;i++) {
 				ParamOfLightSource param =  paramList.get(i-1);
 				//状态方程余量
-				Vector resLlmd = this.getResLlmd(param.lnu0_x,  param.lnu0_y,  
+				SparseVector resLlmd = this.getResLlmd(param.lnu0_x,  param.lnu0_y,  
 						a0, v0[i-1],param.g_tidle).scale(-1.0);
 		        plotVector(mesh,resLlmd,
 		        		String.format("M%02d_Res_Llambda%02d.dat",i-1,this.iterNum));
 				f.setBlock(nDataBlock+i, resLlmd);			
 				
 				//伴随方程余量
-				Vector resLu = this.getResLu(param.s_i, 
+				SparseVector resLu = this.getResLu(param.s_i, 
 					param.lnu0_x, param.lnu0_y, param.laplace_lnu0,
 					a0, v0[i-1], param.g_tidle,lambda0[i-1]).scale(-1.0);//？1.0
 		        plotVector(mesh,resLu,
@@ -1502,9 +1499,9 @@ public class VariationGaussNewtonDOT {
 			//BlockVector x = solver.solveMulti();
 
 			//this.imposeDirichletCondition(BM, f, FC.c0);
-			this.imposeDirichletCondition(BM, f, nDataBlock,FC.c0);
+			this.imposeDirichletCondition(BM, f, nDataBlock,FC.C0);
 			SolverJBLAS sol = new SolverJBLAS();
-			BlockVector x = (BlockVector)sol.solveDGESV(BM, f);
+			SparseBlockVector x = sol.solveDGESV(BM, f);
 			
 			for(int i=1;i<=nDataBlock;i++) {
 				plotVector(mesh, x.getBlock(i), String.format("M%02d_delta_v%02d.dat",i-1,iter));
@@ -1634,7 +1631,7 @@ public class VariationGaussNewtonDOT {
 			
 	
 			//a(x)参考值（GCM方法得到的结果）
-			vgn.aGlob = new SparseVector(nodes.size());
+			vgn.aGlob = new SparseVectorHashMap(nodes.size());
 			for(int j=1;j<=nodes.size();j++) {
 				double mu_a = vgn.modelGuess.getMu_a().value(
 								Variable.createFrom(vgn.modelGuess.getMu_a(), nodes.at(j), j));

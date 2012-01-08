@@ -1,18 +1,16 @@
 package edu.uta.futureye.lib.shapefun;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import edu.uta.futureye.core.CoordinateTransform;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FAxpb;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
-import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
@@ -132,10 +130,10 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 						if(var.equals("x"))
 							return new FC(y_s/jacFast);
 						if(var.equals("y"))
-							return FC.c0.S(x_s/jacFast);
+							return FC.C0.S(x_s/jacFast);
 					} else if(varName.equals("s")) {
 						if(var.equals("x"))
-							return FC.c0.S(y_r/jacFast);
+							return FC.C0.S(y_r/jacFast);
 						if(var.equals("y"))
 							return new FC(x_r/jacFast);
 					}
@@ -178,6 +176,11 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 
 	public double value(Variable v) {
 		return funCompose.value(v);
+	}
+	
+	@Override
+	public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+		return funCompose.valueArray(v,cache);
 	}
 
 	@Override

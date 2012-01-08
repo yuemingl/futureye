@@ -2,10 +2,10 @@ package edu.uta.futureye.test;
 
 import java.util.HashMap;
 
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
@@ -13,8 +13,6 @@ import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeRefined;
 import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Refiner;
-import edu.uta.futureye.function.AbstractFunction;
-import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FAxpb;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
@@ -288,7 +286,7 @@ public class TestAdaptive {
 		mesh.markBorderNode(mapNTF);
 		
 		mesh.printMeshInfo();
-		Tools.plotFunction(mesh, "", "patch_rectangle_test1.dat", FC.c0);
+		Tools.plotFunction(mesh, "", "patch_rectangle_test1.dat", FC.C0);
 		
 		//二次加密
 		eToRefine.clear();
@@ -300,7 +298,7 @@ public class TestAdaptive {
 		mesh.markBorderNode(mapNTF);
 		
 		mesh.printMeshInfo();
-		Tools.plotFunction(mesh, "", "patch_rectangle_test2.dat", FC.c0);
+		Tools.plotFunction(mesh, "", "patch_rectangle_test2.dat", FC.C0);
 
 		SFBilinearLocal2D[] shapeFun = new SFBilinearLocal2D[4];
 		for(int i=0;i<4;i++)
@@ -393,7 +391,7 @@ public class TestAdaptive {
 	    MeshWriter writer = new MeshWriter(mesh);
 	    writer.writeTechplot("patch_rectangle.dat", u);	
 	    
-	    Vector res = new SparseVector(u.getDim());
+	    Vector res = new SparseVectorHashMap(u.getDim());
 	    stiff.mult(u, res);
 	    res.add(-1.0, load);
 	    writer.writeTechplot("patch_rectangle_res.dat", res);	

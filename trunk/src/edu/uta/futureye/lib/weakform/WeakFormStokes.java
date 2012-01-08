@@ -119,4 +119,10 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 		}
 		return null;
 	}
+	
+	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
+		if(nComponent1 == nComponent2) return true;
+		else if(nComponent1 == 3 || nComponent2 == 3) return true;
+		else return false;
+	}
 }

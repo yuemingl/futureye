@@ -1,19 +1,46 @@
 package edu.uta.futureye.function.operator;
 
 import java.util.List;
+import java.util.Map;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
+import edu.uta.futureye.function.VariableArray;
 import edu.uta.futureye.function.basic.FC;
+import edu.uta.futureye.function.basic.FX;
 import edu.uta.futureye.function.basic.SpaceVectorFunction;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
+import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
 
 public class FMath {
+	//--- Predefined static objects ------------------------
+	/**
+	 * Use "import static edu.uta.futureye.function.operator.FMath.*" to simplify
+	 * the use of these predefined static objects
+	 */
+	public final static FC C0 = new FC(0.0);
+	public final static FC C1 = new FC(1.0);
+	public final static FC Cm1 = new FC(-1.0);
+	public final static FC PI = new FC(Math.PI);
+	public final static FC E = new FC(Math.E);
+	
+	public final static FX X = new FX(Constant.x); 
+	public final static FX Y = new FX(Constant.y); 
+	public final static FX Z = new FX(Constant.z); 
+	
+	public final static FX R = new FX(Constant.r); 
+	public final static FX S = new FX(Constant.s); 
+	public final static FX T = new FX(Constant.t); 
+	
+	public static Function C(double v) {
+		return FC.c(v);
+	}
+	
 	
 	//--- Basic operations ------------------------
 	
@@ -128,6 +155,86 @@ public class FMath {
 		return new FC(c1).M(f1).A(new FC(c2).M(f2));
 	}
 	
+	static class FLinearCombination extends AbstractFunction{
+		double []ci;
+		Function []fi;
+		public FLinearCombination(double []ci, Function []fi) {
+			int len = ci.length;
+			this.ci = new double[len];
+			this.fi = new Function[len];
+			for(int i=0;i<fi.length;i++) {
+				this.ci[i] = ci[i];
+				this.fi[i] = fi[i];
+				Utils.mergeList(varNames, fi[i].varNames());
+			}
+		}
+		
+		@Override
+		public double value(Variable v) {
+			double rlt = 0.0;
+			for(int i=0;i<fi.length;i++) {
+				rlt += ci[i]*fi[i].value(v);
+			}
+			return rlt;
+		}
+		
+		@Override
+		public double value(Variable v, Map<Object,Object> cache) {
+			double rlt = 0.0;
+			for(int i=0;i<fi.length;i++) {
+				rlt += ci[i]*fi[i].value(v,cache);
+			}
+			return rlt;
+		}
+		
+		@Override
+		public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+			int len = v.length();
+			double[] rlt = fi[0].valueArray(v,cache);
+			for(int j=0;j<len;j++) 
+				rlt[j] *= ci[0];
+			for(int i=1;i<fi.length;i++) {
+				double[] vs = fi[i].valueArray(v,cache);
+				for(int j=0;j<len;j++) {
+					rlt[j] += ci[i]*vs[j];
+				}
+			}
+			return rlt;
+		}
+		
+		@Override
+		public Function _d(String varName) {
+			Function[] fdi = new Function[fi.length];
+			for(int i=0;i<fi.length;i++) {
+				fdi[i] = fi[i]._d(varName).setVarNames(fi[i].varNames());
+			}
+			return new FLinearCombination(ci,fdi);
+		}
+		
+		@Override
+		public int getOpOrder() {
+			return OP_ORDER3;
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(ci[0]);
+			sb.append("*");
+			sb.append(fi[0].toString());
+			for(int i=1;i<fi.length;i++) {
+				sb.append(" + ");
+				sb.append(ci[i]);
+				sb.append("*");
+				if(OP_ORDER2 < fi[i].getOpOrder())
+					sb.append("(").append(fi[i].toString()).append(")");
+				else
+					sb.append(fi[i].toString());
+			}
+			return sb.toString();
+		}
+	}
+	
 	/**
 	 * \sum{c_i*f_i} = c_1*f_1 + c_2*f_2 + ... + c_N*f_N
 	 * 
@@ -141,12 +248,15 @@ public class FMath {
 		} else if(ci.length != fi.length) {
 			throw new FutureyeException("(ci.length="+ci.length+") != (fi.lenght="+fi.length+")");
 		}
-		Function rlt = new FC(ci[0]).M(fi[0]);
-		for(int i=1;i<fi.length;i++) {
-			rlt = rlt.A(new FC(ci[i]).M(fi[i]));
-		}
-		return rlt;
-	}
+		
+//		Function rlt = new FC(ci[0]).M(fi[0]);
+//		for(int i=1;i<fi.length;i++) {
+//			rlt = rlt.A(new FC(ci[i]).M(fi[i]));
+//		}
+//		return rlt;
+
+		return new FLinearCombination(ci,fi);
+	}	
 	
 	/**
 	 * Compute gradient of <code>fun</code>
@@ -185,7 +295,7 @@ public class FMath {
 	 */
 	public static Function div(VectorFunction vFun) {
 		int dim = vFun.getDim();
-		Function rlt = FC.c0;
+		Function rlt = FC.C0;
 		for(int i=1; i<=dim; i++) {
 			Function fd = (Function)vFun.get(i);
 			rlt = rlt.A(fd._d(vFun.varNames().get(i-1)));
@@ -222,9 +332,15 @@ public class FMath {
 	
 	//--- Vectors operations----------------------------------
 	
+	/**
+	 * Vector summation
+	 * 
+	 * @param vi Vectors
+	 * @return Vector result = v1 + v2 + ... +vn
+	 */
 	public static Vector sum(Vector ...vi) {
 		if(vi==null || vi.length==0) {
-			throw new FutureyeException("Check parameter vi="+vi);
+			throw new FutureyeException("Check parameters vi="+vi);
 		}
 		Vector rlt = vi[0].copy();
 		for(int i=1;i<vi.length;i++) {
@@ -233,10 +349,14 @@ public class FMath {
 		return rlt;
 	}
 	
+	/**
+	 * 
+	 * @param v
+	 * @return
+	 */
 	public static double sum(Vector v) {
-		if(v==null) {
-			throw new FutureyeException("Check parameter v="+v);
-		}
+		if(v == null || v.getDim() == 0)
+			throw new FutureyeException("It should be at least one value in vector v!");
 		double rlt = 0.0;
 		int dim = v.getDim();
 		for(int i=1;i<=dim;i++) {
@@ -262,39 +382,45 @@ public class FMath {
 	}
 	
 	public static double max(Vector v) {
-		double max = Double.MIN_VALUE;
-		for(int i=1;i<=v.getDim();i++) {
+		if(v == null || v.getDim() == 0)
+			throw new FutureyeException("It should be at least one value in vector v!");
+		double max = v.get(1);
+		for(int i=2;i<=v.getDim();i++) {
 			double val = v.get(i);
-			if(val > max)
-				max = val; 
+			if(val > max) max = val;
 		}
 		return max;
 	}
 	
 	public static double max(double[] a) {
-		double rlt = Double.MIN_VALUE;
-		for(int i=0;i<a.length;i++) {
-			if(a[i] > rlt) rlt = a[i];
+		if(a == null || a.length == 0)
+			throw new FutureyeException("It should be at least one value in array a!");
+		double max = a[0];
+		for(int i=1;i<a.length;i++) {
+			if(a[i] > max) max = a[i];
 		}
-		return rlt;
+		return max;
 	}
 	
 	public static double min(Vector v) {
-		double min = Double.MAX_VALUE;
-		for(int i=1;i<=v.getDim();i++) {
+		if(v == null || v.getDim() == 0)
+			throw new FutureyeException("It should be at least one value in vector v!");
+		double min = v.get(1);
+		for(int i=2;i<=v.getDim();i++) {
 			double val = v.get(i);
-			if(val < min)
-				min = val; 
+			if(val < min) min = val; 
 		}
 		return min;
 	}
 	
 	public static double min(double[] a) {
-		double rlt = Double.MAX_VALUE;
+		if(a == null || a.length == 0)
+			throw new FutureyeException("It should be at least one value in array a!");
+		double min = a[0];
 		for(int i=0;i<a.length;i++) {
-			if(a[i] < rlt) rlt = a[i];
+			if(a[i] < min) min = a[i];
 		}
-		return rlt;
+		return min;
 	}
 	
 	/**
@@ -344,4 +470,56 @@ public class FMath {
 		return rlt.axDivy(a, y);
 
 	}
+	
+	//------statistic functions--------------------------------
+	
+	public static double mean(Vector v) {
+		double mn = 0.0;
+		for(int i=v.getDim()+1; --i>0;)
+			mn += v.get(i);
+		mn /= v.getDim();
+		return mn;
+	}
+	
+	public static double variance(Vector v) {
+		double mnv = mean(v);
+		double varv = 0.0, tmp;
+		for(int i=v.getDim()+1; --i>0;) {
+			tmp = mnv - v.get(i);
+			varv += tmp*tmp;
+		}
+		varv /= v.getDim();
+		return varv;
+	}
+	
+	public static double standardDeviation(Vector v) {
+		return Math.sqrt(variance(v));
+	}
+	
+	/**
+	 * 
+	 * @param v
+	 * @return
+	 */
+	public static double sampleStandardDeviation(Vector v) {
+		double mnv = mean(v);
+		double varv = 0.0, tmp;
+		for(int i=v.getDim()+1; --i>0;) {
+			tmp = mnv - v.get(i);
+			varv += tmp*tmp;
+		}
+		varv /= v.getDim()-1;
+		return varv;
+	}
+	
+	public static double averageAbsoluteDeviation(Vector v) {
+		double mnv = mean(v);
+		double aad = 0.0;
+		for(int i=v.getDim()+1; --i>0;) {
+			aad += Math.abs(mnv - v.get(i));
+		}
+		aad /= v.getDim();
+		return aad;
+	}
+
 }

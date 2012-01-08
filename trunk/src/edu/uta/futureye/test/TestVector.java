@@ -2,7 +2,8 @@ package edu.uta.futureye.test;
 
 import edu.uta.futureye.algebra.SpaceVector;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.function.VarPair;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.FAxpb;
@@ -27,7 +28,7 @@ public class TestVector {
 		a3.crossProduct(b3).print();
 		
 		//Sparse Vector
-		SparseVector sv = new SparseVector(10,1);
+		SparseVector sv = new SparseVectorHashMap(10,1);
 		sv.set(3, 100);
 		sv.add(2, 10);
 		sv.print();
@@ -59,16 +60,16 @@ public class TestVector {
 		
 		//SparseBlockVector 
 		SparseBlockVector sbv = new SparseBlockVector(2);
-		SparseVector v1 = new SparseVector(1.0,2.0,3.0);
-		SparseVector v2 = new SparseVector(4.0,5.0);
+		SparseVector v1 = new SparseVectorHashMap(1.0,2.0,3.0);
+		SparseVector v2 = new SparseVectorHashMap(4.0,5.0);
 		//new SparseVector(4,5);  dim=5, default=5.0
 		sbv.setBlock(1, v1);
 		sbv.setBlock(2, v2);
 		sbv.print();
 		
 		SparseBlockVector sbv2 = new SparseBlockVector(2);
-		SparseVector v3 = new SparseVector(10.0,20.0,30.0);
-		SparseVector v4 = new SparseVector(40.0,50.0);
+		SparseVector v3 = new SparseVectorHashMap(10.0,20.0,30.0);
+		SparseVector v4 = new SparseVectorHashMap(40.0,50.0);
 		sbv2.setBlock(1, v3);
 		sbv2.setBlock(2, v4);
 		sbv2.print();

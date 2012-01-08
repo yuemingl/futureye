@@ -7,10 +7,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.uta.futureye.algebra.SolverJBLAS;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
 import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
@@ -33,10 +33,8 @@ import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
-import edu.uta.futureye.lib.assembler.AssemblerScalarFast;
 import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
-import edu.uta.futureye.lib.shapefun.SFQuadraticLocal2D;
 import edu.uta.futureye.lib.shapefun.SFQuadraticLocal2DFast;
 import edu.uta.futureye.lib.weakform.WeakFormL22D;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
@@ -360,7 +358,7 @@ public class GCMModel {
 			rhs = diff_am.M(new Vector2Function(u_m_1)).M(1.5);//enhance!!!
 			this.plotFunction(mesh, rhs, "enhance_rhs"+iterNum+".dat");
 		}
-		weakForm.setF(FC.c0.S(rhs)); //-1
+		weakForm.setF(FC.C0.S(rhs)); //-1
 		
 //		weakForm.setParam(
 //			new FC(-1.0), //2011-5-7 负系数
@@ -388,7 +386,7 @@ public class GCMModel {
 		SolverJBLAS solver = new SolverJBLAS();
 		Vector u = solver.solveDGESV(stiff, load);
 		
-	    Vector alpha_wL = solveParamInverse2(mesh,u,FC.c0.S(rhs));
+	    Vector alpha_wL = solveParamInverse2(mesh,u,FC.C0.S(rhs));
 	    plotVector(mesh, alpha_wL, "enhance_alpha_wL"+iterNum+".dat");
 
 		return u;
@@ -398,7 +396,7 @@ public class GCMModel {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		Vector v = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	var.setIndex(node.globalIndex);
@@ -413,7 +411,7 @@ public class GCMModel {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		Vector v = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	var.setIndex(node.globalIndex);
@@ -455,7 +453,7 @@ public class GCMModel {
 	    double lightY = this.lightSource.get("y");
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
-	    Vector rlt = new SparseVector(nNode);
+	    Vector rlt = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	rlt.set(i, bkUL.get(i));
@@ -520,7 +518,7 @@ public class GCMModel {
 	    double lightY = this.lightSource.get("y");
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
-	    Vector rlt = new SparseVector(nNode);
+	    Vector rlt = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	rlt.set(i, bkUL.get(i));
@@ -586,7 +584,7 @@ public class GCMModel {
 	    double lightY = this.lightSource.get("y");
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
-	    Vector rlt = new SparseVector(nNode);
+	    Vector rlt = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	rlt.set(i, bkUR.get(i));
@@ -815,7 +813,7 @@ public class GCMModel {
 	    alphaR = Utils.gaussSmooth(meshGCM, alphaR, 1, 0.5);
 	    alphaR = Utils.gaussSmooth(meshGCM, alphaR, 1, 0.5);
 
-	    Vector alpha_avg = new SparseVector(nNode);
+	    Vector alpha_avg = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	alpha_avg.set(i, (alphaL.get(i)+alphaR.get(i))/2.0);
 	    }
@@ -885,7 +883,7 @@ public class GCMModel {
 	    //方法二：从背景开始
 	    Vector um1 = bkUL;
 		//初值使用背景
-		Vector alpha_m1 = new SparseVector(nNode,0.1);
+		Vector alpha_m1 = new SparseVectorHashMap(nNode,0.1);
 	    plotVector(meshGCM, alpha_m1, "enhance_alpha_m01.dat");
 		Vector alpha_m2 = alpha_avg_smooth;
 	    plotVector(meshGCM, alpha_m2, "enhance_alpha_m02.dat");
@@ -927,7 +925,7 @@ public class GCMModel {
 		for(int i=1; i<N; i++)
 			s[i] = s[0] - i*h;
 		
-		Vector tailT = new SparseVector(um1.getDim());
+		Vector tailT = new SparseVectorHashMap(um1.getDim());
 		//tail函数（最远处）
 		for(int i=1;i<=tailT.getDim();i++) {
 			tailT.set(i, Math.log(um1.get(i))/(s[0]*s[0]));
@@ -948,7 +946,7 @@ public class GCMModel {
 		}
 		for(int i=0;i<N-1;i++) {
 			int dim = ui[i].getDim();
-			phi[i] = new SparseVector(dim);
+			phi[i] = new SparseVectorHashMap(dim);
 			for(int j=1;j<=dim;j++) {
 				phi[i].set(j, 
 						(1.0/h) * 
@@ -970,7 +968,7 @@ public class GCMModel {
 	
 	
 	public Vector addNoise(Vector v, double persent) {
-		Vector rlt = new SparseVector(v.getDim());
+		Vector rlt = new SparseVectorHashMap(v.getDim());
 		for(int i=1;i<=v.getDim();i++) {
 			double val = v.get(i);
 			val += val*persent*(2*Math.random()-1.0);
@@ -1154,7 +1152,7 @@ public class GCMModel {
 	    alphaR = Utils.gaussSmooth(mesh, alphaR, 1, 0.8);
 	    plotVector(mesh, alphaR, "alphaR_cut_smooth.dat");
 	    
-	    Vector alpha_avg = new SparseVector(nNode);
+	    Vector alpha_avg = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	alpha_avg.set(i, (alphaL.get(i)+alphaR.get(i))/2.0);
 	    }
@@ -1247,7 +1245,7 @@ public class GCMModel {
 		List<PairDoubleInteger> list = new ArrayList<PairDoubleInteger>();
 		for(int i=1;i<=eList.size();i++) {
 			Element e = eList.at(i);
-			Vector v1 = new SparseVector(e.nodes.size());
+			Vector v1 = new SparseVectorHashMap(e.nodes.size());
 			for(int j=1;j<=e.nodes.size();j++) {
 				Node node = e.nodes.at(j);
 				v1.set(j, v.get(node.globalIndex)-v_smooth.get(node.globalIndex));
@@ -1290,8 +1288,8 @@ public class GCMModel {
 				file.mkdirs();
 			}
 	    }
-	    Vector x = new SparseVector(pList.size());
-	    Vector y = new SparseVector(pList.size());
+	    Vector x = new SparseVectorHashMap(pList.size());
+	    Vector y = new SparseVectorHashMap(pList.size());
 	    for(int i=0;i<pList.size();i++) {
 	    	PairDoubleInteger pair = pList.get(i);
 	    	x.set(i+1, pair.d);
@@ -1314,7 +1312,7 @@ public class GCMModel {
 	public Vector extractData(Mesh meshFrom, Mesh meshTo, Vector u) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = new SparseVectorHashMap(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -1327,7 +1325,7 @@ public class GCMModel {
 	public Vector extendData(Mesh meshFrom, Mesh meshTo, Vector u, double deaultValue) {
 		NodeList nodeTo = meshTo.getNodeList();
 		int dimTo = nodeTo.size();
-		Vector rlt = new SparseVector(dimTo);
+		Vector rlt = new SparseVectorHashMap(dimTo);
 		for(int i=1;i<=nodeTo.size();i++) {
 			Node node = meshFrom.containNode(nodeTo.at(i));
 			if(node != null) {
@@ -1340,7 +1338,7 @@ public class GCMModel {
 	}	
 	
 	Vector getGCMCoef(double sn_1, double sn) {
-		Vector A = new SparseVector(4);
+		Vector A = new SparseVectorHashMap(4);
 		double I0 =  3*(sn_1-sn) - 2*sn_1*(Math.log(sn_1)-Math.log(sn));
 		double A1 = (1.0/I0)*(
 				(-3.0/2.0)*(Math.pow(sn_1, 4)-Math.pow(sn, 4))+
@@ -1458,7 +1456,7 @@ public class GCMModel {
 			//截取meshForward的部分解到meshGCM上
 			ui[i] = extractData(meshForward, meshGCM, ui_ex[i]);
 			plotVector(meshGCM, ui[i], String.format("GCM_incU_%02d.dat",i));
-			vi[i] = new SparseVector(dimGCM);
+			vi[i] = new SparseVectorHashMap(dimGCM);
 			for(int k=1;k<=dimGCM;k++) {
 				vi[i].set(k, Math.log(ui[i].get(k)) / (s[i]*s[i]) );
 			}
@@ -1467,7 +1465,7 @@ public class GCMModel {
 		//Boundary function on \partial\Omega (实际上模拟的phi[i]在整个区域上都有值)
 		//phi[0] phi[1] ... phi[N-2], *** phi := (vi[i]-vi[i+1])/h ***
 		for(int i=0;i<N-1;i++) {
-			phi[i] = new SparseVector(dimGCM);
+			phi[i] = new SparseVectorHashMap(dimGCM);
 			for(int k=1;k<=dimGCM;k++) {
 				phi[i].set(k, (1.0/h) * ( vi[i].get(k) - vi[i+1].get(k) ));
 			}
@@ -1493,7 +1491,7 @@ public class GCMModel {
 		Vector u_tail = solveForwardNeumann(meshForward); //在meshGCM上求解，top边界条件不好确定
 		//截取meshForward的部分解到meshGCM上
 		u_tail = extractData(meshForward, meshGCM, u_tail);
-		Vector tailT = new SparseVector(dimGCM);
+		Vector tailT = new SparseVectorHashMap(dimGCM);
 		for(int k=1;k<=dimGCM;k++) {
 			tailT.set(k, Math.log(u_tail.get(k)) / (s[0]*s[0]) );
 		}
@@ -1571,12 +1569,12 @@ public class GCMModel {
 	 */
 	public  void solveGCM(Mesh mesh, int N, double[]s, Vector[]phi, Vector tailT) {
 		int dim = tailT.getDim();
-		Vector sumLaplaceQ = new SparseVector(dim);
-		Vector sumQ_x= new SparseVector(dim);
-		Vector sumQ_y= new SparseVector(dim);
-//		Vector sumLaplaceQ_real = new SparseVector(dim);
-//		Vector sumQ_x_real = new SparseVector(dim);
-//		Vector sumQ_y_real = new SparseVector(dim);
+		Vector sumLaplaceQ = new SparseVectorHashMap(dim);
+		Vector sumQ_x= new SparseVectorHashMap(dim);
+		Vector sumQ_y= new SparseVectorHashMap(dim);
+//		Vector sumLaplaceQ_real = new SparseVectorHashMap(dim);
+//		Vector sumQ_x_real = new SparseVectorHashMap(dim);
+//		Vector sumQ_y_real = new SparseVectorHashMap(dim);
 		Vector[] q = new Vector[N];
 		Vector T_laplace = Tools.computeLaplace2D(mesh, tailT);
 		Vector T_x = Tools.computeDerivative(mesh, tailT, "x");
@@ -1586,7 +1584,7 @@ public class GCMModel {
 			plotVector(mesh, T_x, "T_x.dat");
 			plotVector(mesh, T_y, "T_y.dat");
 		}
-		Vector q_0 = new SparseVector(dim);
+		Vector q_0 = new SparseVectorHashMap(dim);
 		for(int i=0;i<N-1;i++) {
 			q[i] = solveGCM(mesh,i,
 					s[i],s[i+1],
@@ -1621,7 +1619,7 @@ public class GCMModel {
 		}
 		
 		//用最近处光源重构(注意this.delta的位置)：v_tidle -> u ->　a
-		Vector v_tidle = new SparseVector(dim);
+		Vector v_tidle = new SparseVectorHashMap(dim);
 		for(int i=0;i<N-1;i++) {
 			double h = s[i] - s[i+1];
 			v_tidle.add(-s[N-1]*s[N-1]*h, q[i]);
@@ -1630,7 +1628,7 @@ public class GCMModel {
 		v_tidle.add(s[N-1]*s[N-1], tailT);
 		plotVector(mesh, v_tidle, "v_tidle_N.dat");
 		
-		Vector u = new SparseVector(dim);
+		Vector u = new SparseVectorHashMap(dim);
 		for(int i=1;i<=dim;i++) {
 			u.set(i, Math.pow(Math.E, v_tidle.get(i)));
 		}
@@ -1642,7 +1640,7 @@ public class GCMModel {
 		
 		//模拟计算出来的phi除了提供边界条件，区域内部的值也有，可以用来重构真实的a(x)
 		//*** v_tidle_real:= ln(u) ***
-		Vector v_tidle_real = new SparseVector(dim);
+		Vector v_tidle_real = new SparseVectorHashMap(dim);
 		for(int i=0;i<N-1;i++) {
 			double h = s[i] - s[i+1];
 			v_tidle_real.add(-s[N-1]*s[N-1]*h, phi[i]);
@@ -1651,7 +1649,7 @@ public class GCMModel {
 		v_tidle_real.add(s[N-1]*s[N-1], tailT);
 		plotVector(mesh, v_tidle_real, "v_tidle_N_real.dat");
 		
-		Vector u_real = new SparseVector(dim);
+		Vector u_real = new SparseVectorHashMap(dim);
 		for(int i=1;i<=dim;i++) {
 			u_real.set(i, Math.pow(Math.E, v_tidle_real.get(i)));
 		}
@@ -1701,16 +1699,16 @@ public class GCMModel {
 		}
 		//Right hand side of equation q_n
 		int dim = sumLaplaceQ.getDim();
-		Vector f1 = new SparseVector(dim); //zero vector
+		Vector f1 = new SparseVectorHashMap(dim); //zero vector
 		//??? + - ??? A.get(3)*h  //2011-5-7 "-" OK
 		f1.add(-A.get(3)*h, sumLaplaceQ);
 		f1.add(A.get(3), laplaceT);
-		Vector f2x = new SparseVector(dim); //zero vector
+		Vector f2x = new SparseVectorHashMap(dim); //zero vector
 		f2x.add(h, sumQ_x);
 		f2x.add(-1.0, T_x);
 		f2x = FMath.axMuly(A.get(4), f2x, f2x);
 		if(debug) plotVector(mesh, f2x, "GCM_f2x_"+n_1+".dat");
-		Vector f2y = new SparseVector(dim); //zero vector
+		Vector f2y = new SparseVectorHashMap(dim); //zero vector
 		f2y.add(h, sumQ_y);
 		f2y.add(-1.0, T_y);
 		f2y = FMath.axMuly(A.get(4), f2y, f2y);
@@ -1726,7 +1724,7 @@ public class GCMModel {
 		
 		//------------------------Nonlinear iteration-----------------------
 		//Vector qn_1 = q_0;
-		Vector qn_1 = new SparseVector(dim);
+		Vector qn_1 = new SparseVectorHashMap(dim);
 		Vector qn = null;
 		int nMaxIter = 15;
 		if(linearize) nMaxIter = 1;
@@ -1739,11 +1737,11 @@ public class GCMModel {
 				plotVector(mesh, q_x_k_1, "GCM_q_x_km1_"+n_1+"_"+iter+".dat");
 				plotVector(mesh, q_y_k_1, "GCM_q_y_km1_"+n_1+"_"+iter+".dat");
 			}
-			Vector b1 = new SparseVector(dim); //zero vector
+			Vector b1 = new SparseVectorHashMap(dim); //zero vector
 			b1.add(A.get(2)*h, sumQ_x);
 			b1.add(-A.get(2), T_x);
 			if(!linearize) b1.add(-A.get(1), q_x_k_1);
-			Vector b2 = new SparseVector(dim); //zero vector
+			Vector b2 = new SparseVectorHashMap(dim); //zero vector
 			b2.add(A.get(2)*h, sumQ_y);
 			b2.add(-A.get(2), T_y);
 			if(!linearize) b2.add(-A.get(1), q_y_k_1);
@@ -1759,11 +1757,11 @@ public class GCMModel {
 				plotVector(mesh, phi_laplace, "GCM_"+n_1+"_phi_laplace_"+iter+".dat");
 				plotVector(mesh, phi_x, "GCM_"+n_1+"_phi_x_"+iter+".dat");
 				plotVector(mesh, phi_y, "GCM_"+n_1+"_phi_y_"+iter+".dat");
-				Vector b1r = new SparseVector(dim); //zero vector
+				Vector b1r = new SparseVectorHashMap(dim); //zero vector
 				b1r.add(A.get(2)*h, sumQ_x);
 				b1r.add(-A.get(2),  T_x);
 				b1r.add(-A.get(1),  phi_x);
-				Vector b2r = new SparseVector(dim); //zero vector
+				Vector b2r = new SparseVectorHashMap(dim); //zero vector
 				b2r.add(A.get(2)*h, sumQ_y);
 				b2r.add(-A.get(2),  T_y);
 				b2r.add(-A.get(1),  phi_y);

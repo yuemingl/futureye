@@ -2,13 +2,9 @@ package edu.uta.futureye.application;
 
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.core.Mesh;
-import edu.uta.futureye.function.AbstractFunction;
-import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.basic.Vector2Function;
-import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.lib.element.FELinearTriangle;
-import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
 

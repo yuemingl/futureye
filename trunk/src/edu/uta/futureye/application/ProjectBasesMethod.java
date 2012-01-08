@@ -1,7 +1,6 @@
 package edu.uta.futureye.application;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,12 +10,13 @@ import java.util.List;
 import edu.uta.futureye.algebra.CompressedColMatrix;
 import edu.uta.futureye.algebra.CompressedRowMatrix;
 import edu.uta.futureye.algebra.FullVector;
-import edu.uta.futureye.algebra.Solver;
-import edu.uta.futureye.algebra.SparseMatrix;
-import edu.uta.futureye.algebra.SparseVector;
+import edu.uta.futureye.algebra.SparseMatrixRowMajor;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.AlgebraMatrix;
-import edu.uta.futureye.algebra.intf.Matrix;
+import edu.uta.futureye.algebra.intf.SparseMatrix;
+import edu.uta.futureye.algebra.intf.SparseVector;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.algebra.solver.Solver;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.core.NodeType;
@@ -27,7 +27,6 @@ import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.util.Constant;
-import edu.uta.futureye.util.PairDoubleInteger;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
 
@@ -52,7 +51,7 @@ public class ProjectBasesMethod {
 	    NodeList list = mesh.getNodeList();
 	    int nNode = list.size();
 		Variable var = new Variable();
-		Vector v = new SparseVector(nNode);
+		Vector v = new SparseVectorHashMap(nNode);
 	    for(int i=1;i<=nNode;i++) {
 	    	Node node = list.at(i);
 	    	var.setIndex(node.globalIndex);
@@ -132,8 +131,8 @@ public class ProjectBasesMethod {
 		int nRow = upSideNodes.size();
 		int nCol = uSmalls.size();
 		
-		SparseMatrix A = new SparseMatrix(nRow,nCol);
-		SparseVector f = new SparseVector(nRow);
+		SparseMatrix A = new SparseMatrixRowMajor(nRow,nCol);
+		SparseVector f = new SparseVectorHashMap(nRow);
 		for(int c=1;c<=nCol;c++) {
 			Vector base = uSmalls.get(c-1);
 			for(int r=1;r<=nRow;r++) {
@@ -148,7 +147,7 @@ public class ProjectBasesMethod {
 		//A.print();
 		//f.print();
 		
-		SparseVector x0 = new SparseVector(nCol);
+		SparseVector x0 = new SparseVectorHashMap(nCol);
 		x0.set(10, 1.0);
 		x0.set(11, 1.0);
 		x0.set(12, 1.0);
@@ -161,7 +160,7 @@ public class ProjectBasesMethod {
 		FullVector g  = new FullVector(nCol);
 		AAT.mult(ff, g);
 		
-		SparseMatrix diagLmd = new SparseMatrix(nRow,nRow);
+		SparseMatrix diagLmd = new SparseMatrixRowMajor(nRow,nRow);
 		for(int i=1;i<=nRow;i++)
 			diagLmd.set(i, i, 1.5/4.0);
 		C.axpy(1.0, new CompressedRowMatrix(diagLmd, false));
@@ -215,8 +214,8 @@ public class ProjectBasesMethod {
 		int nRow = upSideNodes.size();
 		int nCol = uSmalls.size();
 		
-		SparseMatrix A = new SparseMatrix(nRow,nCol);
-		SparseVector f = new SparseVector(nRow);
+		SparseMatrix A = new SparseMatrixRowMajor(nRow,nCol);
+		SparseVector f = new SparseVectorHashMap(nRow);
 		for(int c=1;c<=nCol;c++) {
 			Vector base = uSmalls.get(c-1);
 			for(int r=1;r<=nRow;r++) {
@@ -231,7 +230,7 @@ public class ProjectBasesMethod {
 		//A.print();
 		//f.print();
 		
-		SparseVector x0 = new SparseVector(nCol);
+		SparseVector x0 = new SparseVectorHashMap(nCol);
 		x0.set(1, 1.0);
 		
 		CompressedColMatrix AA = new CompressedColMatrix(A, false);
@@ -242,7 +241,7 @@ public class ProjectBasesMethod {
 		FullVector g  = new FullVector(nCol);
 		AAT.mult(ff, g);
 		
-		SparseMatrix diagLmd = new SparseMatrix(nRow,nRow);
+		SparseMatrix diagLmd = new SparseMatrixRowMajor(nRow,nRow);
 		for(int i=1;i<=nRow;i++)
 			diagLmd.set(i, i,10.0/4.0);
 		C.axpy(1.0, new CompressedRowMatrix(diagLmd, false));
@@ -257,7 +256,7 @@ public class ProjectBasesMethod {
 		x.print();
 		
 		
-		Function rlt_mu_a = FC.c0;
+		Function rlt_mu_a = FC.C0;
 		double[] coef = x.getData();
 		for(int i=0;i<xx.length;i++) {
 			for(int j=0;j<yy.length;j++) {

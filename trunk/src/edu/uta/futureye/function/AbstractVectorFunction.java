@@ -55,6 +55,20 @@ public abstract class AbstractVectorFunction implements VectorFunction {
 	}
 	
 	@Override
+	public Vector[] valueArray(VariableArray valAry, Map<Object,Object> cache) {
+		int len = valAry.length();
+		Vector[] rlt = new SpaceVector[len];
+		for(int j=0;j<len;j++) rlt[j] = new SpaceVector(dim);
+		for(int i=1; i<=dim; i++) {
+			double [] vals = this.get(i).valueArray(valAry, cache);
+			for(int j=0;j<len;j++) {
+				rlt[j].set(i, vals[j]);
+			}
+		}
+		return rlt;
+	}
+	
+	@Override
 	public int getDim() {
 		return this.dim;
 	}
@@ -149,7 +163,7 @@ public abstract class AbstractVectorFunction implements VectorFunction {
 			e.printStackTrace();
 			return null;
 		}
-		Function rlt = FC.c0;
+		Function rlt = FC.C0;
 		for(int i=1;i<=dim;i++) {
 			rlt = rlt.A(this.get(i).M(b.get(i)));
 		}
@@ -158,7 +172,7 @@ public abstract class AbstractVectorFunction implements VectorFunction {
 
 	@Override
 	public Function dot(Vector b) {
-		Function rlt = FC.c0;
+		Function rlt = FC.C0;
 		for(int i=1;i<=dim;i++) {
 			rlt = rlt.A(this.get(i).M(b.get(i)));
 		}

@@ -2,15 +2,17 @@ package edu.uta.futureye.lib.weakform;
 
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
+import edu.uta.futureye.core.DOF;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.intf.WeakForm;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ShapeFunction;
 import edu.uta.futureye.function.intf.VectorShapeFunction;
 import edu.uta.futureye.function.operator.FOIntegrate;
 import edu.uta.futureye.util.FutureyeException;
 
 public abstract class AbstractVectorWeakForm implements WeakForm {
+	protected DOF trialDOF = null;
+	protected DOF testDOF = null;
 	protected VectorShapeFunction u = null;
 	protected VectorShapeFunction v = null;
 	protected int uDOFLocalIndex;
@@ -32,15 +34,39 @@ public abstract class AbstractVectorWeakForm implements WeakForm {
 		throw new UnsupportedOperationException();
 	}
 
+//	@Override
+//	public void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
+//			ShapeFunction test, int testDofLocalIndex) {
+//		this.u = (VectorShapeFunction)trial;
+//		this.v = (VectorShapeFunction)test;
+//		this.uDOFLocalIndex = trialDofLocalIndex;
+//		this.vDOFLocalIndex = testDofLocalIndex;
+//	}
+	
 	@Override
-	public void setShapeFunction(ShapeFunction trial, int trialDofLocalIndex,
-			ShapeFunction test, int testDofLocalIndex) {
-		this.u = (VectorShapeFunction)trial;
-		this.v = (VectorShapeFunction)test;
-		this.uDOFLocalIndex = trialDofLocalIndex;
-		this.vDOFLocalIndex = testDofLocalIndex;
+	public void setDOF(DOF trialDOF, DOF testDOF) {
+		this.trialDOF = trialDOF;
+		this.testDOF = testDOF;
+		if(trialDOF != null) {
+			this.u = trialDOF.getVSF();
+			this.uDOFLocalIndex = trialDOF.getLocalIndex();
+		}
+		if(testDOF != null) {
+			this.v = testDOF.getVSF();
+			this.vDOFLocalIndex = testDOF.getLocalIndex();
+		}
 	}
-
+	
+	@Override
+	public DOF getTrialDOF() {
+		return this.trialDOF;
+	}
+	
+	@Override
+	public DOF getTestDOF() {
+		return this.testDOF;
+	}
+	
 	@Override
 	public double integrate(Element e, Function fun) {
 		if(fun == null) return 0.0;
@@ -79,4 +105,9 @@ public abstract class AbstractVectorWeakForm implements WeakForm {
 		}
 		throw new FutureyeException("Error: integrate");
 	}
+	
+	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
+		throw new FutureyeException("Please specify coupling informaton of components of vector valued funtion(VVF) problem!");
+	}
+
 }
