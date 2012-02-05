@@ -12,6 +12,8 @@ import edu.uta.futureye.function.basic.FAxpb;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
+import edu.uta.futureye.util.Constant;
+import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
 import edu.uta.futureye.util.container.VertexList;
@@ -173,7 +175,9 @@ from the above 4 equations, we have:
 		y_s = funs[3];
 		
 		//用面积计算Jacobin，速度要快一倍
-		jac = FC.c(Utils.getRectangleArea(vList)/4.0);
+		double area = Utils.getRectangleArea(vList)/4.0;
+		if(Math.abs(area)<Constant.eps) throw new FutureyeException();
+		jac = FC.c(area);
 	}
 
 	public String toString() {

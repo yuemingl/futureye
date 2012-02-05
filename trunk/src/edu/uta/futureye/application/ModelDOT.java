@@ -24,6 +24,8 @@ import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
 import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
 
+import static edu.uta.futureye.function.operator.FMath.*;
+
 /**
  * Solver the following model problem:
  * 
@@ -45,9 +47,20 @@ public class ModelDOT {
 	//Absorption coefficient mu_a
 	private Function mu_a = null;
 	//Reduced scattering coefficient mu_s'
-	//k = 1/(3*mu_s') = 0.02
-	public Function k = new FC(0.02);
+	public Function k = C(0.02); //default k = 1/(3*mu_s') = 0.02
 	
+	/**
+	 * set Mu_s'
+	 * @param mu_sp
+	 */
+	public void setMu_sp(double mu_sp) {
+		k = C(1/(3*mu_sp));
+	}
+	
+	/**
+	 * Set Mu_a
+	 * @param fMu_a
+	 */
 	public void setMu_a(Function fMu_a) {
 		this.mu_a = fMu_a;
 	}

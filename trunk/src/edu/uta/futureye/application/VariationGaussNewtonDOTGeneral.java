@@ -106,8 +106,8 @@ public class VariationGaussNewtonDOTGeneral {
 	ModelDOTMult modelInit = new ModelDOTMult(); //Initial model of inclusion
 
 	//测量类型开关，以下为u_g在整个区域上都已知
-	public boolean bTestWholdDomain = true; // （=true 有强烈震荡，为什么？需要调整beta较大些可以解决！）
-	public boolean bTestWholeDomainDirichletBoundary = true;
+	public boolean bTestWholdDomain = true; //=true测量数据在整个区域，=false测量数据在边界上 （=true 有强烈震荡，为什么？需要调整beta较大些可以解决！）
+	public boolean bTestWholeDomainDirichletBoundary = true; //测量数据在整个区域并且=ture时使用Dirichlet边界条件，=false时使用Neumann边界条件
 	public boolean bTestBoundaryAsWholdDomain = false;
     
     //mu_a from GCM
@@ -1311,8 +1311,7 @@ public class VariationGaussNewtonDOTGeneral {
             		FC.c(1.0), 
             		null,
             		FC.c(0.0)); //---同时改
-        }
-        else {
+        } else {
         	weakForm.setParam(
         		FC.c(0.0), //null==(k=1)
         		FC.c(0.0), 
@@ -2262,9 +2261,8 @@ public class VariationGaussNewtonDOTGeneral {
 			paramList.add(para);
 		}
 		
-		//以边界上的测量结果作为边界条件，再以aGlob为系数，求解状态方程，作为“测量”解，
-		//在整个区域上计算u-z,而不是只在边界上计算u-g
-		//其中 g=z|_\Gamma
+		//以边界上的测量结果作为边界条件，再以aGlob为系数，求解状态方程，作为“测量”解，在整个区域上计算u-z,
+		//而不是只在边界上计算u-g (g=z|_\Gamma)
 		if(bTestBoundaryAsWholdDomain) {
 			for(int i=0; i<LSx.length; i++) {
 				reinitModelLight(i);

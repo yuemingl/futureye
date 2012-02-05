@@ -163,7 +163,7 @@ public class TrilinearV_ConstantP extends AbstractVectorFunction
 	 */
 	public class BilinearV_ConstantP extends AbstractVectorFunction 
 									implements VectorShapeFunction {
-		//(u1,u2,u3,p)
+		//(u1,u2,u3,p) 3D单元的边界单元不能直接使用2D的形函数，因为形函数需要向量dim=4，而2D的dim=3 (u1,u2, p)
 		protected SpaceVectorFunction sf = null;
 		protected int funIndex;
 		protected ObjList<String> innerVarNames = null;

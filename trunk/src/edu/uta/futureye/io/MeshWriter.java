@@ -256,16 +256,20 @@ public class MeshWriter {
 	 * @param x
 	 * @param y
 	 */
-	public void writeTechplotLine(String fileName, Vector x, Vector y) {
+	public static void writeTechplotLine(String fileName, Vector x, Vector ...y) {
 		FileOutputStream out;
 		try {
 			File file = new File(fileName);
 			out = new FileOutputStream(file);
 			OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
 			PrintWriter br = new PrintWriter(writer);
-			
-			for(int i=1;i<=x.getDim();i++)
-				br.println(x.get(i)+"\t"+y.get(i));
+			for(int i=1;i<=x.getDim();i++) {
+				br.print(x.get(i));
+				for(int j=0;j<y.length;j++) {
+					br.print("\t"+y[j].get(i));
+				}
+				br.println();
+			}
 				
 			br.close();
 			out.close();

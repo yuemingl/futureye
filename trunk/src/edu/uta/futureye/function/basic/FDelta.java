@@ -17,7 +17,16 @@ public class FDelta extends AbstractFunction {
 	 * @param amp
 	 */
 	public FDelta(Variable x0,double eps,double amp) {
-		super("x","y");
+		if(x0.getValues().size() == 1) {
+			varNames.add("x");
+		} else if(x0.getValues().size() == 2) {
+			varNames.add("x");
+			varNames.add("y");
+		} else if(x0.getValues().size() == 3) {
+			varNames.add("x");
+			varNames.add("y");		
+			varNames.add("z");		
+		}
 		this.x0 = x0;
 		this.eps = eps;
 		this.amp = amp;
@@ -25,9 +34,20 @@ public class FDelta extends AbstractFunction {
 	
 	@Override
 	public double value(Variable x) {
-		double dx = x.get("x")-x0.get("x");
-		double dy = x.get("y")-x0.get("y");
-		double d2 = dx*dx+dy*dy;
+		double d2 = 0.0;
+		if(x0.getValues().size() == 1) {
+			double dx = x.get("x")-x0.get("x");
+			d2 = dx*dx;
+		} else if(x0.getValues().size() == 2) {
+			double dx = x.get("x")-x0.get("x");
+			double dy = x.get("y")-x0.get("y");
+			d2 = dx*dx+dy*dy;
+		} else if(x0.getValues().size() == 3) {
+			double dx = x.get("x")-x0.get("x");
+			double dy = x.get("y")-x0.get("y");
+			double dz = x.get("z")-x0.get("z");
+			d2 = dx*dx+dy*dy+dz*dz;
+		}
 		return amp*Math.exp(-d2/eps/4.0) / (2*Math.sqrt(Math.PI*eps));
 	}
 

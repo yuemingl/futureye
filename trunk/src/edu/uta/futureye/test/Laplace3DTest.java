@@ -224,15 +224,19 @@ public class Laplace3DTest {
 		mapNTF.put(NodeType.Robin, new AbstractFunction("x","y","z"){
 			@Override
 			public double value(Variable v) {
-				if(1.0-v.get("z")<0.01)
+				if(2.8-v.get("x")<0.01 || 2.8-v.get("z")<0.01)
 					return 1.0;
 				else
 					return -1.0;
 			}
 		});
 		mapNTF.put(NodeType.Dirichlet, null);
+//		mapNTF.put(NodeType.Robin, null);
+
 		mesh.markBorderNode(mapNTF);
 		//mesh.writeNodesInfo(meshName+"_mark.dat");
+		
+		mesh.writeNodesInfo("human_phantom3D_mesh.dat");
 		
         ElementList eList = mesh.getElementList();
         FETrilinearHexahedron feTLH = new FETrilinearHexahedron();
@@ -245,10 +249,10 @@ public class Laplace3DTest {
 		weakForm.setF(new FC(1.0));
 		
 		weakForm.setParam(
-					null,
+					new FC(1),//null,
 					new FC(1.0),
 					new FC(0.0),
-					null //Robin: 6*y^2-54
+					new FC(1)//null //Robin: 6*y^2-54
 				);
 		
 		

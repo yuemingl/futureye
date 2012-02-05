@@ -304,12 +304,26 @@ public class HumanReal {
 	/**
 	 * Read all slice of the data
 	 * 
+	 * Return:
+	 * Map of light source and slices list
+	 * e.g.
+	 * "123" -> slices list (1,...,NSlice)
+	 * For each slice we have a sublist of double[], this sublist is a sequence of data in time.
+	 * Each slice corresponds to a file, e.g. 
+	 * Slice  1: "HumanReal123_1.txt"
+	 * Slice  2: "HumanReal123_2.txt"
+	 * ...
+	 * Slice 16: "HumanReal123_16.txt"
+	 * 
+	 * For each double[] in the sublists, we have values of light intensity on the points of border
+	 * 
 	 * @param dataFolder
 	 * @return
 	 */
 	public Map<String,List<List<double[]>>> readAllData(String dataFolder) {
-		//Source
+		//Source number
 		String[] all = {"123","456","789","101112"};
+		
 		Map<String,List<List<double[]>>> rlt = new HashMap<String,List<List<double[]>>>();
 		for(int j=0;j<all.length;j++) {
 			List<List<double[]>> allSlices = new ArrayList<List<double[]>>();
@@ -345,7 +359,7 @@ public class HumanReal {
 	 * Read one slice of the data (one data file)
 	 * 
 	 * @param fileName
-	 * @return
+	 * @return list: time sequence;  double[]: values of light intensity on the points of border
 	 */
 	public List<double[]> readData(String fileName) {
 		FileInputStream in;
@@ -449,6 +463,14 @@ public class HumanReal {
 	
 	public static enum Part {LEFT,RIGHT}
 	
+	/**
+	 * Run GCM reconstruction
+	 * 
+	 * @param dataFolder Output data folder
+	 * @param waveFolder Output sub data folder under "dataFolder"
+	 * @param part Left or right brain 
+	 * @param bAverageData true=do block average
+	 */
 	public static void run(String dataFolder,String waveFolder, Part part, boolean bAverageData) {
 		
 		HumanReal hr = new HumanReal();

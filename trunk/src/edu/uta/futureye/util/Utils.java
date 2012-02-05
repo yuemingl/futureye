@@ -310,6 +310,7 @@ public class Utils {
 		return rlt;
 	}
 	public static Function interpolateFunctionOnElement(Function fun, Element e) {
+		if(fun == null) throw new FutureyeException("fun should not be null");
 		if(fun instanceof FC)
 			return fun;
 		Function rlt = new FC(0.0);
@@ -518,18 +519,35 @@ public class Utils {
 	}
 	
 	/**
-	 * 计算二维三角形面积
+	 * 计算三角形面积（二维点或者三维点）
 	 * @param vertices
 	 * @return
 	 */
 	public static double getTriangleArea(ObjList<Vertex> vertices) {
 		double area = 0.0;
-		if(vertices.size() == 3) {
+		if(vertices.size() == 3 && vertices.at(1).dim() == 2) {
 			double x1 = vertices.at(1).coord(1) , y1 =  vertices.at(1).coord(2) ;
 			double x2 = vertices.at(2).coord(1) , y2 =  vertices.at(2).coord(2) ;
 			double x3 = vertices.at(3).coord(1) , y3 =  vertices.at(3).coord(2) ;
 			area = ( (x2*y3 - x3*y2) - (x1*y3 - x3*y1) + (x1*y2 - x2*y1) ) / 2.0;
+		} else if(vertices.size() == 3 && vertices.at(1).dim() == 3) {
+			double x1 = vertices.at(1).coord(1) , y1 =  vertices.at(1).coord(2) , z1 =  vertices.at(1).coord(3) ;
+			double x2 = vertices.at(2).coord(1) , y2 =  vertices.at(2).coord(2) , z2 =  vertices.at(2).coord(3) ;
+			double x3 = vertices.at(3).coord(1) , y3 =  vertices.at(3).coord(2) , z3 =  vertices.at(3).coord(3) ;
+			SpaceVector v1 = new SpaceVector(3);
+			v1.set(1, x2-x1);
+			v1.set(2, y2-y1);
+			v1.set(3, z2-z1);
+			SpaceVector v2 = new SpaceVector(3);
+			v2.set(1, x3-x1);
+			v2.set(2, y3-y1);
+			v2.set(3, z3-z1);
+			area = v1.crossProduct(v2).norm2() / 2.0;
+			if(Math.abs(area)<Constant.eps) throw new FutureyeException();
+		} else {
+			throw new FutureyeException();
 		}
+		if(Math.abs(area)<Constant.eps) throw new FutureyeException();
 		return area;
 	}
 	
@@ -773,6 +791,26 @@ public class Utils {
 			}
 		} else 
 			throw new FutureyeException("NOT Supported!");
+		return rlt;
+	}
+	
+	/**
+	 * 
+	 * @param A A[2][3][len]
+	 * @return
+	 */
+	public static double[] determinant23(double[][][] A) {
+		int len = A[0][0].length;
+		double[] rlt = new double[len];
+		for(int i=0;i<len;i++) {
+			double f0 = A[0][0][i];
+			double f1 = A[0][1][i];
+			double f2 = A[0][2][i];
+			double f3 = A[1][0][i];
+			double f4 = A[1][1][i];
+			double f5 = A[1][2][i];
+			rlt[i] = Math.sqrt( (f1*f5-f4*f2)*(f1*f5-f4*f2) + (f0*f5-f3*f2)*(f0*f5-f3*f2) + (f0*f4-f3*f1)*(f0*f4-f3*f1) );
+		}
 		return rlt;
 	}
 	
