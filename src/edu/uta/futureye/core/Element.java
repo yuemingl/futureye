@@ -1236,7 +1236,12 @@ public class Element {
 
 	public void updateJacobinLinear2D() {
 		//Coordinate transform and Jacbian on this element
-		trans = new CoordinateTransform(2);
+		if(this.dim() == 2 && this.nodes.at(1).dim() == 2)
+			trans = new CoordinateTransform(2);
+		else if(this.dim() == 2 && this.nodes.at(1).dim() == 3)
+			trans = new CoordinateTransform(3,2); //单位单元的面单元是二维的，但是其上的结点是三维的
+		else
+			throw new FutureyeException("Element dim or node dim error!");
 		
 		trans.transformLinear2D(this);
 		trans.computeJacobianMatrix();

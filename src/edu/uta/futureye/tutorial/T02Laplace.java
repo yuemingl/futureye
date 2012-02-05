@@ -31,7 +31,7 @@ import edu.uta.futureye.util.container.ElementList;
  *   u = (x^2-9)*(y^2-9)
  * </blockquote></pre>
  * 
- * @author Yueming Liu
+ * @author liuyueming
  */
 public class T02Laplace {
 	public Mesh mesh;

@@ -283,8 +283,9 @@ public class FOIntegrate{
 			valAry.set("r", ra);
 			valAry.set("s", sa);
 			double[] rltAry = integrand.valueArray(valAry,new HashMap<Object, Object>());
-			for(int i=0;i<rltAry.length;i++) rlt += rltAry[i];			
-			
+			//bugfix 2/3/2012 乘以wa[i]
+			for(int i=0;i<rltAry.length;i++) 
+				rlt += wa[i]*rltAry[i];
 		} else {
 			System.out.println("ERROR: intOnLinearRefElement() Not supported order = "+order);
 		}
@@ -364,7 +365,8 @@ public class FOIntegrate{
 			valAry.set("s", sa);
 			valAry.set("t", ta);
 			double[] rltAry = integrand.valueArray(valAry,new HashMap<Object, Object>());
-			for(int i=0;i<rltAry.length;i++) rlt += rltAry[i];
+			for(int i=0;i<rltAry.length;i++) 
+				rlt += wa[i]*rltAry[i];
 
 		} else if(order == 3) {
 //			for(int i=0;i<order;i++) {
@@ -397,7 +399,8 @@ public class FOIntegrate{
 			valAry.set("s", sa);
 			valAry.set("t", ta);
 			double[] rltAry = integrand.valueArray(valAry,new HashMap<Object, Object>());
-			for(int i=0;i<rltAry.length;i++) rlt += rltAry[i];
+			for(int i=0;i<rltAry.length;i++) 
+				rlt += wa[i]*rltAry[i];
 			
 		} else if(order == 4) {
 //			for(int i=0;i<order;i++) {
@@ -430,7 +433,8 @@ public class FOIntegrate{
 			valAry.set("s", sa);
 			valAry.set("t", ta);
 			double[] rltAry = integrand.valueArray(valAry,new HashMap<Object, Object>());
-			for(int i=0;i<rltAry.length;i++) rlt += rltAry[i];
+			for(int i=0;i<rltAry.length;i++) 
+				rlt += wa[i]*rltAry[i];
 		} else if(order == 5) {
 //			for(int i=0;i<order;i++) {
 //				for(int j=0;j<order;j++) {
@@ -462,7 +466,8 @@ public class FOIntegrate{
 			valAry.set("s", sa);
 			valAry.set("t", ta);
 			double[] rltAry = integrand.valueArray(valAry,new HashMap<Object, Object>());
-			for(int i=0;i<rltAry.length;i++) rlt += rltAry[i];		
+			for(int i=0;i<rltAry.length;i++) 
+				rlt += wa[i]*rltAry[i];		
 		}
 		return rlt;
 	}

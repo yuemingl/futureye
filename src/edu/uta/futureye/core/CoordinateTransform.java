@@ -91,6 +91,19 @@ public class CoordinateTransform {
 			toVarNames.add(t[i]);
 		}
 	}
+	
+	public CoordinateTransform(int fromDim, int toDim) {
+		fromVarNames = new LinkedList<String>();
+		toVarNames = new LinkedList<String>();
+		String[] f = {"x","y","z"};
+		String[] t = {"r","s","t"};
+		for(int i=0;i<fromDim;i++) {
+			fromVarNames.add(f[i]);
+		}
+		for(int i=0;i<toDim;i++) {
+			toVarNames.add(t[i]);
+		}
+	}
 
 	/**
 	 * 一维线性坐标变换
@@ -284,7 +297,7 @@ public class CoordinateTransform {
 				throw new FutureyeException("Call setTransformFunction() first!");
 			Function[] funs = new Function[transFuns.size()*toVarNames.size()];
 			int index = 0;
-			for(Function transFun : transFuns) { //x=x(r,s,t), y=y(r,s,t), x(r,s,t)
+			for(Function transFun : transFuns) { //x=x(r,s,t), y=y(r,s,t), z=z(r,s,t)
 				for(String var : toVarNames) {   //r,s,t
 					funs[index++] = transFun._d(var);
 				}
@@ -346,13 +359,26 @@ public class CoordinateTransform {
 		 */
 		
 		Function[] funs = this.JacobianMatrix;
-		/*
-		 * 要求结点编号为逆时针：funs[0:3]
-		 *            |f0 f1|
-		 *  det(Jac)= |f2 f3| = f0*f3-f1*f2
-		 */
-		//this.Jacobian = funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
-		this.Jacobian = new Jacobian2D(funs);
+		if(funs.length == 4) {
+			/*
+			 * 要求结点编号为逆时针：funs[0:3]
+			 *            |f0 f1|
+			 *  det(Jac)= |f2 f3| = f0*f3-f1*f2
+			 */
+			//this.Jacobian = funs[0].M(funs[3]) .S (funs[1].M(funs[2]));
+			this.Jacobian = new Jacobian2D(funs);
+		} else if(funs.length == 6) {
+			/*
+			 * 三维单元的二维面
+			 * 
+			 *       |f0 f1 f2|
+			 * Jac = |f3 f4 f5|
+			 * 
+			 * det(Jac) = sqrt( (f1*f5-f4*f2)^2 + (f0*f5-f3*f2)^2 + (f0*f4-f3*f1)^2 )
+			 * 
+			 */
+			this.Jacobian = new Jacobian2DFrom3D(funs);
+		}
 	}
 	
 	public static class Jacobian2D extends AbstractFunction {
@@ -413,7 +439,73 @@ public class CoordinateTransform {
 		}
 	}
 	
-	
+	/**
+	 * 三维单元的二维面
+	 * 
+	 * @author liuyueming
+	 *
+	 */
+	public static class Jacobian2DFrom3D extends AbstractFunction {
+		Function[] funs = null;
+		public Jacobian2DFrom3D(Function[] funs) {
+			this.funs = funs;
+		}
+		
+		@Override
+		public double value(Variable v) {
+			return value(v,null);
+		}
+		
+		@Override
+		public double value(Variable v, Map<Object,Object> cache) {
+			Double detJ = null;
+			if(cache != null) {
+				detJ = (Double)cache.get(1);
+			}
+			if(detJ == null) {
+				double f0 = funs[0].value(v);
+				double f1 = funs[1].value(v);
+				double f2 = funs[2].value(v);
+				double f3 = funs[3].value(v);
+				double f4 = funs[4].value(v);
+				double f5 = funs[5].value(v);
+				detJ = Math.sqrt( (f1*f5-f4*f2)*(f1*f5-f4*f2) + (f0*f5-f3*f2)*(f0*f5-f3*f2) + (f0*f4-f3*f1)*(f0*f4-f3*f1) );
+				if(cache != null) {
+					cache.put(1, detJ);
+				}
+			}
+			return detJ;
+		}
+		
+		@Override
+		public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
+			double[] detJ = null;
+			int len = v.length();
+			if(cache != null) {
+				detJ = (double[])cache.get(1);
+			}
+			if(detJ == null) {
+				double[][][] J = new double[2][3][len];
+				J[0][0] = funs[0].valueArray(v,cache);
+				J[0][1] = funs[1].valueArray(v,cache);
+				J[0][2] = funs[2].valueArray(v,cache);
+				J[1][0] = funs[3].valueArray(v,cache);
+				J[1][1] = funs[4].valueArray(v,cache);
+				J[1][2] = funs[5].valueArray(v,cache);
+				//@see ./doc_ex/invA22.png
+				detJ = Utils.determinant23(J);
+				if(cache != null) {
+					cache.put(1, detJ);
+					cache.put(2, J);
+				}
+			}
+			return detJ;
+		}
+		
+		public String toString() {
+			return "Jacobian2DFrom3D";
+		}
+	}
 	
 	/**
 	 *  Compute 3D determinant of Jacobian matrix

@@ -101,10 +101,12 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {//Neumann border type
-			Element be = e;
-			Function fq = Utils.interpolateFunctionOnElement(g_q, be);
-			Function borderIntegrand = fq.M(v);
-			return borderIntegrand;
+			if(g_q != null) {
+				Element be = e;
+				Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+				Function borderIntegrand = fq.M(v);
+				return borderIntegrand;
+			}
 		}
 		return  null;
 	}

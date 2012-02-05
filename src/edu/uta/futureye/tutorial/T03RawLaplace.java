@@ -32,7 +32,7 @@ import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
  *   u = (x^2-9)*(y^2-9)
  * </blockquote></pre>
  * 
- * @author Yueming Liu
+ * @author liuyueming
  */
 public class T03RawLaplace {
 	public static void triangle() {
