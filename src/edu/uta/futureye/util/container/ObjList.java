@@ -23,7 +23,7 @@ public class ObjList<T> implements Iterable<T>{
 	public ObjList() {
 	}
 	
-	@SafeVarargs
+//	@SafeVarargs
 	public ObjList(T ...es) {
 		for(T e : es) this.add(e);
 	}

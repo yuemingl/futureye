@@ -27,8 +27,8 @@ public class Variable {
 	//LinkedHashMap 遍历时保证变量顺序
 	protected Map<String,Double> valMap = new LinkedHashMap<String,Double>();
 
-	protected double[] valArray = new double[9];
-	protected boolean[] useArray = {false,false,false,false,false,false,false,false,false};
+	//protected double[] valArray = new double[9];
+	//protected boolean[] useArray = {false,false,false,false,false,false,false,false,false};
 	//protected boolean bApplyRestirct = false;
 	
 	//Node Index
@@ -45,8 +45,8 @@ public class Variable {
 	 * 构造一维自变量并赋值
 	 */
 	public Variable(double val) {
-		valArray[0] = val;
-		useArray[0] = true;
+		//valArray[0] = val;
+		//useArray[0] = true;
 	}
 	
 	/**
@@ -54,34 +54,35 @@ public class Variable {
 	 * @return
 	 */
 	public double get() {
-		return valArray[0];
+		//return valArray[0];
+		return valMap.values().iterator().next();
 	}
 	
 	////////////////////////////////////////////////
 
 	public Variable(String name, double val) {
-		int id = VN.getID(name);
-		if(id != -1) {
-			valArray[id] = val;
-			useArray[id] = true;
-		}
-		else
+//		int id = VN.getID(name);
+//		if(id != -1) {
+//			valArray[id] = val;
+//			useArray[id] = true;
+//		}
+//		else
 			valMap.put(name, val);
 	}
 	
 	public Variable(VarPair first, VarPair ...pairs) {
-		int id = first.getVarID();
-		if(id != -1) {
-			valArray[id] = first.value;
-			useArray[id] = true;
-		} else
+//		int id = first.getVarID();
+//		if(id != -1) {
+//			valArray[id] = first.value;
+//			useArray[id] = true;
+//		} else
 			valMap.put(first.name, first.value);
 		for(int i=0;i<pairs.length;i++) {
-			id = pairs[i].getVarID();
-			if(id != -1) {
-				valArray[id] = pairs[i].value;
-				useArray[id] = true;
-			} else
+//			id = pairs[i].getVarID();
+//			if(id != -1) {
+//				valArray[id] = pairs[i].value;
+//				useArray[id] = true;
+//			} else
 				valMap.put(pairs[i].name, pairs[i].value);
 		}
 	}
@@ -92,14 +93,15 @@ public class Variable {
 	 * @return
 	 */
 	public double get(String name) {
-		int id = VN.getID(name);
-		if(id != -1)
-			return valArray[id];
-		else
+//		int id = VN.getID(name);
+//		if(id != -1)
+//			return valArray[id];
+//		else
 			return valMap.get(name);
 	}
 	public double get(VN name) {
-		return valArray[name.getID()];
+		//return valArray[name.getID()];
+		return valMap.get(VN.names[name.getID()]);
 	}
 	
 	/**
@@ -108,10 +110,10 @@ public class Variable {
 	 * @return
 	 */
 	public double get(VarPair pair) {
-		int id = pair.getVarID();
-		if(id != -1)
-			valArray[id] = pair.value;
-		else
+//		int id = pair.getVarID();
+//		if(id != -1)
+//			valArray[id] = pair.value;
+//		else
 			pair.value = valMap.get(pair.name);
 		return pair.value;
 	}
@@ -126,34 +128,35 @@ public class Variable {
 	 * @return
 	 */
 	public Variable set(String name, double val) {
-		int id = VN.getID(name);
-		if(id != -1) {
-			valArray[id] = val;
-			useArray[id] = true;
-		} else
+//		int id = VN.getID(name);
+//		if(id != -1) {
+//			valArray[id] = val;
+//			useArray[id] = true;
+//		} else
 			valMap.put(name, val);
 		return this;
 	}
 	public Variable set(VN name, double val) {
-		int id = name.getID();
-		valArray[id] = val;
-		useArray[id] = true;
+//		int id = name.getID();
+//		valArray[id] = val;
+//		useArray[id] = true;
+		valMap.put(VN.names[name.getID()],val);
 		return this;
 	}
 	
 	public Variable set(VarPair pair) {
-		int id = pair.getVarID();
-		if(id != -1) {
-			valArray[id] = pair.value;
-			useArray[id] = true;
-		} else
+//		int id = pair.getVarID();
+//		if(id != -1) {
+//			valArray[id] = pair.value;
+//			useArray[id] = true;
+//		} else
 			valMap.put(pair.name, pair.value);
 		return this;
 	}
 
 	public Map<String,Double> getValues() {
-		for(int i=0;i<9;i++)
-			if(useArray[i]) valMap.put(VN.names[i], valArray[i]);
+//		for(int i=0;i<9;i++)
+//			if(useArray[i]) valMap.put(VN.names[i], valArray[i]);
 		return valMap;
 	}
 

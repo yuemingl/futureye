@@ -113,4 +113,7 @@ public abstract class AbstractScalarWeakForm implements WeakForm {
 	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
 		return false;
 	}
+	
+	public void preProcess(Element e) {
+	}
 }

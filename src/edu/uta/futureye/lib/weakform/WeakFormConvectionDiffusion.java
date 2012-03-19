@@ -84,11 +84,11 @@ public class WeakFormConvectionDiffusion extends AbstractScalarWeakForm {
 	public Function leftHandSide(Element e, ItemType itemType) {
 		 if(itemType==ItemType.Domain)  {
 			 //Interplate functions on element e
-			Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-			Function fb = Utils.interpolateFunctionOnElement(g_b,e);
+			Function fk = Utils.interpolateOnElement(g_k,e);
+			Function fb = Utils.interpolateOnElement(g_b,e);
 			VectorFunction fv = new SpaceVectorFunction(g_v.getDim());
 			for(int dim=1;dim<=g_v.getDim();dim++)
-				fv.set(dim, Utils.interpolateFunctionOnElement(g_v.get(dim),e));
+				fv.set(dim, Utils.interpolateOnElement(g_v.get(dim),e));
 			
 			//Dt*(k*\nabla{u},\nabla{w}) + 
 			//Dt*( (v1*u_x,w)+(v2*u_y,w)+(v3*u_z,w) ) + 
@@ -108,7 +108,7 @@ public class WeakFormConvectionDiffusion extends AbstractScalarWeakForm {
 		else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd = Utils.interpolateFunctionOnElement(g_d, be);
+				Function fd = Utils.interpolateOnElement(g_d, be);
 				Function borderIntegrand = fd.M(u.M(v));
 				return borderIntegrand;
 			}
@@ -120,13 +120,13 @@ public class WeakFormConvectionDiffusion extends AbstractScalarWeakForm {
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
 			//(Dt*f + c_n,w)
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
-			Function fcn = Utils.interpolateFunctionOnElement(g_cn, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
+			Function fcn = Utils.interpolateOnElement(g_cn, e);
 			Function integrand = ff.M(FC.c(Dt)).A(fcn).M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			Element be = e;
-			Function fq = Utils.interpolateFunctionOnElement(g_g, be);
+			Function fq = Utils.interpolateOnElement(g_g, be);
 			Function borderIntegrand = fq.M(v);
 			return borderIntegrand;
 		}

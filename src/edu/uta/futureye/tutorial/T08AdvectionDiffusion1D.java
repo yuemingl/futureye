@@ -114,8 +114,8 @@ public class T08AdvectionDiffusion1D {
 			public Function makeExpression(Element e, Type type) {
 				ScalarShapeFunction u = getScalarTrial();
 				ScalarShapeFunction v = getScalarTest();
-				Function fk = param(e,"k");
-				Function fu = param(e,"u");
+				Function fk = getParam("k",e);
+				Function fu = getParam("u",e);
 				switch(type) {
 					case LHS_Domain:
 						return fk.M(u._d("x").M(v._d("x"))).A(fu.M(u._d("x").M(v)));
@@ -124,8 +124,8 @@ public class T08AdvectionDiffusion1D {
 				}
 			}
 		};
-		wfb.addParamters(FC.c(k), "k");
-		wfb.addParamters(FC.c(u), "u");
+		wfb.addParam("k", FC.c(k));
+		wfb.addParam("u", FC.c(u));
 		WeakForm wf = wfb.getScalarWeakForm();
         
         //5.Assembly process

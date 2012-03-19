@@ -9,10 +9,10 @@ import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.VectorFunction;
-import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.lib.shapefun.SFConstant0;
 import edu.uta.futureye.util.MathEx;
 import edu.uta.futureye.util.Utils;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * <blockquote><pre>
@@ -80,9 +80,9 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 		if(itemType==ItemType.Domain)  {
 			//Integrand part of Weak Form on element e
 			Function integrand = null;
-			Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-			Function fc = Utils.interpolateFunctionOnElement(g_c,e);
-			VectorFunction fU = Utils.interpolateFunctionOnElement(g_U, e);
+			Function fk = Utils.interpolateOnElement(g_k,e);
+			Function fc = Utils.interpolateOnElement(g_c,e);
+			VectorFunction fU = Utils.interpolateOnElement(g_U, e);
 			
 			ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
 			ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
@@ -91,8 +91,9 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
 			ScalarShapeFunction q  = (ScalarShapeFunction)v.get(3);
 			
-			//upwind
-			if(this.vDOFLocalIndex<=8) {
+			//upwind: v1 and v2 in (u,v,p)
+			if(this.testDOF.getVVFComponent() != 3) {
+			//if(this.vDOFLocalIndex<=8) {
 				Node node1 = testDOF.getNodeOwner();
 //				Vector valUpwind = e.getDiagVectorInElement2D(node1);
 //				Vector valU = g_U.value(new Variable().setIndex(node1.globalIndex));
@@ -117,10 +118,10 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 				//double k_tidle = 2*(MathEx.coth(alpha)-1.0/alpha)*normU*h;
 				double k_tidle = (MathEx.coth(alpha)-1.0/alpha)*normU*h;
 				if(!(v1 instanceof SFConstant0)) {
-					v1.A(FMath.grad(v1,v1.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
+					v1.A(grad(v1,v1.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
 				}
 				if(!(v2 instanceof SFConstant0)) {
-					v2.A(FMath.grad(v2,v2.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
+					v2.A(grad(v2,v2.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
 				}
 			}
 			
@@ -134,10 +135,10 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 			 *			= (v1,f1)+(v2,f2)
 			 * 
 			 */
-			VectorFunction grad_u1 = FMath.grad(u1,u1.innerVarNames());
-			VectorFunction grad_u2 = FMath.grad(u2,u2.innerVarNames());
-			Function uv1 = grad_u1.dot(FMath.grad(v1,v1.innerVarNames()));
-			Function uv2 = grad_u2.dot(FMath.grad(v2,v2.innerVarNames()));
+			VectorFunction grad_u1 = grad(u1,"x","y");
+			VectorFunction grad_u2 = grad(u2,"x","y");
+			Function uv1 = grad_u1.dot(grad(v1,"x","y"));
+			Function uv2 = grad_u2.dot(grad(v2,"x","y"));
 			Function div_v = v1._d("x").A(v2._d("y"));
 			Function div_u = u1._d("x").A(u2._d("y"));
 			Function cvect = fU.dot(grad_u1).M(v1).A(fU.dot(grad_u2).M(v2));
@@ -147,8 +148,8 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 		} else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd1 = Utils.interpolateFunctionOnElement(g_d.get(1), be);
-				Function fd2 = Utils.interpolateFunctionOnElement(g_d.get(2), be);
+				Function fd1 = Utils.interpolateOnElement(g_d.get(1), be);
+				Function fd2 = Utils.interpolateOnElement(g_d.get(2), be);
 				ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
 				ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
 				ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
@@ -165,8 +166,8 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function f1 = Utils.interpolateFunctionOnElement(g_f.get(1), e);
-			Function f2 = Utils.interpolateFunctionOnElement(g_f.get(2), e);
+			Function f1 = Utils.interpolateOnElement(g_f.get(1), e);
+			Function f2 = Utils.interpolateOnElement(g_f.get(2), e);
 			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
 			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
 			//(v1*f1+v2*f2)

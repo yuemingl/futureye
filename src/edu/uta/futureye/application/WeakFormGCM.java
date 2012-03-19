@@ -50,10 +50,10 @@ public class WeakFormGCM extends AbstractScalarWeakForm {
 			//Integrand part of Weak Form on element e
 			Function integrand = null;
 
-			Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-			Function fc = Utils.interpolateFunctionOnElement(g_c,e);
-			Function fb1 = Utils.interpolateFunctionOnElement(g_b1,e);
-			Function fb2 = Utils.interpolateFunctionOnElement(g_b2,e);
+			Function fk = Utils.interpolateOnElement(g_k,e);
+			Function fc = Utils.interpolateOnElement(g_c,e);
+			Function fb1 = Utils.interpolateOnElement(g_b1,e);
+			Function fb2 = Utils.interpolateOnElement(g_b2,e);
 			
 			integrand = FMath.sum(
 						fk.M(
@@ -69,7 +69,7 @@ public class WeakFormGCM extends AbstractScalarWeakForm {
 		else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd = Utils.interpolateFunctionOnElement(g_d, be);
+				Function fd = Utils.interpolateOnElement(g_d, be);
 				Function borderIntegrand = fd.M(u.M(v));
 				return borderIntegrand;
 			}
@@ -80,12 +80,12 @@ public class WeakFormGCM extends AbstractScalarWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			Element be = e;
-			Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+			Function fq = Utils.interpolateOnElement(g_q, be);
 			Function borderIntegrand = fq.M(v);
 			return borderIntegrand;
 		} 

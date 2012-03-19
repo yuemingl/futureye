@@ -25,6 +25,13 @@ import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.NodeList;
 
+/**
+ * 处理Fenghua数据：
+ *   Research/matlab/HumanPhantom(Fenghua)
+ * 
+ * @author liuyueming
+ *
+ */
 public class HumanPhantom {
 	String outputFolder = "HumanPhantom";
 	
@@ -347,8 +354,11 @@ public class HumanPhantom {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
 		HumanPhantom hp = new HumanPhantom();
 		hp.init();
+
+		hp.plot3DInclusion();
 		
 		//String folder = "HumanPhantom_d30";
 		//String folder = "HumanPhantom_d30d30";
@@ -362,6 +372,12 @@ public class HumanPhantom {
 			aList.add(hp.run(LD.get(i),RD.get(i),i+1,"out"+folder,false));
 		
 		hp.buildResult3D(aList,"3D"+folder+".dat");
+	}
+	
+	public void plot3DInclusion() {
+		Mesh mesh3D = read3DMesh("./HumanPhantom/inclusion.grd");
+		Vector v3D = new SparseVectorHashMap(mesh3D.getNodeList().size());
+		Tools.plotVector(mesh3D, outputFolder, "inclusion.dat", v3D);
 	}
 
 }

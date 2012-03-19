@@ -1,11 +1,17 @@
 package edu.uta.futureye.application;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 import edu.uta.futureye.algebra.SpaceVector;
+import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
+import edu.uta.futureye.application.HumanReal.Part;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.FaceLocal;
@@ -21,6 +27,7 @@ import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FDelta;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
+import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
@@ -35,7 +42,7 @@ import edu.uta.futureye.util.container.ObjList;
 import static edu.uta.futureye.function.operator.FMath.*;
 
 public class HumanRealSimulate {
-	String workFolder = "HumanReal";
+	String workFolder = "HumanReal/Simulate";
 	//light source position
 	public Variable lightPosition = null; 
 	Function delta = null;
@@ -55,6 +62,22 @@ public class HumanRealSimulate {
 		this.lightPosition.set("z", z);
 		delta = new FDelta(this.lightPosition,0.01,2e5);
 	}
+	public void setLightPosition(Variable v) {
+		this.lightPosition = v;
+		delta = new FDelta(this.lightPosition,0.01,2e5);
+	}
+	
+	public void readMesh(String meshName) {
+		MeshReader reader = new MeshReader(workFolder+"/"+meshName+".grd");
+		meshOmega = reader.read3DMesh(); //3D
+		meshOmega.setName(meshName);
+		meshOmega.computeNodeBelongsToElements(); //worked in 3D
+		meshOmega.computeGlobalEdge();
+        ElementList eList = meshOmega.getElementList();
+        FETrilinearHexahedron feTLH = new FETrilinearHexahedron();
+        for(int i=1;i<=eList.size();i++)
+        	feTLH.assignTo(eList.at(i));		
+	}
 	
 	/**
 	 * Solver the following model problem:
@@ -67,27 +90,14 @@ public class HumanRealSimulate {
 	 *   k = 1/(3*mu_s')
 	 *   a = a(x,y,z) = mu_a(x,y,z)
 	 */
-	public Vector solveForward(String meshName, String info) {
-		System.out.println("Solve forward: mesh \""+meshName + "\" info:" + info);
-		
-		MeshReader reader = new MeshReader(workFolder+"/"+meshName+".grd");
-		meshOmega = reader.read3DMesh(); //3D
-		meshOmega.computeNodeBelongsToElements(); //worked in 3D
-		meshOmega.computeGlobalEdge();
-		
+	public Vector solveForward(String info) {
+		System.out.println("Solve forward: mesh \""+meshOmega.getName() + "\" info:" + info);
+				
 		HashMap<NodeType, Function> mapNTF = new HashMap<NodeType, Function>();
 		mapNTF.put(NodeType.Neumann, null);
 		meshOmega.markBorderNode(mapNTF);
 		meshOmega.writeNodesInfo(workFolder+"/meshInfo.dat");
-		
-        ElementList eList = meshOmega.getElementList();
-        FETrilinearHexahedron feTLH = new FETrilinearHexahedron();
-        for(int i=1;i<=eList.size();i++)
-        	feTLH.assignTo(eList.at(i));
 
-//		Tools.plotFunction(meshOmega, workFolder, "mu_a.dat", this.mu_a);
-//		Tools.plotFunction(meshOmega, workFolder, "delta.dat", this.delta);
-		
 //		int count=0,count2=0;
 //		for(Element e : mesh.getElementList()) {
 //			if(e.isBorderElement()) count++;
@@ -181,19 +191,16 @@ public class HumanRealSimulate {
 		return rlt;
 	}
 	
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		HumanRealSimulate sim = new HumanRealSimulate();
-		sim.setLightPosition(1.5,-0.5,4);
-		//sim.setLightPosition(0.5,-0.5,15);
-		//sim.setLightPosition(0.5,-0.5,17.5);
-		
+	public void simulateForward(
+			Variable[] lightSources,
+			Vector u0, //output
+			Vector u //output
+			) {
+		//mu_s'
 		double mu_sp = 10;
+		//mu_a
 		Function fmu_a = new AbstractFunction("x","y","z"){
-			double x0 = 5,y0=-1.5, z0=4;//z0=13
+			double x0 = 4.0,y0=-3.0, z0=4.0;//z0=13
 			@Override
 			public double value(Variable v) {
 				double x = v.get("x");
@@ -205,47 +212,182 @@ public class HumanRealSimulate {
 					return 0.1;
 			}
 		};
+		Tools.plotFunction(meshOmega, workFolder, "mu_a.dat", fmu_a);
 		Function fmu_a0 = C(0.1);
-		
-		String meshName = "mesh3DLeft";
-		//String meshName = "mesh3DRight";
-		String meshMeasureSurfaceName = "meshMeasureSurfaceLeft";
-		//String meshMeasureSurfaceName = "meshMeasureSurfaceRight";
-		MeshReader reader = new MeshReader(sim.workFolder+"/"+meshMeasureSurfaceName+".grd");
-		Mesh meshMeasureSurface = reader.read2DMesh(); //2D
-		
-		sim.setModelParam(mu_sp, fmu_a0);
-		Vector u0 = sim.solveForward(meshName,"background");
-		Tools.plotVector(sim.meshOmega, sim.workFolder, meshName+"_u0.dat", u0);
-		Vector meaSurf0 = sim.extractMeasureSurfaceValues(meshMeasureSurface, u0);
-		Tools.plotVector(meshMeasureSurface, sim.workFolder, meshName+"_u0_MeaSurf.dat", meaSurf0);
 
-		sim.setModelParam(mu_sp, fmu_a);
-		Vector u = sim.solveForward(meshName,"inclusion");
-		Tools.plotVector(sim.meshOmega, sim.workFolder, meshName+"_u.dat", u);
-		Vector meaSurf = sim.extractMeasureSurfaceValues(meshMeasureSurface, u);
-		Tools.plotVector(meshMeasureSurface, sim.workFolder, meshName+"_u_MeaSurf.dat", meaSurf);
 		
+		for(int i=0;i<lightSources.length;i++) {
+			setLightPosition(lightSources[i]);
+			Tools.plotFunction(meshOmega, workFolder, String.format("delta_src%02d.dat",i), this.delta);
+			
+			setModelParam(mu_sp, fmu_a0);
+			Vector _u0 = solveForward("background");
+			if(i==0) u0.set(_u0); else u0.axpy(1.0, _u0);
+			Tools.plotVector(meshOmega, workFolder, String.format(meshOmega.getName()+"_u0_src%02d.dat",i), _u0);
+	
+			setModelParam(mu_sp, fmu_a);
+			Vector _u = solveForward("inclusion");
+			if(i==0) u.set(_u); else u.axpy(1.0, _u);
+			Tools.plotVector(meshOmega, workFolder, String.format(meshOmega.getName()+"_u_src%02d.dat",i), _u);
+		}
+		u0.scale(1.0/lightSources.length);
+		u.scale(1.0/lightSources.length);
+	}
+	
+	public void simulateDetector(
+			Mesh meshMeasureSurface, Vector u0, Vector u, //input
+			Vector meaSurf0, Vector meaSurf //output
+			) {
+		Vector _meaSurf0 = extractMeasureSurfaceValues(meshMeasureSurface, u0);
+		meaSurf0.set(_meaSurf0);
+		Tools.plotVector(meshMeasureSurface, workFolder, meshOmega.getName()+"_u0_MeaSurf.dat", meaSurf0);
+		
+		Vector _meaSurf = extractMeasureSurfaceValues(meshMeasureSurface, u);
+		meaSurf.set(_meaSurf);
+		Tools.plotVector(meshMeasureSurface, workFolder, meshOmega.getName()+"_u_MeaSurf.dat", meaSurf);
+		
+		//Coordinates of detectors
 		double []setup_x = {1,3,5,7,  2,  4,  6,1,3,5,7};
 		double []setup_y = {3,3,3,3,4.5,4.5,4.5,6,6,6,6};
-		//meaSurf - meaSurf0
 		Vector2Function fmeaSurf0 = new Vector2Function(meaSurf0, meshMeasureSurface, "x","y");
 		Vector2Function fmeaSurf = new Vector2Function(meaSurf, meshMeasureSurface, "x","y");
 		Vector diffIntensity = new SpaceVector(setup_x.length);
 		Vector diffOD = new SpaceVector(setup_x.length);
 		for(int i=0;i<setup_x.length;i++) {
 			Variable v = new Variable("x",setup_x[i]).set("y",setup_y[i]);
+			//diffIntensity = I - I0
 			diffIntensity.set(i+1, fmeaSurf.value(v)-fmeaSurf0.value(v));
+			//diffOD = - log (I/I0)
 			diffOD.set(i+1, -Math.log(fmeaSurf0.value(v)/fmeaSurf.value(v)));
 		}
 		
-		MeshWriter.writeTechplotLine(sim.workFolder + "/detector.txt", 
+		MeshWriter.writeTechplotLine(workFolder + "/detector.txt", 
 				new SpaceVector(setup_x), 
 				new SpaceVector(setup_y),
 				diffIntensity,
 				diffOD
-				);
+				);	
+	}
+	
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		
+		HumanRealSimulate sim = new HumanRealSimulate();
+		sim.plot3DInclusion();
+
+		String meshName = "mesh3DLeft";
+		//String meshName = "mesh3DRight";
+		sim.readMesh(meshName);
+		
+		String meshMeasureSurfaceName = "meshMeasureSurfaceLeft";
+		//String meshMeasureSurfaceName = "meshMeasureSurfaceRight";
+		MeshReader reader = new MeshReader(sim.workFolder+"/"+meshMeasureSurfaceName+".grd");
+		Mesh meshMeasureSurface = reader.read2DMesh(); //2D
+		meshMeasureSurface.setName(meshMeasureSurfaceName);
+		
+		
+		Vector u0Sum = new SparseVectorHashMap();
+		Vector uSum = new SparseVectorHashMap();
+		Variable[] lightSources = new Variable[3];
+		lightSources[0] = new Variable("x",1.5).set("y", -0.5).set("z",2);
+		lightSources[1] = new Variable("x",1.5).set("y", -0.5).set("z",4);
+		lightSources[2] = new Variable("x",1.5).set("y", -0.5).set("z",6);
+		sim.simulateForward(lightSources, u0Sum, uSum);
+		
+		Vector meaSurf0 = new SparseVectorHashMap();
+		Vector meaSurf = new SparseVectorHashMap();
+		sim.simulateDetector(meshMeasureSurface, u0Sum, uSum, meaSurf0, meaSurf);
+		
+		//使用matlab进行插值 interplate_measurement_surface.m
+		
+		Vector interpMeaSurf = Tools.read2DFunctionValues(meshMeasureSurface,sim.workFolder+"/interplate_data.mat","XXI","YYI","VVI");
+		Tools.plotVector(meshMeasureSurface, sim.workFolder, meshName+"_u_MeaSurf_interp_dOD.dat", interpMeaSurf);
+		
+		Vector diffIntensity = axpy(
+				-1.0,
+				meaSurf0, 
+				axMuly(1.0, meaSurf0,exp(interpMeaSurf))
+			);
+		Tools.plotVector(meshMeasureSurface, sim.workFolder, meshName+"_u_MeaSurf_interp_dI.dat", diffIntensity);
+		Vector diffIntensityReal = axpy(-1.0,meaSurf0,meaSurf);
+		
+		
+		HumanReal hr = new HumanReal();
+		hr.init();
+		NodeList slice1Left = null;
+		NodeList slice1Right = null;
+		double[] leftData = new double[hr.NN];
+		double[] rightData = new double[hr.NN];
+		int timeIndex = 1;
+		boolean debug = true;
+		double[] leftLightCoord = {1.5,-0.5};
+		double[] rightLightCoord = {7.5,-0.5};
+		
+		//模拟插值数据
+		String outSubFloder = "simulate_interp";
+		List<Vector> alphaSlices = new ArrayList<Vector>();
+		for(int slice=1;slice<=hr.NSlice;slice++) {
+			double x = (slice-1)*0.5;
+			slice1Left = Tools.getNodeListOnX(meshMeasureSurface, x, false);
+			slice1Right = Tools.getNodeListOnX(meshMeasureSurface, x, true);
+			
+			for(int i=1;i<=slice1Left.size();i++) {
+				leftData[i-1] = diffIntensity.get(slice1Left.at(i).globalIndex);
+			}
+			for(int i=1;i<=slice1Right.size();i++) {
+				rightData[i-1] = diffIntensity.get(slice1Right.at(i).globalIndex);
+			}
+			Vector vSlice = hr.run( leftData, rightData, 
+					slice, timeIndex, outSubFloder, debug,
+					1,leftLightCoord,rightLightCoord);
+			alphaSlices.add(vSlice);
+		}
+		if(meshName.equals("mesh3DLeft"))
+			hr.buildResult3DLeft(alphaSlices, String.format("3D_Left_simulate_interp.dat"));
+		else
+			hr.buildResult3DRight(alphaSlices, String.format("3D_Right_simulate_interp.dat"));
+		
+		
+		//模拟真实数据
+		outSubFloder = "simulate_real";
+		alphaSlices.clear();
+		for(int slice=1;slice<=hr.NSlice;slice++) {
+			double x = (slice-1)*0.5;
+			slice1Left = Tools.getNodeListOnX(meshMeasureSurface, x, false);
+			slice1Right = Tools.getNodeListOnX(meshMeasureSurface, x, true);
+			
+			for(int i=1;i<=slice1Left.size();i++) {
+				leftData[i-1] = diffIntensityReal.get(slice1Left.at(i).globalIndex);
+			}
+			for(int i=1;i<=slice1Right.size();i++) {
+				rightData[i-1] = diffIntensityReal.get(slice1Right.at(i).globalIndex);
+			}
+			Vector vSlice = hr.run( leftData, rightData, 
+					slice, timeIndex, outSubFloder, debug,
+					1,leftLightCoord,rightLightCoord);
+			alphaSlices.add(vSlice);
+		}
+		if(meshName.equals("mesh3DLeft"))
+			hr.buildResult3DLeft(alphaSlices, String.format("3D_Left_simulate_real.dat"));
+		else
+			hr.buildResult3DRight(alphaSlices, String.format("3D_Right_simulate_real.dat"));
 		
 	}
-
+	
+	public Mesh read3DMesh(String file) {
+		MeshReader reader = new MeshReader(file);
+		Mesh mesh = reader.read3DMesh();
+		//Vector v = new SparseVectorHashMap(mesh.getNodeList().size());
+		//Tools.plotVector(mesh, outputFolder, "3D.dat", v);
+		return mesh;
+	}
+	
+	public void plot3DInclusion() {
+		Mesh mesh3D = read3DMesh(this.workFolder+"/inclusion.grd");
+		Vector v3D = new SparseVectorHashMap(mesh3D.getNodeList().size());
+		Tools.plotVector(mesh3D, this.workFolder, "inclusion.dat", v3D);
+	}
 }

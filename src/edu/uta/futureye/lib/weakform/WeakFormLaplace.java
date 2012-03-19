@@ -2,8 +2,8 @@ package edu.uta.futureye.lib.weakform;
 
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.util.Utils;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * <blockquote><pre>
@@ -48,7 +48,7 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 		this.g_f = f;
 	}
 	
-	//Robin: d*u +  k*u_n = g
+	//Robin: d*u +  k*u_n = q
 	public void setParam(Function k,Function c,Function q,Function d) {
 		this.g_k = k;
 		this.g_c = c;
@@ -62,29 +62,22 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 			//Integrand part of Weak Form on element e
 			Function integrand = null;
 			if(g_k == null) {
-				integrand =  
-					FMath.grad(u,u.innerVarNames()).
-								  dot( 
-					FMath.grad(v,v.innerVarNames()) 
-								  );
+				integrand = grad(u,u.innerVarNames()).dot(
+							grad(v,v.innerVarNames()));
 			} else {
-				
-				Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-				Function fc = Utils.interpolateFunctionOnElement(g_c,e);
+				Function fk = Utils.interpolateOnElement(g_k,e);
+				Function fc = Utils.interpolateOnElement(g_c,e);
 				integrand = fk.M(
-									FMath.grad(u,u.innerVarNames()).
-									dot(
-									FMath.grad(v,v.innerVarNames())))
-							.A(
-									fc.M(u.M(v))
-							);
+					grad(u,u.innerVarNames()).dot(
+					grad(v,v.innerVarNames()))).A(
+					fc.M(u.M(v)));
 			}
 			return integrand;
 		}
 		else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd = Utils.interpolateFunctionOnElement(g_d, be);
+				Function fd = Utils.interpolateOnElement(g_d, be);
 				Function borderIntegrand = fd.M(u.M(v));
 				return borderIntegrand;
 			}
@@ -95,13 +88,13 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			if(g_q != null) {
 				Element be = e;
-				Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+				Function fq = Utils.interpolateOnElement(g_q, be);
 				Function borderIntegrand = fq.M(v);
 				return borderIntegrand;
 			}

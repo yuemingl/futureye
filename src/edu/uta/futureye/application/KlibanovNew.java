@@ -47,6 +47,7 @@ public class KlibanovNew {
 			Vector u, double s,  //input
 			Vector ReU, Vector ImU //output
 			) {
+		//write your code here
 		
 	}
 	
@@ -88,9 +89,11 @@ public class KlibanovNew {
 		transformLaplace(u,s,ReU,ImU);
 		
 		//update tail
-		
+		//write you code here to update tail
 		
 		//solve q
+		//Please modify the file GCMModelNew.java to implement 
+		//the new algorithm based on the current implementation of GCM
 		GCMModelNew model = new GCMModelNew(prm.outputFolder);
 		//model.solveGCM(mesh, N, s, phi, tailT)
 	}

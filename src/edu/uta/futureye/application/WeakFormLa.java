@@ -65,7 +65,7 @@ public class WeakFormLa extends AbstractScalarWeakForm {
 		else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd = Utils.interpolateFunctionOnElement(g_d, be);
+				Function fd = Utils.interpolateOnElement(g_d, be);
 				Function borderIntegrand = fd.M(u.M(v));
 				return borderIntegrand;
 			}
@@ -76,9 +76,9 @@ public class WeakFormLa extends AbstractScalarWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
-			Function fk1 = Utils.interpolateFunctionOnElement(g_k1,e);
-			Function fk2 = Utils.interpolateFunctionOnElement(g_k2,e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
+			Function fk1 = Utils.interpolateOnElement(g_k1,e);
+			Function fk2 = Utils.interpolateOnElement(g_k2,e);
 			int NF = g_b.length;
 			Function[] fb = new Function[NF];
 			Function[] fc = new Function[NF];
@@ -91,8 +91,8 @@ public class WeakFormLa extends AbstractScalarWeakForm {
 			Function[] fbMfc = new Function[NF];
 
 			for(int k=0;k<NF;k++) {
-				fb[k] = Utils.interpolateFunctionOnElement(g_b[k],e);
-				fc[k] = Utils.interpolateFunctionOnElement(g_c[k],e);
+				fb[k] = Utils.interpolateOnElement(g_b[k],e);
+				fc[k] = Utils.interpolateOnElement(g_c[k],e);
 
 				int N = e.nodes.size();
 				double[] fbv = new double[N];
@@ -112,10 +112,10 @@ public class WeakFormLa extends AbstractScalarWeakForm {
 				Function cdx = new FXY(0.0,ac[3],ac[1]);
 				Function cdy = new FXY(ac[3],0.0,ac[2]);
 			
-				fbx[k] = Utils.interpolateFunctionOnElement(bdx, e);
-				fby[k] = Utils.interpolateFunctionOnElement(bdy, e);
-				fcx[k] = Utils.interpolateFunctionOnElement(cdx, e);
-				fcy[k] = Utils.interpolateFunctionOnElement(cdy, e);
+				fbx[k] = Utils.interpolateOnElement(bdx, e);
+				fby[k] = Utils.interpolateOnElement(bdy, e);
+				fcx[k] = Utils.interpolateOnElement(cdx, e);
+				fcy[k] = Utils.interpolateOnElement(cdy, e);
 				
 				fbxMfcx[k] = fbx[k].M(fcx[k]);
 				fbyMfcy[k] = fby[k].M(fcy[k]);
@@ -132,7 +132,7 @@ public class WeakFormLa extends AbstractScalarWeakForm {
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			Element be = e;
-			Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+			Function fq = Utils.interpolateOnElement(g_q, be);
 			Function borderIntegrand = fq.M(v);
 			return borderIntegrand;
 		} 

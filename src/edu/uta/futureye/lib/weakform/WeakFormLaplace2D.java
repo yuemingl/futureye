@@ -73,8 +73,8 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 			if(g_k == null) {
 				integrand = u._d("x").M(v._d("x")) .A (u._d("y").M(v._d("y")));
 			} else {
-				Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-				Function fc = Utils.interpolateFunctionOnElement(g_c,e);
+				Function fk = Utils.interpolateOnElement(g_k,e);
+				Function fc = Utils.interpolateOnElement(g_c,e);
 				integrand = fk.M(
 								u._d("x").M(v._d("x")) .A (u._d("y").M(v._d("y")))
 							).A(
@@ -86,7 +86,7 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 		else if(itemType==ItemType.Border) {//Neumann border integration on LHS
 			if(g_d != null) {
 				Element be = e;
-				Function fd = Utils.interpolateFunctionOnElement(g_d, be);
+				Function fd = Utils.interpolateOnElement(g_d, be);
 				Function borderIntegrand = fd.M(u.M(v));
 				return borderIntegrand;
 			}
@@ -97,13 +97,13 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			if(g_q != null) {
 				Element be = e;
-				Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+				Function fq = Utils.interpolateOnElement(g_q, be);
 				Function borderIntegrand = fq.M(v);
 				return borderIntegrand;
 			}
@@ -136,9 +136,9 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 		}
 
 		Function fk = null;
-		if(g_k != null) fk = Utils.interpolateFunctionOnElement(g_k,e);
+		if(g_k != null) fk = Utils.interpolateOnElement(g_k,e);
 		Function fc = null;
-		if(g_c != null) fc = Utils.interpolateFunctionOnElement(g_c,e);
+		if(g_c != null) fc = Utils.interpolateOnElement(g_c,e);
 
 		//所有自由度双循环
 		for(int i=1;i<=nDOFs;i++) {
@@ -181,7 +181,7 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 				globalStiff.add(nGlobalRow, nGlobalCol, lhsVal);
 			}
 			//Load vector
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
 			Function integrand = ff.M(sfI);
 			double rhsVal = 0.0;
 			if(e.vertices().size() == 3) {
@@ -205,7 +205,7 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 				Element be = beList.at(n);
 				
 				Function fd = null;
-				if(g_d != null) fd = Utils.interpolateFunctionOnElement(g_d, be);
+				if(g_d != null) fd = Utils.interpolateOnElement(g_d, be);
 				//Check node type
 				NodeType nodeType = be.getBorderNodeType();
 				if(nodeType == NodeType.Neumann || nodeType == NodeType.Robin) {
@@ -241,7 +241,7 @@ public class WeakFormLaplace2D extends AbstractScalarWeakForm {
 						}
 						//Load vector for border
 						if(g_q != null) {
-							Function fq = Utils.interpolateFunctionOnElement(g_q, be);
+							Function fq = Utils.interpolateOnElement(g_q, be);
 							Function borderIntegrand = fq.M(sfI);
 							double rhsBrVal = FOIntegrate.intOnLinearRefElement(
 									borderIntegrand.M(be.getJacobin()),5

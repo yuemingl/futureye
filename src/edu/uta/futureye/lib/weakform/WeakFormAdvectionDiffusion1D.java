@@ -52,8 +52,8 @@ public class WeakFormAdvectionDiffusion1D extends AbstractScalarWeakForm {
 	public Function leftHandSide(Element e, ItemType itemType) {
 		 if(itemType==ItemType.Domain)  {
 			 //Interplate functions on element e
-			Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-			Function fu = Utils.interpolateFunctionOnElement(g_u,e);
+			Function fk = Utils.interpolateOnElement(g_k,e);
+			Function fu = Utils.interpolateOnElement(g_u,e);
 			Function integrand = null;
 			
 			DOF dof = e.getAllNodeDOFList().at(vDOFLocalIndex);
@@ -87,7 +87,7 @@ public class WeakFormAdvectionDiffusion1D extends AbstractScalarWeakForm {
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
 			//(Dt*f + c_n,w)
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
