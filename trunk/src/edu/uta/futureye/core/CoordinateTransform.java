@@ -677,4 +677,13 @@ public class CoordinateTransform {
 				+ items[1]*det6538
 				+ items[2]*det3764);
 	}
+	
+	public List<String> getFromVarNames() {
+		return this.fromVarNames;
+	}
+	
+	public List<String> getToVarNames() {
+		return this.toVarNames;
+	}
+	
 }

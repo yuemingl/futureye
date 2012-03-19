@@ -23,6 +23,9 @@ import edu.uta.futureye.util.container.ObjIndex;
 import edu.uta.futureye.util.container.ObjList;
 
 public class Mesh {
+	//Mesh name
+	protected String name = null;
+
 	//Global node list
 	protected NodeList nodeList = new NodeList();
 	
@@ -490,6 +493,22 @@ public class Mesh {
 		return newMesh;
 	}
 	
+	/**
+	 * Shallow copy or reference
+	 * 
+	 * @param mesh
+	 */
+	public void ref(Mesh mesh) {
+		this.name = mesh.name;
+		this.nodeList = mesh.nodeList;
+		this.edgeList = mesh.edgeList;
+		this.faceList = mesh.faceList;
+		this.eleList = mesh.eleList;
+		this.nVertex = mesh.nVertex;
+		this.mapNTF = mesh.mapNTF;
+		this.debug = mesh.debug;
+	}
+	
 	public void printMeshInfo() {
 		for(int i=1;i<=this.eleList.size();i++) {
 			Element e = this.eleList.at(i);
@@ -548,6 +567,14 @@ public class Mesh {
 			}
 		}
 		Tools.plotVector(this, "", fileName, v);
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
 	}
 	
 }

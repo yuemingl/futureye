@@ -412,4 +412,14 @@ public class SparseMatrixColMajor implements SparseMatrix {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public double apply(int row, int col) {
+		return this.get(row, col);
+	}	
+	
+	@Override
+	public void update(int row, int col, double value) {
+		this.set(row, col, value);
+	}		
 }

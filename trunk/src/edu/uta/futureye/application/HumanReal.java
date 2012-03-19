@@ -43,28 +43,28 @@ public class HumanReal {
 	 * @param u
 	 * @return
 	 */
-	public Vector computeTailLeftLight(Mesh mesh, Vector u) {
-		NodeList nodes = mesh.getNodeList();
-		double top = 0;
-		double width = 9;
-		double skipLen = 1.0;
-		Point lPos = model.getLightPosition();
-		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
-		SparseVector rlt = new SparseVectorHashMap(u.getDim());
-		
-		for(int i=1;i<=nodes.size();i++) {
-			Node node = nodes.at(i);
-			//计算当前点和光源的距离
-			double len = Utils.computeLength(lPos, node);
-			if(len>skipLen && len < width) {
-				Variable var = new Variable("x",lPos.coord(1)+len).set("y", top);
-				rlt.set(i, fu.value(var));
-			} else {
-				rlt.set(i, u.get(i));
-			}
-		}
-		return rlt;
-	}
+//	public Vector computeTailLeftLight(Mesh mesh, Vector u) {
+//		NodeList nodes = mesh.getNodeList();
+//		double top = 0.0;
+//		double width = 9.0;
+//		double skipLen = 1.0; //距离光源1.0范围内的点跳过tail赋值
+//		Point lPos = model.getLightPosition();
+//		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
+//		SparseVector rlt = new SparseVectorHashMap(u.getDim());
+//		
+//		for(int i=1;i<=nodes.size();i++) {
+//			Node node = nodes.at(i);
+//			//计算当前点和光源的距离
+//			double len = Utils.computeLength(lPos, node);
+//			if(len>skipLen && lPos.coord(1)+len < width) {
+//				Variable var = new Variable("x",lPos.coord(1)+len).set("y", top);
+//				rlt.set(i, fu.value(var));
+//			} else {
+//				rlt.set(i, u.get(i));
+//			}
+//		}
+//		return rlt;
+//	}
 	
 	/**
 	 * [0,9]*[0,-9]
@@ -75,11 +75,45 @@ public class HumanReal {
 	 * @param u
 	 * @return
 	 */
+//	public Vector computeTailRightLight(Mesh mesh, Vector u) {
+//		NodeList nodes = mesh.getNodeList();
+//		double top = 0;
+//		double widthLeft = 6;
+//		double widthRight = 3;
+//		double skipLen = 1.0;
+//		Point rPos = model.getLightPosition();
+//		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
+//		SparseVector rlt = new SparseVectorHashMap(u.getDim());
+//		
+//		for(int i=1;i<=nodes.size();i++) {
+//			Node node = nodes.at(i);
+//			//计算当前点和光源的距离
+//			double len = Utils.computeLength(rPos, node);
+//			if(node.coord(1) <= rPos.coord(1)) {//光源左侧的点
+//				if(len>skipLen && len < widthLeft) {
+//					Variable var = new Variable("x",rPos.coord(1)-len).set("y", top);
+//					rlt.set(i, fu.value(var));
+//				} else {
+//					rlt.set(i, u.get(i));
+//				}
+//			} else {//光源右侧的点
+//				if(len>skipLen && len < widthRight) {
+//					Variable var = new Variable("x",rPos.coord(1)+len).set("y", top);
+//					rlt.set(i, fu.value(var));
+//				} else {
+//					rlt.set(i, u.get(i));
+//				}				
+//			}
+//			
+//		}
+//		return rlt;
+//	}
+	
 	public Vector computeTailRightLight(Mesh mesh, Vector u) {
 		NodeList nodes = mesh.getNodeList();
-		double top = 0;
-		double widthLeft = 6;
-		double widthRight = 3;
+		double top = 0.0;
+		double xMin = 0.0;
+		double xMax = 9.0;
 		double skipLen = 1.0;
 		Point rPos = model.getLightPosition();
 		Vector2Function fu = new Vector2Function(u,mesh,"x","y");
@@ -89,55 +123,21 @@ public class HumanReal {
 			Node node = nodes.at(i);
 			//计算当前点和光源的距离
 			double len = Utils.computeLength(rPos, node);
-			if(node.coord(1) <= rPos.coord(1)) {//光源左侧的点
-				if(len>skipLen && len < widthLeft) {
-					Variable var = new Variable("x",rPos.coord(1)-len).set("y", top);
-					rlt.set(i, fu.value(var));
-				} else {
-					rlt.set(i, u.get(i));
-				}
-			} else {//光源右侧的点
-				if(len>skipLen && len < widthRight) {
-					Variable var = new Variable("x",rPos.coord(1)+len).set("y", top);
-					rlt.set(i, fu.value(var));
-				} else {
-					rlt.set(i, u.get(i));
-				}				
-			}
+			double dx = Math.signum(node.coord(1)-rPos.coord(1))*len*1.0;//!!!
 			
+			if(len>skipLen && rPos.coord(1)+dx>=xMin && rPos.coord(1)+dx<=xMax) {
+				Variable var = new Variable("x",rPos.coord(1)+dx).set("y", top);
+				rlt.set(i, fu.value(var));
+			} else {
+				rlt.set(i, u.get(i));				
+			}
 		}
 		return rlt;
 	}
-	
-	/**
-	 * 
-	 * @param mesh
-	 * @param y
-	 * @param sortAsc: sort by x
-	 * @return
-	 */
-	public NodeList getNodeListOnY(Mesh mesh, double y,final boolean sortAsc) {
-		NodeList nodes = mesh.getNodeList();
-		NodeList rlt = new NodeList();
-		for(int i=1;i<=nodes.size();i++) {
-			Node node = nodes.at(i);
-			if(Math.abs(node.coord(2)-y)<Constant.meshEps) {
-				rlt.add(node);
-			}
-		}
-		List<Node> l = rlt.toList();
-		Collections.sort(l, new Comparator<Node>() {
-			@Override
-			public int compare(Node o1, Node o2) {
-				if(o1.coord(1)>o2.coord(1))
-					return sortAsc?1:-1;
-				else
-					return sortAsc?-1:1;
-			}
-		});
-		return rlt;
+	public Vector computeTailLeftLight(Mesh mesh, Vector u) {
+		return computeTailRightLight(mesh,u);
 	}
-	
+
 	public void init() {
 		model.setMu_a(FC.c(0.1));
 		
@@ -148,12 +148,15 @@ public class HumanReal {
 		mesh.computeNodeBelongsToElements();
 		mesh.computeNeighborNodes();
 		
-		topList = this.getNodeListOnY(mesh, 0.0, true);
+		topList = Tools.getNodeListOnY(mesh, 0.0, true);
 		//System.out.println(topList);
 		
 	}
 
-	public Vector run(double[] leftData, double[] rightData, int sliceNo, int timeIndex, String outSubFloder, boolean debug) {
+	public Vector run(double[] leftData, double[] rightData, 
+			int sliceNo, int timeIndex, String outSubFloder, boolean debug,
+			double ampFactor,double[] leftLightCoord, double[] rightLightCoord) {
+		
 		String outputFolder = String.format("%s/%s/%02d",this.outputFolder,outSubFloder,sliceNo);
 		String outputFolder2 = String.format("%s/%s",this.outputFolder,outSubFloder);
 		String timeFormat = String.format("_t%05d", timeIndex);
@@ -161,8 +164,8 @@ public class HumanReal {
 		int padLeft = 6;
 		int padRight1 = 7;
 		int padRight2 = 4;
-		double ampFactor = 1000;
-		model.setLightPosition(0.0, 0.0);
+		////double ampFactor = 1000;
+		model.setLightPosition(leftLightCoord[0], leftLightCoord[1]);
 		Vector uLeft = model.solveNeumann(mesh);
 		if(debug) Tools.plotVector(mesh, outputFolder, "uLeft"+timeFormat+".dat", uLeft);
 
@@ -173,12 +176,19 @@ public class HumanReal {
 		if(debug) Tools.plotVector(mesh, outputFolder, "aLeft0"+timeFormat+".dat", aLeft0);
 
 		Vector leftRawData = new SparseVectorHashMap(uLeft.getDim());
-		for(int i=padLeft;i<leftData.length-padLeft;i++) {
+		Vector leftRawDataFull = new SparseVectorHashMap(uLeft.getDim());
+		for(int i=0;i<leftData.length;i++) {
 			Node node = topList.at(i+1);
-			uLeft.set(node.globalIndex,uLeft.get(node.globalIndex)+ampFactor*leftData[i]);
-			leftRawData.set(node.globalIndex, leftData[i]);
+			if(i>=padLeft && i<leftData.length-padLeft) {
+				uLeft.set(node.globalIndex,uLeft.get(node.globalIndex)+ampFactor*leftData[i]);
+				leftRawData.set(node.globalIndex, leftData[i]);
+			}
+			leftRawDataFull.set(node.globalIndex, leftData[i]);
 		}
 		if(debug) Tools.plotVector(mesh, outputFolder, "leftRawData"+timeFormat+".dat", leftRawData);
+		if(debug) Tools.plotVector(mesh, outputFolder, "leftRawDataFull"+timeFormat+".dat", leftRawDataFull);
+		
+		
 		//Left tail
 		Vector tailLeftLight = computeTailLeftLight(mesh, uLeft);
 		if(debug) {
@@ -205,8 +215,8 @@ public class HumanReal {
 		Tools.plotVector(mesh, outputFolder, "aLeftSmooth_Cut"+timeFormat+".dat", aLeft);
 
 		
-		ampFactor = 1000;
-		model.setLightPosition(6.0, 0.0);
+		////ampFactor = 1000;
+		model.setLightPosition(rightLightCoord[0], rightLightCoord[1]);
 		Vector uRight = model.solveNeumann(mesh);
 		if(debug) Tools.plotVector(mesh, outputFolder, "uRight"+timeFormat+".dat", uRight);
 		
@@ -217,12 +227,18 @@ public class HumanReal {
 		if(debug) Tools.plotVector(mesh, outputFolder, "aRight0"+timeFormat+".dat", aRight0);
 		
 		Vector rightRawData = new SparseVectorHashMap(uRight.getDim());
-		for(int i=padRight1;i<rightData.length-padRight2;i++) {
+		Vector rightRawDataFull = new SparseVectorHashMap(uRight.getDim());
+		for(int i=0;i<rightData.length;i++) {
 			Node node = topList.at(i+1);
-			uRight.set(node.globalIndex,uRight.get(node.globalIndex)+ampFactor*rightData[i]);
-			rightRawData.set(node.globalIndex, rightData[i]);
+			if(i>=padRight1 && i<rightData.length-padRight2) {
+				uRight.set(node.globalIndex,uRight.get(node.globalIndex)+ampFactor*rightData[i]);
+				rightRawData.set(node.globalIndex, rightData[i]);
+			}
+			rightRawDataFull.set(node.globalIndex, rightData[i]);
 		}
 		if(debug) Tools.plotVector(mesh, outputFolder, "rightRawData"+timeFormat+".dat", rightRawData);
+		if(debug) Tools.plotVector(mesh, outputFolder, "rightRawDataFull"+timeFormat+".dat", rightRawDataFull);
+
 		//Right tail
 		Vector tailRightLight = computeTailRightLight(mesh, uRight);
 		if(debug) {
@@ -290,6 +306,14 @@ public class HumanReal {
 //		Tools.plotVector(mesh, outputFolder2, String.format("aAvgSmoothCut_%02d"+timeFormat+".dat",sliceNo), aAvg);
 		
 		return aAvg;
+	}
+	
+	public Vector run(double[] leftData, double[] rightData, int sliceNo, int timeIndex, String outSubFloder, boolean debug) {
+		double[] leftLightCoord = {0.0,0.0};
+		double[] rightLightCoord = {6.0,0.0};
+		return run(leftData, rightData, 
+				sliceNo, timeIndex, outSubFloder, debug,
+				1000,leftLightCoord, rightLightCoord);
 	}
 	
 	public Mesh read3DMesh(String file) {

@@ -18,7 +18,7 @@ public interface WeakForm {
 	/**
 	 * Set DOF objects to the weak form. These objects contain shape functions,
 	 * local and global index of DOFs and geometry information of the geometry
-	 * objects that possess the corresponding DOF object
+	 * objects that possess the corresponding DOF objects
 	 * <p>
 	 * 直接传入DOF对象。对于一般的弱形式，只需要形函数就够了，
 	 * 但是对于需要特殊处理的弱形式（例如：迎风方法需要知道自由度
@@ -57,6 +57,13 @@ public interface WeakForm {
 	 * @return
 	 */
 	Function rightHandSide(Element e, ItemType itemType);
+	
+	/**
+	 * Provide a pre-process function before calling leftHandSide(...) and rightHandSide(...) if necessary
+	 * @param e
+	 */
+	void preProcess(Element e);
+
 	//----------------------------------------------------------
 	
 	//--- Fast approach providing weak form interface to assembler-----
@@ -94,5 +101,6 @@ public interface WeakForm {
 	 * @return
 	 */
 	boolean isVVFComponentCoupled(int nComponent1, int nComponent2);
+	
 	
 }

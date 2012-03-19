@@ -408,4 +408,14 @@ public class SparseBlockVector implements BlockVector<SparseVector>, SparseVecto
 			this.e = e;
 		}
     }
+
+	@Override
+	public double apply(int index) {
+		return this.get(index);
+	}
+
+	@Override
+	public void update(int index, double value) {
+		this.set(index,value);
+	}  
 }

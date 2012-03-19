@@ -302,14 +302,14 @@ public class Utils {
 	    return su;
 	}
 	
-	public static VectorFunction interpolateFunctionOnElement(VectorFunction fun, Element e) {
+	public static VectorFunction interpolateOnElement(VectorFunction fun, Element e) {
 		SpaceVectorFunction rlt = new SpaceVectorFunction(fun.getDim());
 		for(int i=1;i<=fun.getDim();i++) {
-			rlt.set(i, interpolateFunctionOnElement(fun.get(i),e));
+			rlt.set(i, interpolateOnElement(fun.get(i),e));
 		}
 		return rlt;
 	}
-	public static Function interpolateFunctionOnElement(Function fun, Element e) {
+	public static Function interpolateOnElement(Function fun, Element e) {
 		if(fun == null) throw new FutureyeException("fun should not be null");
 		if(fun instanceof FC)
 			return fun;

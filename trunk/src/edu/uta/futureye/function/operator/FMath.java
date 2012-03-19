@@ -21,7 +21,7 @@ public class FMath {
 	//--- Predefined static objects ------------------------
 	/**
 	 * Use "import static edu.uta.futureye.function.operator.FMath.*" to simplify
-	 * the use of these predefined static objects
+	 * the usage of these predefined static objects
 	 */
 	public final static FC C0 = new FC(0.0);
 	public final static FC C1 = new FC(1.0);
@@ -65,6 +65,13 @@ public class FMath {
 		};
 	}
 	
+	/**
+	 * f^p
+	 * 
+	 * @param f
+	 * @param p
+	 * @return
+	 */
 	public static Function pow(final Function f, final double p) {
 		return new AbstractFunction(f.varNames()) {
 			@Override
@@ -88,6 +95,12 @@ public class FMath {
 		};
 	}
 
+	/**
+	 * f1^f2
+	 * @param f1
+	 * @param f2
+	 * @return
+	 */
 	public static Function pow(final Function f1, final Function f2) {
 		return new AbstractFunction(Utils.mergeList(f1.varNames(), f2.varNames())) {
 			@Override
@@ -276,6 +289,20 @@ public class FMath {
 	 * Compute gradient of <code>fun</code> with respect to variables <code>varNames</code>
 	 * in case of composition of functions.
 	 * 
+	 * @param vars
+	 * @return
+	 */
+	public static VectorFunction grad(Function fun, String ...varNames) {
+		VectorFunction rlt = new SpaceVectorFunction(varNames.length);
+		for(int i=0;i<varNames.length;i++)
+			rlt.set(i+1, fun._d(varNames[i]));
+		return rlt;
+	}
+	
+	/**
+	 * Compute gradient of <code>fun</code> with respect to variables <code>varNames</code>
+	 * in case of composition of functions.
+	 * 
 	 * @param fun
 	 * @param varNames
 	 * @return
@@ -311,6 +338,23 @@ public class FMath {
 	 * @param varNames
 	 * @return
 	 */
+	public static Function div(VectorFunction vFun,String ...varNames) {
+		Function rlt = new FC(0.0);
+		for(int i=0;i<varNames.length;i++) {
+			Function fd = (Function)vFun.get(i+1);
+			rlt = rlt.A(fd._d(varNames[i]));
+		}
+		return rlt;
+	}
+	
+	/**
+	 * Compute divergence of <code>vFun</code> with respect to variables <code>varNames</code>
+	 * in case of composition of functions.
+	 * 
+	 * @param fun
+	 * @param varNames
+	 * @return
+	 */
 	public static Function div(VectorFunction vFun,ObjList<String> varNames) {
 		Function rlt = new FC(0.0);
 		for(int i=1;i<=varNames.size();i++) {
@@ -324,6 +368,10 @@ public class FMath {
 		//TODO
 		return null;
 	}
+	public static Function curl(VectorFunction vFun, String ...varNames) {
+		//TODO
+		return null;
+	}	
 	public static Function curl(VectorFunction vFun, ObjList<String> varNames) {
 		//TODO
 		return null;
@@ -350,9 +398,9 @@ public class FMath {
 	}
 	
 	/**
-	 * 
+	 * Sum all the components of a vector
 	 * @param v
-	 * @return
+	 * @return v_1 + v_2 + ... + v_n
 	 */
 	public static double sum(Vector v) {
 		if(v == null || v.getDim() == 0)
@@ -369,6 +417,14 @@ public class FMath {
 		Vector v2 = v.copy();
 		for(int i=1;i<=v.getDim();i++) {
 			v2.set(i,Math.log(v.get(i)));
+		}
+		return v2;
+	}
+	
+	public static Vector exp(Vector v) {
+		Vector v2 = v.copy();
+		for(int i=1;i<=v.getDim();i++) {
+			v2.set(i,Math.exp(v.get(i)));
 		}
 		return v2;
 	}

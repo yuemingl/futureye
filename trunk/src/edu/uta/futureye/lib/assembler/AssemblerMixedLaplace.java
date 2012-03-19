@@ -25,10 +25,14 @@ public class AssemblerMixedLaplace implements Assembler {
 		int elementDOF = mesh.getEdgeList().size();
 		
 		globalStiff = new SparseBlockMatrix(2,2);
-		globalStiff.setBlock(1, 1, new SparseMatrixRowMajor(edgeDOF,edgeDOF));
-		globalStiff.setBlock(1, 2, new SparseMatrixRowMajor(edgeDOF,elementDOF));
-		globalStiff.setBlock(2, 1, new SparseMatrixRowMajor(elementDOF,edgeDOF));
-		globalStiff.setBlock(2, 2, new SparseMatrixRowMajor(elementDOF,elementDOF));
+		globalStiff.setBlock(1, 1, 
+				new SparseMatrixRowMajor(edgeDOF,edgeDOF));
+		globalStiff.setBlock(1, 2, 
+				new SparseMatrixRowMajor(edgeDOF,elementDOF));
+		globalStiff.setBlock(2, 1, 
+				new SparseMatrixRowMajor(elementDOF,edgeDOF));
+		globalStiff.setBlock(2, 2, 
+				new SparseMatrixRowMajor(elementDOF,elementDOF));
 		
 		globalLoad = new SparseBlockVector(2);
 		globalLoad.setBlock(1, new SparseVectorHashMap(edgeDOF));

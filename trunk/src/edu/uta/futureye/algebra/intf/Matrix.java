@@ -45,21 +45,41 @@ public interface Matrix {
 	int getColDim();
 	
 	/**
+	 * 获取row行col列元素的值
+	 * @param row
+	 * @param col
+	 * @return <tt>m(row,col)</tt>
+	 */
+	double get(int row, int col);
+	
+	/**
+	 * Alias of get(int row, int col), used in ScalaFEM as syntactic sugar: 
+	 * <code>val a = m(row,col)</code>
+	 * 
+	 * @param row
+	 * @param col
+	 * @return <tt>m(row,col)</tt>
+	 */
+	double apply(int row, int col);
+
+	/**
 	 * 设置row行col列元素的值
 	 * @param row
 	 * @param col
 	 * @param value
 	 */
-	void set(int row, int col,double value);
+	void set(int row, int col, double value);
 	
 	/**
-	 * 获取row行col列元素的值
+	 * Alias of set(int row, int col, double value), used in ScalaFEM as syntactic sugar: 
+	 * <code>m(row,col)=value</code>
+	 * 
 	 * @param row
 	 * @param col
-	 * @return
+	 * @param value
 	 */
-	double get(int row, int col);
-	
+	void update(int row, int col, double value);
+
 	/**
 	 * m(row,col) += value
 	 * @param row

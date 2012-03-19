@@ -40,7 +40,16 @@ public interface Vector {
 	 * @return <code>x(index)</code>
 	 */
 	double get(int index);
-
+	
+	/**
+	 * Alias of get(int index), used in ScalaFEM as syntactic sugar: 
+	 * <code>val a = x(index)</code>
+	 * 
+	 * @param index
+	 * @return <code>x(index)</code>
+	 */
+	double apply(int index);
+	
 	/**
 	 * <code>x(index) = value</code>
 	 * 将分量<tt>index</tt>的值设置为<tt>value</tt>
@@ -49,6 +58,15 @@ public interface Vector {
 	 * @param value
 	 */
 	void set(int index, double value);
+	
+	/**
+	 * Alias of set(int index, double value), used in ScalaFEM as syntactic sugar: 
+	 * <code>x(index)=value</code>
+	 * 
+	 * @param index
+	 * @param value
+	 */
+	void update(int index, double value);
 	
 	/**
 	 * Set all the values of vector to a single value <tt>value</tt>

@@ -74,7 +74,14 @@ public abstract class AbstractFunction implements Function {
 	@Override
 	public Function compose(final Map<String,Function> fInners) {
 		final Function fOuter = this;
-		return new AbstractFunction(fOuter.varNames()) {
+		boolean find = false;
+		for(String key : fInners.keySet()) {
+			if(varNames().contains(key)) find = true;
+		}
+		if(!find) 
+			return this; //No compose
+		else
+			return new AbstractFunction(fOuter.varNames()) {
 			@Override
 			public double value(Variable v) {
 				return value(v,null);
@@ -82,47 +89,53 @@ public abstract class AbstractFunction implements Function {
 			
 			@Override
 			public double value(Variable v, Map<Object,Object> cache) {
-				//bugfix 增加或条件
-				if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
-						v.getValues().keySet().containsAll(fOuter.varNames())) {
+				
+				//if(fOuter.varNames().size() == 0) {
+				//	throw new FutureyeException("\nERROR:\n fOuter varNames list is empty!");
+				//}
+				
+				//bugfix 增加或条件 
+				//bugfix 3/19/12
+				//if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
+				//		v.getValues().keySet().containsAll(fOuter.varNames())) {
+				if(v.getValues().keySet().containsAll(fOuter.varNames())) {
 					return fOuter.value(v,cache);
-				} else if(fOuter.varNames().size() == fInners.size()){
+				//} else if(fOuter.varNames().size() == fInners.size()){
+				} else {
 					Variable newVar = new Variable();
 					for(String varName : fOuter.varNames()) {
 						Function fInner = fInners.get(varName);
-						if(fInner != null )
+						if(fInner != null ) 
 							newVar.set(varName, fInner.value(v,cache));
-						else
-							throw new FutureyeException("\nERROR:\n Can not find "+varName+" in fInners.");
+						else //for mixed case: fOuter( x(r,s,t), y(r,s,t), r, s) bugfix 3/19/12
+							newVar.set(varName, v.get(varName));
+						//	throw new FutureyeException("\nERROR:\n Can not find "+varName+" in fInners.");
 					}
 					return fOuter.value(newVar,cache);
-				} else {
-					throw new FutureyeException(
-							"\nERROR:\n Variable number mismatch of fOuter("+
-							fOuter.varNames()+") and fInner("+fInners+").");
 				}
-			}
+//				else {
+//					throw new FutureyeException(
+//							"\nERROR:\n Variable number mismatch of fOuter("+
+//							fOuter.varNames()+") and fInner("+fInners+").");
+//				}
+			} 
+
 			
 			@Override
 			public double[] valueArray(VariableArray v, Map<Object,Object> cache) {
 				//bugfix 增加或条件
-				if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
-						v.getValues().keySet().containsAll(fOuter.varNames())) {
+				if(v.getValues().keySet().containsAll(fOuter.varNames())) {
 					return fOuter.valueArray(v,cache);
-				} else if(fOuter.varNames().size() == fInners.size()){
+				} else {
 					VariableArray newVar = new VariableArray();
 					for(String varName : fOuter.varNames()) {
 						Function fInner = fInners.get(varName);
 						if(fInner != null )
 							newVar.set(varName, fInner.valueArray(v,cache));
-						else
-							throw new FutureyeException("\nERROR:\n Can not find "+varName+" in fInners.");
+						else //for mixed case: fOuter( x(r,s,t), y(r,s,t), r, s)
+							newVar.set(varName, v.get(varName));
 					}
 					return fOuter.valueArray(newVar,cache);
-				} else {
-					throw new FutureyeException(
-							"\nERROR:\n Variable number mismatch of fOuter("+
-							fOuter.varNames()+") and fInner("+fInners+").");
 				}
 			}
 			
@@ -177,7 +190,7 @@ public abstract class AbstractFunction implements Function {
 	////////////////////////Operations////////////////////////////////////
 	
 	@Override
-	public Function A(final Function g) {
+	public Function A(Function g) {
 		final Function f1 = this;
 		final Function f2 = g;
 		if(f1 instanceof FC && f2 instanceof FC) {
@@ -229,7 +242,7 @@ public abstract class AbstractFunction implements Function {
 				
 				@Override
 				public Function _d(String varName) {
-					return f1._d(varName).A(f2._d(varName)).setVarNames(this.varNames);
+					return f1._d(varName).A(f2._d(varName)).setVarNames(this.varNames());
 				}
 				@Override
 				public int getOpOrder() {
@@ -247,7 +260,7 @@ public abstract class AbstractFunction implements Function {
 		}
 	}
 	@Override
-	public Function A(final double g) {
+	public Function A(double g) {
 		return A(FC.c(g));
 	}
 	
@@ -284,7 +297,7 @@ public abstract class AbstractFunction implements Function {
 				
 				@Override
 				public Function _d(String varName) {
-					return f1._d(varName).S(f2._d(varName)).setVarNames(this.varNames);
+					return f1._d(varName).S(f2._d(varName)).setVarNames(this.varNames());
 				}
 				@Override
 				public int getOpOrder() {
@@ -307,7 +320,7 @@ public abstract class AbstractFunction implements Function {
 		}
 	}
 	@Override
-	public Function S(final double g) {
+	public Function S(double g) {
 		return S(FC.c(g));
 	}	
 	
@@ -352,7 +365,7 @@ public abstract class AbstractFunction implements Function {
 				public Function _d(String varName) {
 					return 	f1._d(varName).M(f2).A(
 							f1.M(f2._d(varName))
-							).setVarNames(this.varNames);
+							).setVarNames(this.varNames());
 				}
 				@Override
 				public int getOpOrder() {
@@ -375,7 +388,7 @@ public abstract class AbstractFunction implements Function {
 			};
 	}
 	@Override
-	public Function M(final double g) {
+	public Function M(double g) {
 		return M(FC.c(g));
 	}	
 	
@@ -418,7 +431,7 @@ public abstract class AbstractFunction implements Function {
 				@Override
 				public Function _d(String varName) {
 					return f1._d(varName).M(f2).S(f1.M(f2._d(varName)))
-							.D(f2.M(f2)).setVarNames(this.varNames);
+							.D(f2.M(f2)).setVarNames(this.varNames());
 				}
 				@Override
 				public int getOpOrder() {
@@ -442,7 +455,7 @@ public abstract class AbstractFunction implements Function {
 		}
 	}
 	@Override
-	public Function D(final double g) {
+	public Function D(double g) {
 		return D(FC.c(g));
 	}
 	
@@ -474,7 +487,7 @@ public abstract class AbstractFunction implements Function {
 	
 	@Override
 	public String getExpression() {
-		String s = varNames.toString();
+		String s = varNames().toString();
 		return "F("+s.substring(1, s.length()-1)+")";
 	}
 	

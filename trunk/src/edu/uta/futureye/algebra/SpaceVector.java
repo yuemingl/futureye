@@ -271,4 +271,14 @@ public class SpaceVector implements Vector {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public double apply(int index) {
+		return this.get(index);
+	}
+
+	@Override
+	public void update(int index, double value) {
+		this.set(index,value);
+	}
 }

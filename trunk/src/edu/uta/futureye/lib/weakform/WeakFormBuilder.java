@@ -45,16 +45,16 @@ public class WeakFormBuilder {
 		return this;
 	}
 	
-	public WeakFormBuilder addParamters(Function f, String fName) {
+	public WeakFormBuilder addParam(String fName, Function f) {
 		param.put(fName, f);
 		return this;
 	}
 	
-	public Function param(Element e, String fName) {
+	public Function getParam(String fName, Element e) {
 		Function f = param.get(fName);
 		if(f == null)
 			throw new FutureyeException("Can NOT find the parameter "+fName+"!");
-		Function ff = Utils.interpolateFunctionOnElement(f,e);
+		Function ff = Utils.interpolateOnElement(f,e);
 		return ff;
 	}
 	
@@ -226,11 +226,11 @@ public class WeakFormBuilder {
 				//example: equals to class WeakFormLaplace2D
 				ScalarShapeFunction u = getScalarTrial();
 				ScalarShapeFunction v = getScalarTest();
-				Function fk = param(e,"k");
-				Function fc = param(e,"c");
-				Function fd = param(e,"d");
-				Function ff = param(e,"f");
-				Function fq = param(e,"q");
+				Function fk = getParam("k",e);
+				Function fc = getParam("c",e);
+				Function fd = getParam("d",e);
+				Function ff = getParam("f",e);
+				Function fq = getParam("q",e);
 				
 				switch(type) {
 					case LHS_Domain:
@@ -250,11 +250,11 @@ public class WeakFormBuilder {
 				}
 			}			
 		};
-		wfb.addParamters(FC.C1, "k");
-		wfb.addParamters(FC.C0, "c");
-		wfb.addParamters(FC.C1, "d");
-		wfb.addParamters(FX.fx.M(FX.fx), "f");
-		wfb.addParamters(FC.C0, "q");
+		wfb.addParam("k", FC.C1);
+		wfb.addParam("c", FC.C0);
+		wfb.addParam("d", FC.C1);
+		wfb.addParam("f", FX.fx.M(FX.fx));
+		wfb.addParam("q", FC.C0);
 		WeakForm wf = wfb.getScalarWeakForm();
 		System.out.println(wf.getTrialDOF());
 

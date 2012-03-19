@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.uta.futureye.algebra.SpaceVector;
 import edu.uta.futureye.algebra.SparseVectorHashMap;
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.SparseVector;
@@ -27,12 +28,14 @@ import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.operator.FMath;
+import edu.uta.futureye.io.MatlabMatFileReader;
 import edu.uta.futureye.io.MeshWriter;
 import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
 import edu.uta.futureye.lib.shapefun.SFLinearLocal2D;
 import edu.uta.futureye.lib.weakform.WeakFormDerivative;
 import edu.uta.futureye.lib.weakform.WeakFormL22D;
+import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.PairDoubleInteger;
 import edu.uta.futureye.util.Utils;
@@ -548,5 +551,96 @@ public class Tools {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Read values of f(x,y), where (x,y) defined on <tt>mesh</tt>,
+	 * return a vector defined on <tt>mesh</tt> containing the values. 
+	 * 
+	 * @param matFile
+	 * @param mesh
+	 * @param xName x: 2D matlab matrix
+	 * @param yName y: 2D matlab matrix
+	 * @param vName f(x,y): 2D matlab matrix 
+	 * @return
+	 */
+	public static Vector read2DFunctionValues(Mesh mesh, String matFile, String xName, String yName, String vName) {
+		MatlabMatFileReader r = new MatlabMatFileReader(matFile);
+		Matrix mx = r.getMatrix(xName);
+		Matrix my = r.getMatrix(yName);
+		Matrix mv = r.getMatrix(vName);
+		Vector rlt = new SpaceVector(mesh.getNodeList().size());
+		int m = mv.getRowDim();
+		int n = mv.getColDim();
+		for(int i=1;i<=m;i++) {
+			for(int j=1;j<=n;j++) {
+				double x = mx.get(i, j);
+				double y = my.get(i, j);
+				double v = mv.get(i, j);
+				Node node = mesh.containNode(new Node(0,x,y));
+				if(node != null) {
+					rlt.set(node.globalIndex, v);
+				}
+			}
+		}
+		return rlt;
+	}
+	
+	/**
+	 * 
+	 * @param mesh
+	 * @param x
+	 * @param sortAsc
+	 * @return
+	 */
+	public static NodeList getNodeListOnX(Mesh mesh, double x,final boolean sortAsc) {
+		NodeList nodes = mesh.getNodeList();
+		NodeList rlt = new NodeList();
+		for(int i=1;i<=nodes.size();i++) {
+			Node node = nodes.at(i);
+			if(Math.abs(node.coord(1)-x)<Constant.meshEps) {
+				rlt.add(node);
+			}
+		}
+		List<Node> l = rlt.toList();
+		Collections.sort(l, new Comparator<Node>() {
+			@Override
+			public int compare(Node o1, Node o2) {
+				if(o1.coord(2)>o2.coord(2))
+					return sortAsc?1:-1;
+				else
+					return sortAsc?-1:1;
+			}
+		});
+		return rlt;
+	}
+	
+	/**
+	 * 
+	 * @param mesh
+	 * @param y
+	 * @param sortAsc: sort by x
+	 * @return
+	 */
+	public static NodeList getNodeListOnY(Mesh mesh, double y,final boolean sortAsc) {
+		NodeList nodes = mesh.getNodeList();
+		NodeList rlt = new NodeList();
+		for(int i=1;i<=nodes.size();i++) {
+			Node node = nodes.at(i);
+			if(Math.abs(node.coord(2)-y)<Constant.meshEps) {
+				rlt.add(node);
+			}
+		}
+		List<Node> l = rlt.toList();
+		Collections.sort(l, new Comparator<Node>() {
+			@Override
+			public int compare(Node o1, Node o2) {
+				if(o1.coord(1)>o2.coord(1))
+					return sortAsc?1:-1;
+				else
+					return sortAsc?-1:1;
+			}
+		});
+		return rlt;
 	}
 }

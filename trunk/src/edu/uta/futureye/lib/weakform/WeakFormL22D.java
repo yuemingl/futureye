@@ -30,7 +30,7 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 		if(itemType==ItemType.Domain)  {
 			//Integrand part of Weak Form on element e
 			Function integrand = null;
-			Function fU = Utils.interpolateFunctionOnElement(g_U, e);
+			Function fU = Utils.interpolateOnElement(g_U, e);
 			integrand = fU.M(u.M(v));
 			return integrand;
 		}
@@ -40,8 +40,8 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function ff = Utils.interpolateFunctionOnElement(g_f, e);
-			Function fk = Utils.interpolateFunctionOnElement(g_k, e);
+			Function ff = Utils.interpolateOnElement(g_f, e);
+			Function fk = Utils.interpolateOnElement(g_k, e);
 			
 			Function integrand = null;
 			if(g_Ux == null) {
@@ -59,8 +59,8 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 				//d(a1 + a2*x + a3*y + a4*x*y)/dy
 				Function dy = new FXY(a[3],0.0,a[2]);
 				
-				Function fUx = Utils.interpolateFunctionOnElement(dx, e);
-				Function fUy = Utils.interpolateFunctionOnElement(dy, e);
+				Function fUx = Utils.interpolateOnElement(dx, e);
+				Function fUy = Utils.interpolateOnElement(dy, e);
 				integrand = 
 					ff.M(v)
 					.S(
@@ -97,8 +97,8 @@ public class WeakFormL22D extends AbstractScalarWeakForm {
 //							)
 //						);
 			} else {
-				Function fUx = Utils.interpolateFunctionOnElement(g_Ux, e);
-				Function fUy = Utils.interpolateFunctionOnElement(g_Uy, e);
+				Function fUx = Utils.interpolateOnElement(g_Ux, e);
+				Function fUy = Utils.interpolateOnElement(g_Uy, e);
 				integrand = 
 					ff.M(v)
 					.S(

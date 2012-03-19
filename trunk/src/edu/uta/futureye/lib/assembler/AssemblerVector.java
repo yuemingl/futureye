@@ -121,6 +121,8 @@ public class AssemblerVector implements Assembler {
 			DOFs.at(i).getVSF().asignElement(e);
 		}
 		
+		weakForm.preProcess(e);
+
 		//所有自由度双循环
 		for(int i=1;i<=nDOFs;i++) {
 			DOF dofI = DOFs.at(i);

@@ -60,11 +60,11 @@ public class WeakFormElasticIsoPlaneStrain2D extends AbstractVectorWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			VectorFunction fb = Utils.interpolateFunctionOnElement(g_b, e);
+			VectorFunction fb = Utils.interpolateOnElement(g_b, e);
 			return v.dot(fb);
 		} else if(itemType==ItemType.Border) {
 			Element be = e;
-			VectorFunction ft = Utils.interpolateFunctionOnElement(g_t, be);
+			VectorFunction ft = Utils.interpolateOnElement(g_t, be);
 			Function borderIntegrand = v.dot(ft);
 			return borderIntegrand;
 		}

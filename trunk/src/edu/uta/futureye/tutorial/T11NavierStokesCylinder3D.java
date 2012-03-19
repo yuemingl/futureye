@@ -57,7 +57,7 @@ public class T11NavierStokesCylinder3D {
 	//delta t
 	protected double dt = 0.02;
 	//viscosity
-	protected double mu = 0.001; //0.0005
+	protected double nu = 0.001; //0.0005
 	
 	FiniteElementType fe = null;
 	
@@ -265,7 +265,7 @@ public class T11NavierStokesCylinder3D {
 					uk.get(3).D(dt)
 					));
 			
-		weakForm.setParam(FC.c(mu),U,FC.c(1.0/dt));
+		weakForm.setParam(FC.c(nu),U,FC.c(1.0/dt));
 		
 		assembler = new AssemblerVector(mesh, weakForm,fe);
 		assembler.assemble();
@@ -284,7 +284,7 @@ public class T11NavierStokesCylinder3D {
 	
 	public SparseBlockVector nonlinearIterSteady(int nIter, SpaceVectorFunction uk) {
 		weakForm.setF(new SpaceVectorFunction(FC.C0,FC.C0,FC.C0));
-		weakForm.setParam(FC.c(mu),U,FC.C0);
+		weakForm.setParam(FC.c(nu),U,FC.C0);
 		
 		assembler = new AssemblerVector(mesh, weakForm,fe);
 		System.out.println("Begin Assemble...");
@@ -424,7 +424,7 @@ public class T11NavierStokesCylinder3D {
 		System.out.println("startTimeStep="+startTimeStep);
 		System.out.println("maxTimeStep="+NS.maxTimeStep);
 		System.out.println("------default values------");
-		System.out.println("mu="+NS.mu);
+		System.out.println("mu="+NS.nu);
 		System.out.println("maxNonlinearIter="+NS.maxNonlinearIter);
 		System.out.println("nonlinearError="+NS.nonlinearError);
 		

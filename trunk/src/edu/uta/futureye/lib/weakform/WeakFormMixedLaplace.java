@@ -9,10 +9,10 @@ import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorShapeFunction;
-import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.function.operator.FOIntegrate;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.DOFList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * Problem:
@@ -103,7 +103,7 @@ public class WeakFormMixedLaplace extends AbstractVectorWeakForm {
 				DOF dofE = eleDOFs.at(k);
 				//C = (u,\div{q})_{\Omega}
 				Function integrandC = null;
-				integrandC = FMath.div(vecV);
+				integrandC = div(vecV);
 				double val = FOIntegrate.intOnTriangleRefElement(
 						integrandC.M(e.getJacobin()),4);
 				blockMat.add(dofV.getGlobalIndex(), dofE.getGlobalIndex(), val);
@@ -117,7 +117,7 @@ public class WeakFormMixedLaplace extends AbstractVectorWeakForm {
 		for(int k=1;k<=nElementDOF;k++) {
 			DOF dofE = eleDOFs.at(k);
 			//ShapeFunction sf = dofE.getSF(); //分片常数元，在积分项中系数是1
-			Function integrand = Utils.interpolateFunctionOnElement(g_f, e);
+			Function integrand = Utils.interpolateOnElement(g_f, e);
 			//bf = -(v,f)_{\Omega}
 			integrand = FC.c(-1.0).M(integrand);
 			double val = 0.0;

@@ -11,12 +11,12 @@ import edu.uta.futureye.function.operator.FOIntegrate;
 import edu.uta.futureye.util.FutureyeException;
 
 public abstract class AbstractVectorWeakForm implements WeakForm {
-	protected DOF trialDOF = null;
-	protected DOF testDOF = null;
+	protected DOF trialDOF = null; //包含试探函数的自由度（试探解）
+	protected DOF testDOF = null;  //包含检验函数的自由度
 	protected VectorShapeFunction u = null;
 	protected VectorShapeFunction v = null;
-	protected int uDOFLocalIndex;
-	protected int vDOFLocalIndex;
+	protected int uDOFLocalIndex; //trial
+	protected int vDOFLocalIndex; //test
 
 	@Override
 	public void assembleElement(Element e, 
@@ -109,5 +109,7 @@ public abstract class AbstractVectorWeakForm implements WeakForm {
 	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
 		throw new FutureyeException("Please specify coupling informaton of components of vector valued funtion(VVF) problem!");
 	}
-
+	
+	public void preProcess(Element e) {
+	}
 }

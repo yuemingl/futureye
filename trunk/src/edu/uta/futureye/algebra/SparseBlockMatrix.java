@@ -363,4 +363,13 @@ public class SparseBlockMatrix implements BlockMatrix<SparseMatrix>,SparseMatrix
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public double apply(int row, int col) {
+		return this.get(row, col);
+	}	
+	
+	@Override
+	public void update(int row, int col, double value) {
+		this.set(row, col, value);
+	}	
 }

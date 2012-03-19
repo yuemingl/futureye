@@ -59,8 +59,8 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 		if(itemType==ItemType.Domain)  {
 			//Integrand part of Weak Form on element e
 			Function integrand = null;
-			Function fk = Utils.interpolateFunctionOnElement(g_k,e);
-			Function fc = Utils.interpolateFunctionOnElement(g_c,e);
+			Function fk = Utils.interpolateOnElement(g_k,e);
+			Function fc = Utils.interpolateOnElement(g_c,e);
 			ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
 			ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
 			ScalarShapeFunction p  = (ScalarShapeFunction)u.get(3);
@@ -78,8 +78,8 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 		else if(itemType==ItemType.Border) {
 			if(g_d != null) {
 				Element be = e;
-				Function fd1 = Utils.interpolateFunctionOnElement(g_d.get(1), be);
-				Function fd2 = Utils.interpolateFunctionOnElement(g_d.get(2), be);
+				Function fd1 = Utils.interpolateOnElement(g_d.get(1), be);
+				Function fd2 = Utils.interpolateOnElement(g_d.get(2), be);
 				ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
 				ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
 				ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
@@ -96,8 +96,8 @@ public class WeakFormStokes extends AbstractVectorWeakForm {
 	@Override
 	public Function rightHandSide(Element e, ItemType itemType) {
 		if(itemType==ItemType.Domain)  {
-			Function f1 = Utils.interpolateFunctionOnElement(g_f.get(1), e);
-			Function f2 = Utils.interpolateFunctionOnElement(g_f.get(2), e);
+			Function f1 = Utils.interpolateOnElement(g_f.get(1), e);
+			Function f2 = Utils.interpolateOnElement(g_f.get(2), e);
 			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
 			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
 			//(v1*f1+v2*f2)
