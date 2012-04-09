@@ -7,6 +7,8 @@ import edu.uta.futureye.function.intf.ShapeFunction;
 import edu.uta.futureye.util.container.ObjList;
 
 /**
+ * Shape function: constant zero, as zero component of vector valued shape function
+ * <p>
  * 实现形函数接口，返回常值0，作为向量值形函数的0分量
  * 
  * @author liuyueming
@@ -29,7 +31,7 @@ public class SFConstant0 extends FC implements ScalarShapeFunction {
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 	}
 
 	@Override
@@ -40,5 +42,10 @@ public class SFConstant0 extends FC implements ScalarShapeFunction {
 	@Override
 	public ShapeFunction restrictTo(int funIndex) {
 		return null;
+	}
+	
+	@Override
+	public boolean isConstant() {
+		return true;
 	}
 }

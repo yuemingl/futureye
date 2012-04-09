@@ -97,6 +97,11 @@ public abstract class AbstractVectorFunction implements VectorFunction {
 	
 	/////////////////////////////////////////////
 	@Override
+	public Function get(int index) {
+		throw new FutureyeException("Component of AbstractVectorFunction is not define!");
+	}
+	
+	@Override
 	public VectorFunction set(VectorFunction v) {
 		for(int i=1; i<=dim; i++)
 			this.set(i,v.get(i));

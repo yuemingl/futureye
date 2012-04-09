@@ -492,7 +492,7 @@ public class Element {
 	}
 	
 	/**
-	 * If you do some changes on this.geoEntity, call this method to 
+	 * If you do some changes in this.geoEntity, call this method to 
 	 * update the information in Element
 	 * 
 	 */
@@ -1223,12 +1223,20 @@ public class Element {
 	public void updateJacobinLinear1D() {
 		String[] fromVars = {"x","y"};
 		String[] toVars = {"r"};
+		
 		//Coordinate transform and Jacbian on this border element
-		CoordinateTransform transBorder = new CoordinateTransform(fromVars,toVars);
-		transBorder.transformLinear1D(this);
-		transBorder.computeJacobianMatrix();
-		transBorder.computeJacobian1D();
-		jac = transBorder.getJacobian();
+		//CoordinateTransform transBorder = new CoordinateTransform(fromVars,toVars);
+		//transBorder.transformLinear1D(this);
+		//transBorder.computeJacobianMatrix();
+		//transBorder.computeJacobian1D();
+		//jac = transBorder.getJacobian();
+		//bugfix  transBorder->trans
+		trans = new CoordinateTransform(fromVars,toVars);
+		trans.transformLinear1D(this);
+		trans.computeJacobianMatrix();
+		trans.computeJacobian1D();		
+		jac = trans.getJacobian();
+		
 		//TODO 不要用这个，因为Jacobian有时会随坐标值不同而不同
 		//但是当Jacobian是常数时可以提高计算速度
 		//jac = FC.c(transBorder.getJacobian().value(null));

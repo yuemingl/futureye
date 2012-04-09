@@ -89,15 +89,15 @@ public class TrilinearV_ConstantP extends AbstractVectorFunction
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		if(funIndex>=0 && funIndex<=7) {
-			((ScalarShapeFunction)sf.get(1)).asignElement(e);
+			((ScalarShapeFunction)sf.get(1)).assignElement(e);
 		} else if(funIndex>=8 && funIndex<=15) {
-			((ScalarShapeFunction)sf.get(2)).asignElement(e);
+			((ScalarShapeFunction)sf.get(2)).assignElement(e);
 		} else if(funIndex>=16 && funIndex<=23) {
-			((ScalarShapeFunction)sf.get(3)).asignElement(e);
+			((ScalarShapeFunction)sf.get(3)).assignElement(e);
 		} else if(funIndex==24) {
-			((ScalarShapeFunction)sf.get(4)).asignElement(e);
+			((ScalarShapeFunction)sf.get(4)).assignElement(e);
 		}
 	}
 
@@ -207,15 +207,15 @@ public class TrilinearV_ConstantP extends AbstractVectorFunction
 		}
 		
 		@Override
-		public void asignElement(Element e) {
+		public void assignElement(Element e) {
 			if(funIndex>=0 && funIndex<=3) {
-				((ScalarShapeFunction)sf.get(1)).asignElement(e);
+				((ScalarShapeFunction)sf.get(1)).assignElement(e);
 			} else if(funIndex>=4 && funIndex<=7) {
-				((ScalarShapeFunction)sf.get(2)).asignElement(e);
+				((ScalarShapeFunction)sf.get(2)).assignElement(e);
 			} else if(funIndex>=8 && funIndex<=11) {
-				((ScalarShapeFunction)sf.get(3)).asignElement(e);
+				((ScalarShapeFunction)sf.get(3)).assignElement(e);
 			} else if(funIndex==12) {
-				((ScalarShapeFunction)sf.get(4)).asignElement(e);
+				((ScalarShapeFunction)sf.get(4)).assignElement(e);
 			}
 		}
 		

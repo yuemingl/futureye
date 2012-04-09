@@ -88,8 +88,8 @@ public class FMath {
 			}
 			@Override
 			public String toString() {
-				if( (f instanceof FC && Double.compare(f.value(), 0.0)==0))
-					return "";
+				if( (f.isConstant() && Math.abs(f.value()) < Constant.eps))
+					return "~0.0";
 				return "("+f.toString()+")^"+p+"";
 			}
 		};
@@ -113,8 +113,8 @@ public class FMath {
 			}
 			@Override
 			public String toString() {
-				if( (f1 instanceof FC && Double.compare(f1.value(), 0.0)==0))
-					return "";
+				if( (f1.isConstant() && Math.abs(f1.value()) < Constant.eps))
+					return "~0.0";
 				return "("+f1.toString()+")^("+f2.toString()+")";
 			}
 		};

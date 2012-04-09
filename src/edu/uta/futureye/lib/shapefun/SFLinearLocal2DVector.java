@@ -38,11 +38,11 @@ public class SFLinearLocal2DVector extends AbstractVectorFunction
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		if(funIndex>=0 && funIndex<=2) {
-			((ScalarShapeFunction)sf.get(1)).asignElement(e);
+			((ScalarShapeFunction)sf.get(1)).assignElement(e);
 		} else if(funIndex>=3 && funIndex<=5) {
-			((ScalarShapeFunction)sf.get(2)).asignElement(e);
+			((ScalarShapeFunction)sf.get(2)).assignElement(e);
 		}
 	}
 
@@ -74,11 +74,11 @@ public class SFLinearLocal2DVector extends AbstractVectorFunction
 		}
 
 		@Override
-		public void asignElement(Element e) {
+		public void assignElement(Element e) {
 			if(funIndex>=0 && funIndex<=1) {
-				((ScalarShapeFunction)sf.get(1)).asignElement(e);
+				((ScalarShapeFunction)sf.get(1)).assignElement(e);
 			} else if(funIndex>=2 && funIndex<=3) {
-				((ScalarShapeFunction)sf.get(2)).asignElement(e);
+				((ScalarShapeFunction)sf.get(2)).assignElement(e);
 			}
 		}
 		@Override

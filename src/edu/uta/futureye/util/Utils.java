@@ -311,7 +311,7 @@ public class Utils {
 	}
 	public static Function interpolateOnElement(Function fun, Element e) {
 		if(fun == null) throw new FutureyeException("fun should not be null");
-		if(fun instanceof FC)
+		if(fun.isConstant())
 			return fun;
 		Function rlt = new FC(0.0);
 //		int nNode = e.nodes.size();

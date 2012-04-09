@@ -123,7 +123,7 @@ public class SFSerendipity2D extends AbstractFunction implements ScalarShapeFunc
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		Function[] funs = e.getCoordTrans().getJacobianMatrix();
 		
 		x_r = funs[0];

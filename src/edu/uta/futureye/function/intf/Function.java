@@ -178,6 +178,13 @@ public interface Function {
 	 * @return
 	 */
 	double value();
+
+	/**
+	 * If it is a constant function
+	 * 
+	 * @return
+	 */
+	boolean isConstant();
 	
 	/**
 	 * Deep copy
@@ -241,4 +248,5 @@ public interface Function {
 	 * @param order
 	 */
 	void setOpOrder(int order);
+	
 }

@@ -13,6 +13,7 @@ import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.ObjList;
 import edu.uta.futureye.util.container.VertexList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * 三角形局部坐标，线性型函数
@@ -40,6 +41,7 @@ public class SFLinearLocal2D  extends AbstractFunction
 	
 	private double coef = 1.0;
 	
+	//r, s, t
 	class SF123 extends AbstractFunction {
 		public SF123() {
 			super(SFLinearLocal2D.this.varNames);
@@ -47,17 +49,14 @@ public class SFLinearLocal2D  extends AbstractFunction
 		@Override
 		public Function _d(String var) {
 			if(varNames.get(funIndex).equals(var)) { 
-				//d(N1)/dr = 1.0
-				//d(N2)/ds = 1.0
-				//d(N3)/dt = 1.0
-				return FC.C1;
+				//d(N1)/dr = 1.0;  d(N2)/ds = 1.0;  d(N3)/dt = 1.0
+				return C1;
 			} else if(funIndex == 2){ 
-				//N3 = r = 1 - s - t, not free variable
-				//d(N3)/ds = -1.0
-				//d(N3)/dt = -1.0
-				return FC.Cm1;
+				//N3 = t = 1 - r - s, t is not free variable
+				//d(N3)/dr = -1.0;  d(N3)/ds = -1.0
+				return Cm1;
 			} else {
-				return FC.C0;
+				return C0;
 			}
 		}
 		@Override
@@ -92,6 +91,9 @@ public class SFLinearLocal2D  extends AbstractFunction
 		Map<String, Function> fInners = new HashMap<String, Function>();
 		
 		final String varName = varNames.get(funIndex);
+		//r = r(x,y)
+		//s = s(x,y)
+		//t = t(x,y)
 		fInners.put(varName, new AbstractFunction(innerVarNames.toList()) {	
 			public Function _d(String var) {
 				if(area < 0.0) {
@@ -150,7 +152,7 @@ public class SFLinearLocal2D  extends AbstractFunction
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 		//由node改为vertex，因为Element.adjustVerticeToCounterClockwise()结点顺序只调整了vertex
 		VertexList vList = e.vertices();

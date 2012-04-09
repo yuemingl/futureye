@@ -9,6 +9,7 @@ import edu.uta.futureye.application.Tools;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Mesh;
 import edu.uta.futureye.core.Node;
+import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.AbstractVectorFunction;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.VariableArray;
@@ -19,13 +20,16 @@ import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.FLinear1D;
 import edu.uta.futureye.function.basic.FPolynomial1D;
 import edu.uta.futureye.function.basic.FX;
+import edu.uta.futureye.function.basic.SpaceVectorFunction;
 import edu.uta.futureye.function.basic.Vector2Function;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
 import edu.uta.futureye.function.operator.FMath;
 import edu.uta.futureye.io.MeshReader;
+import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.NodeList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 public class FunctionTest {
 	
@@ -267,6 +271,54 @@ public class FunctionTest {
 		System.out.println();
 	}
 	
+	
+	public static void testForScala() {
+	    //f1 = x^2 + 2x + 2
+	    Function f1 = X.M(X).A( X.A(1.0).M(2.0) );
+	    System.out.println(f1);
+	    System.out.println(f1.value(new Variable(2.0)));
+	    System.out.println(f1._d("x"));
+	    System.out.println(f1._d("x").value(new Variable(3.0)));
+
+	    //f2 = 3x^2 + 4y + 1
+	    Function f2 = new AbstractFunction("x","y") {
+	    	@Override
+	    	public double value(Variable v) {
+		          double x = v.get("x");
+		          double y = v.get("y");
+		          return 3*x*x + 4*y + 1; 
+	    	}
+	    	@Override
+	    	public Function _d(String vn) {
+	    		if (vn == "x") return C(6).M(X);
+	    		else if(vn == "y") return C(4);
+	    		else throw new FutureyeException("variable name="+vn);
+	    	}
+	    }.setFName("f(x,y) = 3x^2+4y+1");
+	    
+	    System.out.println(f2);
+	    Variable vv = new Variable("x",2.0).set("y",3.0);
+	    System.out.println(f2.value(vv));
+	    
+	    System.out.println(f2._d("x"));
+	    System.out.println(f2._d("y"));
+	    //System.out.println(f2._d("z")); //Exception
+	    
+	    //f3 = (x+y, x*y, 1.0)
+	    VectorFunction f3 = new SpaceVectorFunction( 
+	    		new AbstractFunction("x","y") {
+	    	    	@Override
+	    	    	public double value(Variable v) {
+	    		          return v.get("x") + v.get("y"); 
+	    	    	}
+	    	    }.setFName("x+y"),
+	    	    X.M(Y),
+	    	    C1
+	        );
+	    System.out.println(f3);
+	    System.out.println(f3.value(new Variable("x",2.0).set("y",2.0)));
+	}
+	
 	public static void main(String[] args) {
 //		test();
 //		constantTest();
@@ -276,7 +328,16 @@ public class FunctionTest {
 		//testDuDx();
 //		testFunctionExpression();
 		
-		testLinearCombination();
+//		testLinearCombination();
+		
+	FAxpb f = new FAxpb(2.0,1.0);
+	double v = f.value(new Variable("x",3.0));
+	System.out.println(v);
+    Function df = f._d("x");
+    System.out.println(df);
+	
+		
+		testForScala();
 	}
 
 		

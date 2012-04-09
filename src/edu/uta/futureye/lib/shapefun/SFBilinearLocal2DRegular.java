@@ -15,8 +15,11 @@ import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
 import edu.uta.futureye.util.container.VertexList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
+ * For rectangle elements the edges of which are parallel to the axis
+ * <p>
  * 适用于各边与坐标轴平行的四边形单元
  * 针对该特殊情形，简化了计算，可以快速完成关于x,y物理坐标的导数计算
  * 
@@ -68,6 +71,8 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 		//复合函数
 		Map<String, Function> fInners = new HashMap<String, Function>(4);
 		
+		//r = r(x,y)
+		//s = s(x,y)
 		for(final String varName : varNames) {
 			fInners.put(varName, new AbstractFunction(innerVarNames.toList()) {
 				
@@ -75,12 +80,14 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 					double x1 = e.nodes.at(1).coord(1);
 					double x2 = e.nodes.at(2).coord(1);
 					double x3 = e.nodes.at(3).coord(1);
-					double x4 = e.nodes.at(4).coord(1);
+					//double x4 = e.nodes.at(4).coord(1);
 					double y1 = e.nodes.at(1).coord(2);
 					double y2 = e.nodes.at(2).coord(2);
 					double y3 = e.nodes.at(3).coord(2);
-					double y4 = e.nodes.at(4).coord(2);
+					//double y4 = e.nodes.at(4).coord(2);
 	/**
+	 * How to get derivative r_x, r_y, s_x, s_y:
+	 * 
   	 *  4--3  Case1
 	 *  |  |
 	 *  1--2
@@ -130,10 +137,10 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 						if(var.equals("x"))
 							return new FC(y_s/jacFast);
 						if(var.equals("y"))
-							return FC.C0.S(x_s/jacFast);
+							return C0.S(x_s/jacFast);
 					} else if(varName.equals("s")) {
 						if(var.equals("x"))
-							return FC.C0.S(y_r/jacFast);
+							return C0.S(y_r/jacFast);
 						if(var.equals("y"))
 							return new FC(x_r/jacFast);
 					}
@@ -184,7 +191,7 @@ public class SFBilinearLocal2DRegular extends AbstractFunction implements Scalar
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 		VertexList vList = e.vertices();
 		//用面积计算Jacobin

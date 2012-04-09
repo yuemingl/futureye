@@ -77,7 +77,7 @@ public class WeakFormMixedLaplace extends AbstractVectorWeakForm {
 		
 		e.updateJacobinLinear2D();
 		for(int i=1;i<=nEdgeDOF;i++) {
-			edgeDOFs.at(i).getVSF().asignElement(e);
+			edgeDOFs.at(i).getVSF().assignElement(e);
 		}
 		
 		//边自由度双循环

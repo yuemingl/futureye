@@ -170,7 +170,7 @@ public class SFQuadraticLocal2DFast extends AbstractFunction implements ScalarSh
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		
 		double x1 = e.nodes.at(1).coord(1) , y1 =  e.nodes.at(1).coord(2) ;
 		double x2 = e.nodes.at(2).coord(1) , y2 =  e.nodes.at(2).coord(2) ;

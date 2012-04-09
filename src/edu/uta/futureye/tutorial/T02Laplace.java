@@ -1,11 +1,6 @@
 package edu.uta.futureye.tutorial;
 
-import static edu.uta.futureye.function.operator.FMath.C0;
-import static edu.uta.futureye.function.operator.FMath.X;
-import static edu.uta.futureye.function.operator.FMath.Y;
-
 import java.util.HashMap;
-
 import edu.uta.futureye.algebra.intf.Matrix;
 import edu.uta.futureye.algebra.intf.Vector;
 import edu.uta.futureye.algebra.solver.external.SolverJBLAS;
@@ -18,6 +13,7 @@ import edu.uta.futureye.lib.assembler.AssemblerScalar;
 import edu.uta.futureye.lib.element.FELinearTriangle;
 import edu.uta.futureye.lib.weakform.WeakFormLaplace2D;
 import edu.uta.futureye.util.container.ElementList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * <blockquote><pre>

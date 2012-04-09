@@ -17,6 +17,7 @@ import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 import edu.uta.futureye.util.container.ObjList;
 import edu.uta.futureye.util.container.VertexList;
+import static edu.uta.futureye.function.operator.FMath.*;
 
 public class SFBilinearLocal2D extends AbstractFunction implements ScalarShapeFunction {
 	private int funIndex;
@@ -66,19 +67,21 @@ public class SFBilinearLocal2D extends AbstractFunction implements ScalarShapeFu
 		innerVarNames = new ObjList<String>("x","y");
 		
 		//复合函数
-		Map<String, Function> fInners = new HashMap<String, Function>(4);
+		Map<String, Function> fInners = new HashMap<String, Function>(3);
 		
+		//r = r(x,y)
+		//s = s(x,y)
 		for(final String varName : varNames) {
 			fInners.put(varName, new AbstractFunction(innerVarNames.toList()) {
-				//r_x, r_y, s_x, s_y
-				public Function _d(String var) {
-
+				
 /**
+How to get derivative r_x, r_y, s_x, s_y:
+
 f(x,y) = g(r,s)
 f_x = g_r*r_x + g_s*s_x  ---(1)
 f_y = g_r*r_y + g_s*s_y  ---(2)
 
-for (1) let f=x,f=y we get 2 equations, solve them:
+for (1), let f=x and f=y we get tow equations, solve them:
 (x_r x_s)   (r_x)   (1)
 (y_r y_s) * (s_x) = (0)
 
@@ -88,19 +91,21 @@ similarly, for (2):
 
         (x_r x_s)
 Let J = (y_r y_s)
-        
-from the above 4 equations, we have:
+
+from the above four equations, we have:
  (r_x r_y)
  (s_x s_y) = inv(J)
- */
+ */				
+				//Derivatives: r_x, r_y, s_x, s_y
+				public Function _d(String var) {
 					if(varName.equals("r")) {
 						if(var.equals("x")) //r_x
 							return y_s.D(jac);
 						else //r_y
-							return FC.C0.S(x_s.D(jac));
+							return C0.S(x_s.D(jac));
 					} else if(varName.equals("s")) {
 						if(var.equals("x")) //s_x
-							return FC.C0.S(y_r.D(jac));
+							return C0.S(y_r.D(jac));
 						else //s_y
 							return x_r.D(jac);
 					}
@@ -151,7 +156,7 @@ from the above 4 equations, we have:
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 		VertexList vList = e.vertices();
 	
@@ -173,7 +178,6 @@ from the above 4 equations, we have:
 		x_s = funs[1];
 		y_r = funs[2];
 		y_s = funs[3];
-		
 		//用面积计算Jacobin，速度要快一倍
 		double area = Utils.getRectangleArea(vList)/4.0;
 		if(Math.abs(area)<Constant.eps) throw new FutureyeException();

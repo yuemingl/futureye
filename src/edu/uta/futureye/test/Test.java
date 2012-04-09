@@ -107,7 +107,9 @@ public class Test  extends Number implements Comparable<Double> {
 		ElementList lt2 = new ElementList();
 		lt.addAll(lt2);
 		
-		
+		double aaa = 63.9799*100+65.9999*70+71.4299*50+70.3599*50;
+		aaa/=270;
+		System.out.println(aaa);
 		
 	}
 

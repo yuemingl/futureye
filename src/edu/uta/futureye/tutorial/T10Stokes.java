@@ -4,7 +4,6 @@ import java.util.HashMap;
 
 import edu.uta.futureye.algebra.SparseBlockMatrix;
 import edu.uta.futureye.algebra.SparseBlockVector;
-import edu.uta.futureye.algebra.intf.MatrixEntry;
 import edu.uta.futureye.algebra.solver.SchurComplementStokesSolver;
 import edu.uta.futureye.core.EdgeLocal;
 import edu.uta.futureye.core.Element;
@@ -15,7 +14,6 @@ import edu.uta.futureye.core.NodeType;
 import edu.uta.futureye.core.Vertex;
 import edu.uta.futureye.function.AbstractFunction;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.basic.SpaceVectorFunction;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
@@ -27,7 +25,7 @@ import edu.uta.futureye.util.Constant;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.ObjIndex;
 import edu.uta.futureye.util.container.ObjList;
-
+import static edu.uta.futureye.function.operator.FMath.*;
 
 /**
  * Problem:
@@ -199,12 +197,12 @@ public class T10Stokes {
 		WeakFormStokes weakForm = new WeakFormStokes();
 		
 		//Right hand side(RHS): f = (0,0)'
-		weakForm.setF(new SpaceVectorFunction(FC.C0,FC.C0));
-		weakForm.setParam(FC.c(1.0),FC.C0);
+		weakForm.setF(new SpaceVectorFunction(C0,C0));
+		weakForm.setParam(C1);
 		//Robin:  k*u_n + d*u - p\vec{n} = 0
 		VectorFunction d = new SpaceVectorFunction(2);
-		d.set(1, FC.C0);
-		d.set(2, FC.C0);
+		d.set(1, C0);
+		d.set(2, C0);
 		weakForm.setRobin(d);
 		
 		//Assemble
@@ -236,8 +234,8 @@ public class T10Stokes {
 							return 0.0;
 					}
 				});
-		diri.set(2, FC.C0);
-		diri.set(3, FC.C0);
+		diri.set(2, C0);
+		diri.set(3, C0);
 		assembler.imposeDirichletCondition(diri);
 		load.getBlock(1).print();
 		load.getBlock(2).print();
