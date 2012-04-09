@@ -100,13 +100,13 @@ public class QuadraticV_ConstantP extends AbstractVectorFunction
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		if(funIndex>=0 && funIndex<=5) {
-			((ScalarShapeFunction)sf.get(1)).asignElement(e);
+			((ScalarShapeFunction)sf.get(1)).assignElement(e);
 		} else if(funIndex>=6 && funIndex<=11) {
-			((ScalarShapeFunction)sf.get(2)).asignElement(e);
+			((ScalarShapeFunction)sf.get(2)).assignElement(e);
 		} else if(funIndex==12) {
-			((ScalarShapeFunction)sf.get(3)).asignElement(e);
+			((ScalarShapeFunction)sf.get(3)).assignElement(e);
 		}
 	}
 
@@ -192,13 +192,13 @@ public class QuadraticV_ConstantP extends AbstractVectorFunction
 		}
 
 		@Override
-		public void asignElement(Element e) {
+		public void assignElement(Element e) {
 			if(funIndex>=0 && funIndex<=2) {
-				((ScalarShapeFunction)sf.get(1)).asignElement(e);
+				((ScalarShapeFunction)sf.get(1)).assignElement(e);
 			} else if(funIndex>=3 && funIndex<=5) {
-				((ScalarShapeFunction)sf.get(2)).asignElement(e);
+				((ScalarShapeFunction)sf.get(2)).assignElement(e);
 			} else if(funIndex==6) {
-				((ScalarShapeFunction)sf.get(3)).asignElement(e);
+				((ScalarShapeFunction)sf.get(3)).assignElement(e);
 			}
 		}
 		
@@ -221,7 +221,7 @@ public class QuadraticV_ConstantP extends AbstractVectorFunction
 		public Function get(int index) {
 			return sf.get(index);
 		}
-
+		
 		@Override
 		public void set(int index, Function value) {
 			throw new UnsupportedOperationException();

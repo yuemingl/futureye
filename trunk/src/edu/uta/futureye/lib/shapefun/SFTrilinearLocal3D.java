@@ -390,7 +390,7 @@ from the above 9 equations, we have:
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 //		//Coordinate transform and Jacbian on element e
 //		List<Function> funs = trans.getTransformFunction(
 //				trans.getTransformShapeFunctionByElement(e)

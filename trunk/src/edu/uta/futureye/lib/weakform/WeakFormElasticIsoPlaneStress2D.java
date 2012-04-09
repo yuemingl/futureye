@@ -3,6 +3,7 @@ package edu.uta.futureye.lib.weakform;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.function.intf.VectorFunction;
+import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.Utils;
 
 public class WeakFormElasticIsoPlaneStress2D extends AbstractVectorWeakForm {
@@ -95,4 +96,9 @@ public class WeakFormElasticIsoPlaneStress2D extends AbstractVectorWeakForm {
 		this.E = E;
 		this.gamma = gamma;
 	}
+	
+	public boolean isVVFComponentCoupled(int nComponent1, int nComponent2) {
+		return true;
+	}
+	
 }

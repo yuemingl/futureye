@@ -74,7 +74,7 @@ public class SFLinearLocal3D extends AbstractFunction
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 		
 		x1 = e.nodes.at(1).coord(1);

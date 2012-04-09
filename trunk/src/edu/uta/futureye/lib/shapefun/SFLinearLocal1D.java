@@ -84,7 +84,7 @@ public class SFLinearLocal1D extends AbstractFunction  implements ScalarShapeFun
 	}
 	
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 	}
 

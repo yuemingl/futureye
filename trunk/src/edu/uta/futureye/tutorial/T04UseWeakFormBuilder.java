@@ -285,15 +285,14 @@ public class T04UseWeakFormBuilder {
 				Function fg = getParam("g",e);
 				switch(type) {
 				case LHS_Domain:
-					//(k*grad(u),grad(v))_\Omega + (c*u,v)_\Omega
 					return fk.M( grad(u,"x","y").dot(grad(v,"x","y")) ).A(
-							fc.M(u).M(v) );
-				case LHS_Border://(d*u,v)|_N
-					return fd.M(u.M(v));
-				case RHS_Domain://(f,v)_\Omega
-					return ff.M(v);
-				case RHS_Border://(g,v)|_\Gamma_N
-					return fg.M(v);
+						fc.M(u).M(v) );  //(k*grad(u),grad(v))_\Omega + (c*u,v)_\Omega
+				case LHS_Border:
+					return fd.M(u.M(v)); //(d*u,v)_\Gamma_N
+				case RHS_Domain:
+					return ff.M(v);      //(f,v)_\Omega
+				case RHS_Border:
+					return fg.M(v);      //(g,v)_\Gamma_N
 				}
 				return null;
 			}

@@ -38,8 +38,12 @@ public class Mesh {
 	//Global face list
 	protected FaceList faceList = null;
 	
+	//Total number of vertices on a mesh
 	public int nVertex = 0;
 	
+	//Boundary types on nodes are defined through functions
+	//A function indicates which node belongs to the corresponding NodeType
+	//by its coordinates
 	protected Map<NodeType, Function> mapNTF;
 	
 	public boolean debug = false;
@@ -148,6 +152,8 @@ public class Mesh {
 	}
 	
 	/**
+	 * Mark border node type for component <tt>nVVFComponent</tt> of vector valued unknowns.
+	 * 
 	 * 对于向量值问题，可以为每个分量<tt>nVVFComponent</tt>分别标记边界类型
 	 * 
 	 * @param nVVFComponent
@@ -190,11 +196,19 @@ public class Mesh {
 		}
 		if(debug)
 			System.out.println("markBorderNode done!");
-	}	
+	}
+	
+	/**
+	 * Mark border node type for components <tt>setVVFComponent</tt> of vector valued unknowns.
+	 * 
+	 * @param setVVFComponent components indices set
+	 * @param mapNTF
+	 */
 	public void markBorderNode(ObjIndex setVVFComponent, Map<NodeType,Function> mapNTF) {
 		for(int i:setVVFComponent)
 			markBorderNode(i,mapNTF);
 	}
+	
 	public Map<NodeType, Function> getMarkBorderMap() {
 		return this.mapNTF;
 	}

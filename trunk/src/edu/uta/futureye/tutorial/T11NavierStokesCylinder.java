@@ -587,5 +587,7 @@ public class T11NavierStokesCylinder {
 //		System.out.println("index cD cL St DeltaP");
 //		for(int i=1;i<=620;i++)
 //			NS.computeKeyValues(i);
+		
+		//31.934158826680363
 	}
 }

@@ -6,6 +6,7 @@ import java.util.Map;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.geometry.Point;
 import edu.uta.futureye.function.intf.Function;
+import edu.uta.futureye.util.Constant;
 
 /**
  * Function arguments (Independent variables of a function)
@@ -47,6 +48,7 @@ public class Variable {
 	public Variable(double val) {
 		//valArray[0] = val;
 		//useArray[0] = true;
+		valMap.put(Constant.x, val);
 	}
 	
 	/**
@@ -102,6 +104,21 @@ public class Variable {
 	public double get(VN name) {
 		//return valArray[name.getID()];
 		return valMap.get(VN.names[name.getID()]);
+	}
+	
+	/**
+	 * Alias of get(String name), used in ScalaFEM as syntactic sugar: 
+	 * <code>v(name)</code>
+	 * 
+	 * @param name
+	 * @return <tt>v(name)</tt>
+	 */
+	public double apply(String name) {
+		return valMap.get(name);
+	}
+	
+	public double apply(VN name) {
+		return valMap.get(name);
 	}
 	
 	/**

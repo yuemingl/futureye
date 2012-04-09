@@ -53,7 +53,7 @@ public class DescreteDerivativeTest {
 		weakForm.setParam(
 				null,
 				null,
-				new FC(0.05),null //Robin: d*u + k*u_n = q
+				new FC(0.05),null //Robin: d*u + k*u_n = g
 				); 	
 		
 		Assembler assembler = new AssemblerScalar(mesh, weakForm);

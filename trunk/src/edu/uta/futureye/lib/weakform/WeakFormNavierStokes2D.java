@@ -5,11 +5,8 @@ import edu.uta.futureye.core.Edge;
 import edu.uta.futureye.core.Element;
 import edu.uta.futureye.core.Node;
 import edu.uta.futureye.function.Variable;
-import edu.uta.futureye.function.basic.FC;
 import edu.uta.futureye.function.intf.Function;
-import edu.uta.futureye.function.intf.ScalarShapeFunction;
 import edu.uta.futureye.function.intf.VectorFunction;
-import edu.uta.futureye.lib.shapefun.SFConstant0;
 import edu.uta.futureye.util.MathEx;
 import edu.uta.futureye.util.Utils;
 import static edu.uta.futureye.function.operator.FMath.*;
@@ -84,12 +81,8 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 			Function fc = Utils.interpolateOnElement(g_c,e);
 			VectorFunction fU = Utils.interpolateOnElement(g_U, e);
 			
-			ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
-			ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
-			ScalarShapeFunction p  = (ScalarShapeFunction)u.get(3);
-			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
-			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
-			ScalarShapeFunction q  = (ScalarShapeFunction)v.get(3);
+			Function u1 = u.get(1), u2 = u.get(2), p  = u.get(3);
+			Function v1 = v.get(1), v2 = v.get(2), q  = v.get(3);
 			
 			//upwind: v1 and v2 in (u,v,p)
 			if(this.testDOF.getVVFComponent() != 3) {
@@ -117,24 +110,24 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 				double alpha = normU*h/(2*k);
 				//double k_tidle = 2*(MathEx.coth(alpha)-1.0/alpha)*normU*h;
 				double k_tidle = (MathEx.coth(alpha)-1.0/alpha)*normU*h;
-				if(!(v1 instanceof SFConstant0)) {
-					v1.A(grad(v1,v1.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
+				if(!(v1.isConstant())) {
+					v1.A(grad(v1,"x","y").dot(valU_hat).M(k_tidle).D(valU.norm2()));
 				}
-				if(!(v2 instanceof SFConstant0)) {
-					v2.A(grad(v2,v2.innerVarNames()).dot(valU_hat).M(k_tidle).D(valU.norm2()));
+				if(!(v2.isConstant())) {
+					v2.A(grad(v2,"x","y").dot(valU_hat).M(k_tidle).D(valU.norm2()));
 				}
 			}
 			
 			
-			/**
-			 *   k* [(v1_x,u1_x) + (v1_y,u1_y) + (v2_x,u2_x) + (v2_y,u2_y) ]
-			 *   		+ [(U1*u1_x,v1)+(U2*u1_y,v1)] + [(U1*u2_x,v2)+(U2*u2_y,v2)]
-			 *   		+ c*[(u1,v1)+(u2,v2)]
-			 *			- (v1_x+v2_y,p)
-			 *			+ (q,u1_x+u2_y)
-			 *			= (v1,f1)+(v2,f2)
-			 * 
-			 */
+/**
+ * k* [(v1_x,u1_x) + (v1_y,u1_y) + (v2_x,u2_x) + (v2_y,u2_y) ]
+ *  + [(U1*u1_x,v1)+(U2*u1_y,v1)] + [(U1*u2_x,v2)+(U2*u2_y,v2)]
+ *  + c*[(u1,v1)+(u2,v2)]
+ *  - (v1_x+v2_y,p)
+ *  + (q,u1_x+u2_y)
+ *  = (v1,f1)+(v2,f2)
+ * 
+ */
 			VectorFunction grad_u1 = grad(u1,"x","y");
 			VectorFunction grad_u2 = grad(u2,"x","y");
 			Function uv1 = grad_u1.dot(grad(v1,"x","y"));
@@ -150,10 +143,8 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 				Element be = e;
 				Function fd1 = Utils.interpolateOnElement(g_d.get(1), be);
 				Function fd2 = Utils.interpolateOnElement(g_d.get(2), be);
-				ScalarShapeFunction u1 = (ScalarShapeFunction)u.get(1);
-				ScalarShapeFunction u2 = (ScalarShapeFunction)u.get(2);
-				ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
-				ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
+				Function u1 = u.get(1), u2 = u.get(2);
+				Function v1 = v.get(1), v2 = v.get(2);
 				//Robin:  - k*u_n = d*u - p\vec{n}
 				//d1*u1 + d2*u2
 				Function borderIntegrand = fd1.M(u1.M(v1)).A(fd2.M(u2.M(v2)));
@@ -168,22 +159,18 @@ public class WeakFormNavierStokes2D extends AbstractVectorWeakForm {
 		if(itemType==ItemType.Domain)  {
 			Function f1 = Utils.interpolateOnElement(g_f.get(1), e);
 			Function f2 = Utils.interpolateOnElement(g_f.get(2), e);
-			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
-			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
+			Function v1 = v.get(1), v2 = v.get(2);
 			//(v1*f1+v2*f2)
 			Function integrand = v1.M(f1).A(v2.M(f2));
 			return integrand;
 		} else if(itemType==ItemType.Border) {
 			Element be = e;
-			ScalarShapeFunction v1 = (ScalarShapeFunction)v.get(1);
-			ScalarShapeFunction v2 = (ScalarShapeFunction)v.get(2);
-			ScalarShapeFunction p  = (ScalarShapeFunction)v.get(3);
+			Function v1 = v.get(1), v2 = v.get(2), p  = v.get(3);
 			//Robin:  - k*u_n = d*u - p\vec{n}
 			//- p\vec{n} = - p*n1*v1 - p*n2*v2
 			Edge edge = (Edge)be.getGeoEntity();
 			Vector n = edge.getNormVector();
-			FC n1 = FC.c(-1.0*n.get(1));
-			FC n2 = FC.c(-1.0*n.get(2));
+			Function n1 = C(-1.0*n.get(1)), n2 = C(-1.0*n.get(2));
 			Function borderIntegrand = p.M(v1.M(n1)).A(p.M(v2.M(n2)));
 			return borderIntegrand;
 		}

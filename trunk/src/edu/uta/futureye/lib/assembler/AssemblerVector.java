@@ -118,7 +118,7 @@ public class AssemblerVector implements Assembler {
 		
 		//形函数计算需要和单元关联
 		for(int i=1;i<=nDOFs;i++) {
-			DOFs.at(i).getVSF().asignElement(e);
+			DOFs.at(i).getVSF().assignElement(e);
 		}
 		
 		weakForm.preProcess(e);
@@ -156,12 +156,14 @@ public class AssemblerVector implements Assembler {
 				Element be = beList.at(n);
 				
 				be.updateJacobin();
+				weakForm.preProcess(be);
+				
 				DOFList beDOFs = be.getAllDOFList(DOFOrder.NEFV);
 				int nBeDOF = beDOFs.size();
 				
 				//形函数计算需要和单元关联
 				for(int i=1;i<=nBeDOF;i++) {
-					beDOFs.at(i).getVSF().asignElement(be);
+					beDOFs.at(i).getVSF().assignElement(be);
 				}
 				
 				//所有自由度双循环

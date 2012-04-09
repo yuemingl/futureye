@@ -180,7 +180,7 @@ public class SFQuadraticLocal2D extends AbstractFunction implements ScalarShapeF
 	}
 
 	@Override
-	public void asignElement(Element e) {
+	public void assignElement(Element e) {
 		this.e = e;
 	}
 

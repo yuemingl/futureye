@@ -92,4 +92,9 @@ public class FC extends AbstractFunction{
 	public String toString() {
 		return String.valueOf(val);
 	}
+	
+	@Override 
+	public boolean isConstant() {
+		return true;
+	}
 }

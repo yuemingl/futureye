@@ -228,9 +228,10 @@ public class SpaceVector implements Vector {
 	
 	public String toString() {
 		String rlt = "(";
-		for(int i=0;i<dim;i++)
+		for(int i=0;i<dim-1;i++)
 			rlt += data[i]+"  ";
-		return rlt+")";
+		rlt += data[dim-1]+")";
+		return rlt;
 	}
 	
 

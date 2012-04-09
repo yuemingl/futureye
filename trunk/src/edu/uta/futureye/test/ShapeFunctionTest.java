@@ -7,7 +7,7 @@ import edu.uta.futureye.core.Node;
 import edu.uta.futureye.function.Variable;
 import edu.uta.futureye.function.intf.Function;
 import edu.uta.futureye.lib.shapefun.SFBilinearLocal2D;
-import edu.uta.futureye.lib.shapefun.SFLinearLocal2DTest;
+import edu.uta.futureye.lib.shapefun.SFLinearLocal2DRS;
 import edu.uta.futureye.util.container.NodeList;
 
 public class ShapeFunctionTest {
@@ -32,14 +32,14 @@ public class ShapeFunctionTest {
 //		shapeFun[0] = new SFLinearLocal2D(1);
 //		shapeFun[1] = new SFLinearLocal2D(2);
 //		shapeFun[2] = new SFLinearLocal2D(3);
-		SFLinearLocal2DTest[] shapeFun = new SFLinearLocal2DTest[3];
-		shapeFun[0] = new SFLinearLocal2DTest(1);
-		shapeFun[1] = new SFLinearLocal2DTest(2);
-		shapeFun[2] = new SFLinearLocal2DTest(3);
+		SFLinearLocal2DRS[] shapeFun = new SFLinearLocal2DRS[3];
+		shapeFun[0] = new SFLinearLocal2DRS(1);
+		shapeFun[1] = new SFLinearLocal2DRS(2);
+		shapeFun[2] = new SFLinearLocal2DRS(3);
 		
 		//Test the derivatives of shape function
 		
-		shapeFun[0].asignElement(e);
+		shapeFun[0].assignElement(e);
 		System.out.println(shapeFun[0]);
 		Function SF0dx = shapeFun[0]._d("x");
 		Function SF0dy = shapeFun[0]._d("y");
@@ -48,14 +48,14 @@ public class ShapeFunctionTest {
 		System.out.println(SF0dy);
 		System.out.println(SF0dy.value(null));
 		
-		shapeFun[1].asignElement(e);
+		shapeFun[1].assignElement(e);
 		System.out.println(shapeFun[1]);
 		Function SF1dx = shapeFun[1]._d("x");
 		Function SF1dy = shapeFun[1]._d("y");
 		System.out.println(SF1dx.value(null));
 		System.out.println(SF1dy.value(null));
 		
-		shapeFun[2].asignElement(e);
+		shapeFun[2].assignElement(e);
 		System.out.println(shapeFun[2]);
 		Function SF2dx = shapeFun[2]._d("x");
 		Function SF2dy = shapeFun[2]._d("y");
@@ -107,7 +107,7 @@ public class ShapeFunctionTest {
 		
 		//Test the derivatives of shape function
 		
-		shapeFun[0].asignElement(e);
+		shapeFun[0].assignElement(e);
 		Function SF0dx = shapeFun[0]._d("x");
 		Function SF0dy = shapeFun[0]._d("y");
 		System.out.println(SF0dx);
@@ -115,19 +115,19 @@ public class ShapeFunctionTest {
 		System.out.println(SF0dy);
 		System.out.println("SF0dy("+v+")="+SF0dy.value(v));
 		
-		shapeFun[1].asignElement(e);
+		shapeFun[1].assignElement(e);
 		Function SF1dx = shapeFun[1]._d("x");
 		Function SF1dy = shapeFun[1]._d("y");
 		System.out.println(SF1dx);
 		System.out.println(SF1dy);
 		
-		shapeFun[2].asignElement(e);
+		shapeFun[2].assignElement(e);
 		Function SF2dx = shapeFun[2]._d("x");
 		Function SF2dy = shapeFun[2]._d("y");
 		System.out.println(SF2dx);
 		System.out.println(SF2dy);	
 		
-		shapeFun[3].asignElement(e);
+		shapeFun[3].assignElement(e);
 		Function SF3dx = shapeFun[3]._d("x");
 		Function SF3dy = shapeFun[3]._d("y");
 		System.out.println(SF3dx);

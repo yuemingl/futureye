@@ -33,6 +33,7 @@ import edu.uta.futureye.util.FutureyeException;
 import edu.uta.futureye.util.container.DOFList;
 import edu.uta.futureye.util.container.ElementList;
 import edu.uta.futureye.util.container.VertexList;
+import edu.uta.futureye.core.intf.WeakForm.ItemType;
 
 public class AssemblerScalar implements Assembler {
 	private int status = 0;
@@ -226,7 +227,7 @@ public class AssemblerScalar implements Assembler {
 		
 		//形函数计算需要和单元关联
 		for(int i=1;i<=nDOFs;i++) {
-			DOFs.at(i).getSSF().asignElement(e);
+			DOFs.at(i).getSSF().assignElement(e);
 		}
 		
 		weakForm.preProcess(e);
@@ -241,13 +242,13 @@ public class AssemblerScalar implements Assembler {
 				//Local stiff matrix
 				//注意顺序，内循环test基函数不变，trial基函数循环
 				weakForm.setDOF(dofJ, dofI); 
-				Function lhs = weakForm.leftHandSide(e, WeakForm.ItemType.Domain);
+				Function lhs = weakForm.leftHandSide(e, ItemType.Domain);
 				double lhsVal = weakForm.integrate(e, lhs);
 				stiff.add(nGlobalRow, nGlobalCol, lhsVal);
 			}
 			//Local load vector
 			weakForm.setDOF(null,dofI);
-			Function rhs = weakForm.rightHandSide(e, WeakForm.ItemType.Domain);
+			Function rhs = weakForm.rightHandSide(e, ItemType.Domain);
 			double rhsVal = weakForm.integrate(e, rhs);
 			load.add(nGlobalRow, rhsVal);
 		}
@@ -256,16 +257,18 @@ public class AssemblerScalar implements Assembler {
 			ElementList beList = e.getBorderElements();
 			for(int n=1;n<=beList.size();n++) {
 				Element be = beList.at(n);
+				
 				//Check node type
 				NodeType nodeType = be.getBorderNodeType();
 				if(nodeType == NodeType.Neumann || nodeType == NodeType.Robin) {
 					be.updateJacobin();
+					weakForm.preProcess(be);
 					DOFList beDOFs = be.getAllDOFList(DOFOrder.NEFV);
 					int nBeDOF = beDOFs.size();
 					
 					//形函数计算需要和单元关联
 					for(int i=1;i<=nBeDOF;i++) {
-						beDOFs.at(i).getSSF().asignElement(be);
+						beDOFs.at(i).getSSF().assignElement(be);
 					}
 					
 					//所有自由度双循环
@@ -278,13 +281,13 @@ public class AssemblerScalar implements Assembler {
 							//Local stiff matrix for border
 							//注意顺序，内循环test函数不变，trial函数循环
 							weakForm.setDOF(dofJ, dofI);
-							Function lhsBr = weakForm.leftHandSide(be, WeakForm.ItemType.Border);
+							Function lhsBr = weakForm.leftHandSide(be, ItemType.Border);
 							double lhsBrVal = weakForm.integrate(be, lhsBr);
 							stiff.add(nGlobalRow, nGlobalCol, lhsBrVal);
 						}
 						//Local load vector for border
 						weakForm.setDOF(null, dofI);
-						Function rhsBr = weakForm.rightHandSide(be, WeakForm.ItemType.Border);
+						Function rhsBr = weakForm.rightHandSide(be, ItemType.Border);
 						double rhsBrVal = weakForm.integrate(be, rhsBr);
 						load.add(nGlobalRow, rhsBrVal);
 					}
@@ -327,7 +330,7 @@ public class AssemblerScalar implements Assembler {
 		
 		//形函数计算需要和单元关联
 		for(int i=1;i<=nDOFs;i++) {
-			DOFs.at(i).getSSF().asignElement(e);
+			DOFs.at(i).getSSF().assignElement(e);
 		}
 		
 		//所有自由度双循环
@@ -366,7 +369,7 @@ public class AssemblerScalar implements Assembler {
 					localStiffBorder.setColDim(nDOFs);
 					//形函数计算需要和单元关联
 					for(int i=1;i<=nBeDOF;i++) {
-						beDOFs.at(i).getSSF().asignElement(e);
+						beDOFs.at(i).getSSF().assignElement(e);
 					}
 					
 					//所有自由度双循环

@@ -27,11 +27,11 @@ import edu.uta.futureye.util.container.ObjList;
  * Raviart-Thomas 2D0 triangle element
  * 
  * for j=1,2,3
- * \psi_{E_{j}} = \sigma_{j} \frac{|E_{j}|}{2|T|} (\mathbf{x}-P_{j})
+ * \psi_{E_{j}} = \sigma_{j} \frac{|E_{j}|}{2|T|} (x-P_{j})
  *
  * where
- *   \mathbf{x} \in T
- *   E_{j} be the edge of a triangle T opposite to its vertex P_{j}
+ *   x = (x1,x2) \in T
+ *   E_{j} is the edge of a triangle T opposite to its vertex P_{j}
  *   sigma_{j} = \nu_{j} \dot \nu_{E_{j}}
  *   \nu_{j} the unit normal of T along E_{j} 
  *   \nu_{E_{j}} the unit normal vector of E_{j} chosen with a global fixed orientation
@@ -73,7 +73,7 @@ public class RaviartThomas2D0 extends AbstractVectorFunction implements VectorSh
 	
 	
 	@Override
-	public void asignElement(final Element e) {
+	public void assignElement(final Element e) {
 		//Space Vector Function
 		Function fx = new FXY(varNames,1,0);
 		Function fy = new FXY(varNames,0,1);
@@ -98,6 +98,9 @@ public class RaviartThomas2D0 extends AbstractVectorFunction implements VectorSh
 		varNamesInner.add("r");
 		varNamesInner.add("s");
 
+		//x = x(r,s,t)
+		//y = y(r,s,t)
+		//	where t = 1 - r - s
 		for(final String varName : varNames) {
 			fInners.put(varName, new AbstractFunction(varNamesInner) {
 				
@@ -109,14 +112,11 @@ public class RaviartThomas2D0 extends AbstractVectorFunction implements VectorSh
 				@Override
 				public double value(Variable v) {
 					//根据不同的varName给出不同的表达式
-					//x = x(r,s,t)
-					//y = y(r,s,t)
-					//where t = 1 - r - s
 					List<Function> transFun = trans.getTransformFunction(
 							trans.getTransformLinear2DShapeFunction(e));
-					if(varName.equals("x")) {
+					if(varName.equals("x")) {//x = x(r,s,t)
 						return transFun.get(0).value(v);
-					} else if(varName.equals("y")) {
+					} else if(varName.equals("y")) {//y = y(r,s,t)
 						return transFun.get(1).value(v);
 					} else {
 						Exception e = new FutureyeException("Error!");
@@ -147,6 +147,7 @@ public class RaviartThomas2D0 extends AbstractVectorFunction implements VectorSh
 	public Function get(int index) {
 		return this.funCompose.get(index);
 	}
+	
 
 	@Override
 	public void set(int index, Function value) {

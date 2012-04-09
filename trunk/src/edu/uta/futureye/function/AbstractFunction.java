@@ -96,6 +96,8 @@ public abstract class AbstractFunction implements Function {
 				
 				//bugfix 增加或条件 
 				//bugfix 3/19/12
+				//bug?3/20/12  v=[r], fOuter.varNames()=[s,t], 但fOuter的表达式只有r, 这种情况下会进入else分支，
+				//一般来说是不会有这种情况的，如果确实有这种情况，需要在函数类增加activeVarNames
 				//if(fOuter.varNames().containsAll(v.getValues().keySet()) ||
 				//		v.getValues().keySet().containsAll(fOuter.varNames())) {
 				if(v.getValues().keySet().containsAll(fOuter.varNames())) {
@@ -157,7 +159,7 @@ public abstract class AbstractFunction implements Function {
 						Function fInner = fInners.get(innerVarName);
 						if(fInner != null) {
 							Function rltOuter = fOuter._d(innerVarName);
-							if(!(rltOuter instanceof FC))
+							if(!(rltOuter.isConstant()))
 								rltOuter = rltOuter.compose(fInners);
 							Function rltInner = fInner._d(varName);
 							//f_x * x_r + f_y * y_r
@@ -193,11 +195,11 @@ public abstract class AbstractFunction implements Function {
 	public Function A(Function g) {
 		final Function f1 = this;
 		final Function f2 = g;
-		if(f1 instanceof FC && f2 instanceof FC) {
+		if(f1.isConstant() && f2.isConstant()) {
 			return new FC(f1.value() + f2.value());
-		} else if(f1 instanceof FC && Math.abs(f1.value()) < Constant.eps) {
+		} else if(f1.isConstant() && Math.abs(f1.value()) < Constant.eps) {
 			return f2;
-		} else if(f2 instanceof FC && Math.abs(f2.value()) < Constant.eps) {
+		} else if(f2.isConstant() && Math.abs(f2.value()) < Constant.eps) {
 			return f1;
 		} else {
 			return new AbstractFunction(Utils.mergeList(f1.varNames(), f2.varNames())) {
@@ -268,9 +270,9 @@ public abstract class AbstractFunction implements Function {
 	public Function S(Function g) {
 		final Function f1 = this;
 		final Function f2 = g;
-		if(f1 instanceof FC && f2 instanceof FC) {
+		if(f1.isConstant() && f2.isConstant()) {
 			return new FC(f1.value() - f2.value());
-		} else if(f2 instanceof FC && Math.abs(f2.value()) < Constant.eps) {
+		} else if(f2.isConstant() && Math.abs(f2.value()) < Constant.eps) {
 			return f1;
 		} else {
 			return new AbstractFunction(Utils.mergeList(f1.varNames(), f2.varNames())) {
@@ -306,7 +308,7 @@ public abstract class AbstractFunction implements Function {
 				@Override
 				public String toString() {
 					StringBuilder sb = new StringBuilder();
-					if(! (f1 instanceof FC && Math.abs(f1.value()) < Constant.eps) ) {
+					if(! (f1.isConstant() && Math.abs(f1.value()) < Constant.eps) ) {
 						sb.append(f1.toString());
 					}
 					sb.append(" - ");
@@ -328,14 +330,14 @@ public abstract class AbstractFunction implements Function {
 	public Function M(Function f) {
 		final Function f1 = this;
 		final Function f2 = f;
-		if(f1 instanceof FC && f2 instanceof FC) {
+		if(f1.isConstant() && f2.isConstant()) {
 			return new FC(f1.value() * f2.value());
-		} else if( (f1 instanceof FC && Math.abs(f1.value()) < Constant.eps) ||
-				f2 instanceof FC && Math.abs(f2.value()) < Constant.eps)
+		} else if( (f1.isConstant() && Math.abs(f1.value()) < Constant.eps) ||
+				f2.isConstant() && Math.abs(f2.value()) < Constant.eps)
 			return FC.C0;
-		else if(f1 instanceof FC && Math.abs(f1.value()-1.0) < Constant.eps)
+		else if(f1.isConstant() && Math.abs(f1.value()-1.0) < Constant.eps)
 			return f2;
-		else if(f2 instanceof FC && Math.abs(f2.value()-1.0) < Constant.eps)
+		else if(f2.isConstant() && Math.abs(f2.value()-1.0) < Constant.eps)
 			return f1;
 		else
 			return new AbstractFunction(Utils.mergeList(f1.varNames(), f2.varNames())) {
@@ -396,14 +398,14 @@ public abstract class AbstractFunction implements Function {
 	public Function D(Function f) {
 		final Function f1 = this;
 		final Function f2 = f;
-		if(f1 instanceof FC && f2 instanceof FC) {
+		if(f1.isConstant() && f2.isConstant()) {
 			return new FC(f1.value() / f2.value());
-		} else if(f1 instanceof FC && Double.compare(f1.value(),0.0)==0) {
+		} else if(f1.isConstant() && Double.compare(f1.value(),0.0)==0) {
 			//Math.abs(f1.value())<Constant.eps will not work properly
 			return FC.C0;
-		} else if(f2 instanceof FC && Double.compare(f2.value(),0.0)==0) {
+		} else if(f2.isConstant() && Double.compare(f2.value(),0.0)==0) {
 			return FC.c(Double.POSITIVE_INFINITY);
-		}  else if(f2 instanceof FC && Math.abs(f2.value()-1.0) < Constant.eps) {
+		}  else if(f2.isConstant() && Math.abs(f2.value()-1.0) < Constant.eps) {
 			return f1;
 		} else {
 			return new AbstractFunction(Utils.mergeList(f1.varNames(), f2.varNames())) {
@@ -488,7 +490,7 @@ public abstract class AbstractFunction implements Function {
 	@Override
 	public String getExpression() {
 		String s = varNames().toString();
-		return "F("+s.substring(1, s.length()-1)+")";
+		return "AbsFun("+s.substring(1, s.length()-1)+")";
 	}
 	
 	@Override
@@ -497,5 +499,10 @@ public abstract class AbstractFunction implements Function {
 			return getExpression();
 		} else 
 			return getFName();
+	}
+	
+	@Override
+	public boolean isConstant() {
+		return false;
 	}
 }

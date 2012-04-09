@@ -10,7 +10,7 @@ import static edu.uta.futureye.function.operator.FMath.*;
  * Solve the following problem(2D or 3D):
  *   -k*Laplace(u) + c*u = f, in \Omega
  *   u = u0,                  on \Gamma1
- *   d*u + k*u_n = q,         on \Gamma2
+ *   d*u + k*u_n = g,         on \Gamma2
  *   
  *=>Weak formulation:
  *   A(u, v) = (f, v)
@@ -24,7 +24,7 @@ import static edu.uta.futureye.function.operator.FMath.*;
  *   k = k(\vec{x})
  *   c = c(\vec{x})
  *   d = d(\vec{x})
- *   q = q(\vec{x})
+ *   g = q(\vec{x})
  *
  * Remark:
  * *For nature boundary condition (自然边界条件)
@@ -40,7 +40,7 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 	protected Function g_f = null;
 	protected Function g_k = null;
 	protected Function g_c = null;
-	protected Function g_q = null;
+	protected Function g_g = null;
 	protected Function g_d = null;
 
 	//right hand side function (source term)
@@ -48,11 +48,11 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 		this.g_f = f;
 	}
 	
-	//Robin: d*u +  k*u_n = q
-	public void setParam(Function k,Function c,Function q,Function d) {
+	//Robin: d*u +  k*u_n = g
+	public void setParam(Function k,Function c,Function g,Function d) {
 		this.g_k = k;
 		this.g_c = c;
-		this.g_q = q;
+		this.g_g = g;
 		this.g_d = d;
 	}
 
@@ -92,9 +92,9 @@ public class WeakFormLaplace extends AbstractScalarWeakForm {
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {
-			if(g_q != null) {
+			if(g_g != null) {
 				Element be = e;
-				Function fq = Utils.interpolateOnElement(g_q, be);
+				Function fq = Utils.interpolateOnElement(g_g, be);
 				Function borderIntegrand = fq.M(v);
 				return borderIntegrand;
 			}

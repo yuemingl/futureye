@@ -22,14 +22,14 @@ import edu.uta.futureye.util.container.ElementList;
  * Solve
  *   -k*Laplace(u) + c*u = f, in \Omega
  *   u = u0,                  on \Gamma1
- *   d*u + k*u_n = q,         on \Gamma2
+ *   d*u + k*u_n = g,         on \Gamma2
  *=>
  *   A(u, v) = (f, v)
  * 
  * where
- *   A(u, v) = (k*u_x, v_x) + (k*u_y, v_y) + (k*u_z, v_z) - (q-d*u,v)_\Gamma2 + (c*u, v)
+ *   A(u, v) = (k*u_x, v_x) + (k*u_y, v_y) + (k*u_z, v_z) - (g-d*u,v)_\Gamma2 + (c*u, v)
  *=>
- *   A(u, v) = (k*u_x, v_x) + (k*u_y, v_y) + (k*u_z, v_z) + (d*u-q,v)_\Gamma2 + (c*u, v)
+ *   A(u, v) = (k*u_x, v_x) + (k*u_y, v_y) + (k*u_z, v_z) + (d*u-g,v)_\Gamma2 + (c*u, v)
  *
  *   \Gamma1: Dirichlet boundary of \Omega
  *   \Gamma2: Neumann(Robin) boundary of \Omega
@@ -38,7 +38,7 @@ import edu.uta.futureye.util.container.ElementList;
  *   k = k(x,y)
  *   c = c(x,y)
  *   d = d(x,y)
- *   q = q(x,y)
+ *   g = g(x,y)
  * </blockquote></pre>  
  * 
  * @author liuyueming
@@ -48,18 +48,18 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 	protected Function g_f = null;
 	protected Function g_k = null;
 	protected Function g_c = null;
-	protected Function g_q = null;
+	protected Function g_g = null;
 	protected Function g_d = null;
 
 	public void setF(Function f) {
 		this.g_f = f;
 	}
 	
-	//Robin:  d*u + k*u_n= q (自然边界：d==k, q=0)
-	public void setParam(Function k,Function c,Function q,Function d) {
+	//Robin:  d*u + k*u_n= g (自然边界：d==k, g=0)
+	public void setParam(Function k,Function c,Function g,Function d) {
 		this.g_k = k;
 		this.g_c = c;
-		this.g_q = q;
+		this.g_g = g;
 		this.g_d = d;
 	}
 
@@ -101,9 +101,9 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 			Function integrand = ff.M(v);
 			return integrand;
 		} else if(itemType==ItemType.Border) {//Neumann border type
-			if(g_q != null) {
+			if(g_g != null) {
 				Element be = e;
-				Function fq = Utils.interpolateOnElement(g_q, be);
+				Function fq = Utils.interpolateOnElement(g_g, be);
 				Function borderIntegrand = fq.M(v);
 				return borderIntegrand;
 			}
@@ -132,7 +132,7 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 		for(int i=1;i<=nDOFs;i++) {
 			DOF dof = DOFs.at(i);
 			ScalarShapeFunction sf = dof.getSSF();
-			dof.getSSF().asignElement(e);
+			dof.getSSF().assignElement(e);
 			mapShape_x.put(dof.getLocalIndex(), sf._d("x"));
 			mapShape_y.put(dof.getLocalIndex(), sf._d("y"));
 			mapShape_z.put(dof.getLocalIndex(), sf._d("z"));
@@ -213,7 +213,7 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 					
 					//形函数计算需要和单元关联
 					for(int i=1;i<=nBeDOF;i++) {
-						beDOFs.at(i).getSSF().asignElement(be);
+						beDOFs.at(i).getSSF().assignElement(be);
 					}
 					
 					//所有自由度双循环
@@ -241,8 +241,8 @@ public class WeakFormLaplace3D extends AbstractScalarWeakForm {
 							globalStiff.add(nGlobalRow, nGlobalCol, lhsBrVal);
 						}
 						//Load vector for border
-						if(g_q != null) {
-							Function fq = Utils.interpolateOnElement(g_q, be);
+						if(g_g != null) {
+							Function fq = Utils.interpolateOnElement(g_g, be);
 							Function borderIntegrand = fq.M(v);
 							double rhsBrVal = 0.0;
 							if(be.vertices().size() == 3) {
