@@ -1,0 +1,1 @@
+FuturEye is a Java based Finite Element Method (FEM) Toolkit, providing concise, natural and easy understanding programming interfaces for users who wish to develop researching and/or engineering FEM algorithms for Forward and/or Inverse Problems.
