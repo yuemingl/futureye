@@ -1,0 +1,172 @@
+.LOG
+
+https://futureye.googlecode.com/svn/trunk/
+
+A Java based Finite Element Method (FEM) package, providing concise, 
+natural and easy understanding interfaces, classes and programming styles for 
+users who wish to develop researching and engineering FEM algorithms for 
+Forward or Inverse Problems.
+
+
+22:19 2010/12/20
+First Release-0.1:
+
+This release includes basic classes for Finite Element Methods and examples included:
+1.Solve Laplace problem:
+  A(u, v) = (f, v)
+where
+  A(u, v) = (k*u_x, v_x) + (k*u_y, v_y) + (c*u, v)
+  k = k(x,y)
+  c = c(x,y)
+
+2. Compute function derivatives via FEM:
+   (w, v) = (U_x, v)
+  where w is unknown
+  U_x is the piecewise derivative on the mesh
+  w is an approximation of U_x
+
+
+3. Solve parameter inverse problem:
+   (U*u, v) = (f, v) - (k*grad(U),grad(v))
+  where u is unknown
+  U,f and k is known
+
+4. Global convergence method for optical inverse problem
+see edu.uta.futureye.prostate
+
+
+Tutorial programs:
+edu.uta.futureye.tutorial
+
+Test programs:
+edu.uta.futureye.test
+
+Under developing:
+1.support 3D mesh
+2.support vector valued problems
+3.more efficient symbolic functions package
+4.interfaces to more mesh file formats
+
+
+
+22:44 2011/3/10
+Release-1.0
+
+1.自由度可以与结点（Node）、 边（Edge）、 面（Face）、 体（Volume）关联，
+  而且每个几何对象都可以关联多个自由度（DOFList）
+1.Degree of freedoms(DOFs) can be associated with Node,Edge,Face and Volume
+
+  见：edu.uta.futureye.core.Element
+  See：edu.uta.futureye.core.Element
+
+2.支持向量值函数，向量值问题求解向量值形函数RT0，混合元
+2.Vector valued function PDE is supported, mix element is supported, e.g. Raviart-Thomas (RT0)
+
+  见算例：edu.uta.futureye.test.MixedLaplaceTest
+  See：edu.uta.futureye.test.MixedLaplaceTest
+
+3.改进矩阵、向量接口：支持稀疏矩阵、稀疏向量；支持分块稀疏矩阵、分块稀疏向量
+3.Modified matrix and vector interface, sparse matrix and vector, block matrix and vector
+
+  edu.uta.futureye.algebra
+  用法见：edu.uta.futureye.test.TestMatrix, edu.uta.futureye.test.TestVector
+  See：edu.uta.futureye.test.TestMatrix, edu.uta.futureye.test.TestVector
+
+4.增加代数矩阵、向量，可以快速进行方程求解迭代法的代数运算
+4.Algebra matrix and vector is supported, fast operation of iterate schemes for solving system
+
+  interface AlgebraMatrix
+    class CompressedRowMatrix implements AlgebraMatrix
+  interface AlgebraVector
+    class FullVector implements AlgebraVector
+
+5.支持3D问题求解：
+5.3D problem is supported:
+
+  见算例：edu.uta.futureye.test.Laplace3DTest
+  See：edu.uta.futureye.test.Laplace3DTest
+
+6.增加算例：
+6.Examples added
+  edu.uta.futureye.tutorial
+  类Start: 介绍基本符号函数运算：函数四则运算（P加 M减 X乘 除D）、导数（.d("x")）
+  Class Start: basic symbolic operation of function: P+, M-, X*, D/
+
+	//f(x)=2*x+3
+	Function f = FC.c(2.0).X(FX.fx).P(FC.c(3.0));
+	System.out.println("f(x)="+f);
+	System.out.println("f("+v.get()+")="+f.value(v));
+
+	//Derivative: f'(x)=df(x)/dx
+	System.out.println("df(x)/dx="+f.d("x"));
+
+  类RawLaplace: 
+  Class RawLaplace:
+ 
+	使用三角形线性型函数求解Laplace问题，自己关联结点和自由度
+        Triangle linear shape function is used to solve Laplace problem,
+	degree of freedoms are associated in by userself.
+
+  类Laplace: 
+  Class Laplace:
+
+	使用三角形线性型函数求解Laplace问题，使用单元库类FELinearTriangle关联结点和自由度
+	//Use element library to assign degree of freedom (DOF) to element
+	ElementList eList = mesh.getElementList();
+	FELinearTriangle linearTriangle = new FELinearTriangle();
+	for(int i=1;i<=eList.size();i++)
+		linearTriangle.assign(eList.at(i));
+
+  类HeatTransfer: 
+  Class HeatTransfer
+	热传导方程算例
+	Heat transfer equation example
+
+  类Wave: 
+  Class Wave:
+	波动方程算例
+	Wavw equation example
+
+  类ConvectionDiffusion:
+  Class ConvectionDiffusion:
+        对流扩散方程算例
+	Convection Diffusion equation example
+
+
+14:05 2011/4/28
+Release 2.0 beta
+* Add Stokes problem solver
+* Plane Stree/Strain problem sovler
+
+12:16 2011/5/21
+Release 2.01
+* Add example class StokesBox
+* Static member methods of class Vector moved to class FMath
+
+17:08 2011/8/15
+Release 2.02
+*Several bugs have been fixed
+
+*Add class DuDx for computing derivatives of a vector based functions. 
+It is useful when you want to get derivatives element by element in which cases 
+that don't require continuity on the whole mesh/domain. 
+E.g. assembling process on elements. The method of computing derivatives has been
+improved that can be finished in several milisectonds for moderate meshes.
+
+*Add some application examples for inverse problems based on Language Multipliers with PDE constrains
+
+*Original Gridgen files inclued
+
+*Development log file included
+
+23:33 2011/10/24
+Release 2.1
+*Several bugs have been fixed
+
+*Add WeakFormBuilder to simpify the definition of weak forms of PDE
+see example edu.uta.futureye.tutorial.UseWeakFormBuilder
+
+
+19:29 2012/4/8
+Release 3.0
+A lot of changes!

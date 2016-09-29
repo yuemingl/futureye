@@ -1,0 +1,1018 @@
+.LOG
+
+****************************************************************************
+*                                                                          *
+*                     Future Eye 开发日志                                  *
+*                                                                          *
+****************************************************************************
+
+2010-06-25 初创
+
+选择Java作为FutureEye的开发语言，Eclipse作为开发IDE。Java语言完美的OO特性和
+灵活的可移植性以及开发的低成本性使我决定使用它。
+
+第一天：Package创建，Node,Element,Mesh,Matrix,Vector,Function,FunctionDerivable,FConstant,FLinear1D,并实现了函数导数的计算
+第二天：FPolynomial1D，弱形式接口WeakForm, WeakFormLaplace2D
+第三天：DOF,Assembler,坐标变换CoordinateTransform
+第四天： 三角形单元上的线性形函数：SFLinearLocal2D, 第一次成功测试LaplaceTest
+第五天： 函数导数的计算，FAbstract,Fx,FAx,FAxpb,增加函数表达式（toString方法），实现了“符号运算”
+第六天： 四边形单元上的双线性形函数：SFBilinearLocal2D
+第七天： 网格读取MeshReader
+
+总结：
+改进1.Function增加
+public void setVarNames(List<String> varNames);
+public List<String> varNames();
+能够定义函数自变量的名称，在函数求值或者求导时进行自变量判断，
+特别是复合函数求导时，自变量的名称用于区别关于不同变量导数的计算。
+另外，函数自变量的名称也用于输出函数表达式。
+
+改进2.接口FunctionDerivable
+public Function derivative(DerivativeIndicator di);
+改为
+public FunctionDerivable derivative(DerivativeIndicator di);
+实现了“连续求导”，高阶导数的计算可以使用“递归”调用实现。
+
+改进3.FOBasic与FOBasicDerivable
+增加了toString()方法，用于输出函数表达式；
+做了“加减乘除”中关于0和1的处理，而不是进行直接运算；
+删除了重载的varNames()，改为使用FAbstract的构造函数传入。
+
+说明：形函数N=N(r(x,y),s(x,y))，当计算关于x,y的导数时，可能需要计算Jacobian,
+要通过坐标变换函数x(r,s)与y(r,s)关于r,s的导数计算。注意不要出现函数互相嵌套调用。
+
+
+
+
+16:36 2010/7/2
+DOF作为Node的属性出现了问题。由于Node会同时属于多个Element，在每个Element上，
+由于Node编号或者Element形状不同（混合Element网格），其上的DOF对应的形函数
+是不相同的，不便存储。这根Node在Element上的局部编号是同一类问题。解决办法就是
+将DOF作为Element的属性，并通过Node的局部编号与Node对应起来。
+
+
+23:44 2010/7/2
+单元上的坐标变换需要用到单元顶点（Vertex）和顶点上的形函数，
+Vertex继承Node，但Vertex与Node不同之处在于Vertex是属于一个单元的，
+即便多个单元共享一个Node，对应于每个单元的Vertex坐标虽然一样，但是
+局部编号不一定相同（因此要加上局部编号属性）。
+在创建Mesh的时候，顶点是由Vertex类型创建的,通过上溯成Node，保存在NodeList中。
+但需要判断某个Node是不是一个单元的定点的时候，判断Node的实际类型即可。
+
+但是这种方式的问题在于当出现共享某个Node的两个单元，是一个单元的顶点，但不是
+另一个单元的顶点，这样就无法准确得到单元的定点了。
+
+解决方案：在Element中保存一个Node的localIndex的列表，之处列表中的Node是定点，
+当需要获得单元定点时，根据该信息，重新创建Vertex列表。
+
+
+22:04 2010/7/6
+考虑自然边界条件（Neumann,Robin）的处理，需要在一个单元的边界上积分，以二维单元
+为例，其边界是一维的，需要将该一维边界坐标变换到一维参考单元[-1,1]上，在参考单元
+上建立形函数（二维参考单元上形函数在一维上的限制），并计算该坐标变换的Jacobian
+（二维(x,y)平面上的一条直线到[-1,1]上的Jacobian），最后积分。理想方法是从Element2D
+提取边界结点，自由度，形函数构造Element1D，进行坐标变换和积分。
+
+
+17:27 2010/7/7
+关于坐标变换，目前只用顶点的形函数进行变换是错误的。需要用整个单元上的形函数进行
+坐标变换（等参）。如果只用顶点进行坐标变换，对于高次元，需要重新构造基于顶点的线性形函数。
+设计时，可以考虑坐标变换与单元上的形函数独立，增加了坐标变换的适用范围。
+
+
+21:00 2010/7/8
+边界积分需要找到边界结点，但是如何判断一个结点是否在边界上呢？
+有一个办法，二维情况下，首先找到包含该结点的所有单元，在每个
+单元上计算以这个结点为顶点的夹角的角度，如果所有角度之和为360度，
+那么这个结点就是个内点，否则是一个边界点。
+
+23:48 2010/7/9
+仍然是被2010/7/6的问题困扰。增加了方法Element Element.getBorderElement(Node.NodeType nodeType)，
+即返回“边界单元”（有可能是多个）。其形函数理论上是“二维参考单元上形函数在一维上的限制”，但是
+实现起来有些问题，即函数需要增加限制条件。同一形函数在整体合成时，二维单元上不需要限制，边界上需要限制，
+会造成频繁的增加和删除限制，为编写代码带来遗忘隐患。另一方法是引入新的一维形函数，这样在编写实现
+新的形函数时带来工作量。
+
+22:28 2010/7/11
+增加了NodeLocal类，很简单，但是具有很重要的意义。代表了结点在局部单元上的表现。
+增加了Edge和Face类，用来描述Element的几何性质。目前通过编号规则来实现
+public EdgeList getEdgeList()
+public Face getFaceList()
+	 * Element numbering rules:
+	 * 
+	 * 4----3
+	 * |    |
+	 * |    |
+	 * 1----2
+	 * 
+	 * 4--7--3
+	 * |     |
+	 * 8     6
+	 * |     |
+	 * 1--5--2
+	 * 
+	 * 4--11--7--3
+	 * |         |
+	 * 8         10
+	 * |         |
+	 * 12        6
+	 * |         |
+	 * 1-- 5--9--2
+同时，Edge和Face可以变为一个(降维的)Element,
+public Element Edge.changeToElement()
+public Element Face.changeToElement()
+这样，获得一个降维的单元就可以轻松实现：
+public ElementList Element.getBorderElements() //获得边界单元List
+
+16:23 2010/7/12
+代数方程组求解器使用Java版Lapack: JLapack
+代码量：83.1 KB, 50Files, 14 Folders
+
+19:01 2010/7/14
+测试数据triangle_refine.dat三角形网格细化之后，tecplot画图出现网格“双边界”，
+原因是手工截取triangle_refine.grd第一列数据时，没有注意到把第二列的两行数据前
+的负号截掉了。
+
+11:03 2010/7/15
+关于自然边界条件的处理：边界积分后，积分值应该移到右端项，而不是加到global矩阵上。
+因为应用了边界条件之后的边界积分已经与未知量u没有关系了。另外，关于基函数的问题，
+与右端项类似，可以使用基函数将已知函数近似之后积分，也可以直接积分。
+
+0:34 2010/7/17
+前天和昨天优化了程序，将整体合成过程中计算Jacobian提出weakForm，这个过程会不断需要计算
+Jacobin，而实际上只要单元坐标和形函数确定了之后，其Jacobian就不会改变，因此将计算
+Jacobin挪到了Element类中。
+
+测试数据triangle_refine2.dat在区域x=3一边增加了Robin条件，实验结果总是不对，经过两天
+的分析，终于找到问题所在，是在三角形参考单元上的积分错误的把参考单元的面积按照1计算了，
+应该是0.5
+
+
+23:44 2010/7/18
+方法Mesh.markBorderNode(Map<NodeType,Function> mapNTF)可以在计算边界结点时，
+为每个结点设置边界类型，设置方式是通过一个Map:NodeType=>Function边界检测函数实现的，
+函数返回>0说明需要设置结点的边界类型为制定的kay，否则不做任何设置。
+
+改进了Mesh.computeNodesBelongToElement()算法，很简单，但是很有效。
+旧算法：先循环每个结点，再循环每个单元，找到包含此结点的单元，计算量O(N*M)；
+新算法：先循环每个单元，在每个单元内循环每个结点，为每个结点设置该单元（要去重），计算量O(M)
+对于有上千个结点的网格，计算速度有上百倍的提升！
+
+13:09 2010/7/23
+
+昨天成功测试了混合网格，发现的问题是：
+
+有时生成的网格顶点编号是顺时针的，会造成坐标变换中计算Jacobin出现负值，解决办法：
+判断定点是否顺时针（利用前三个顶点形成的两个向量的叉乘值的第三个分量的正负值，负为逆时针）
+增加函数：Element.adjustVerticeToCounterClockwise()
+
+另外的问题是四边形单元在Assemble的时候比较慢，原因是形函数SFBilinearLocal2D计算导数的时候
+需要坐标变换，很慢。
+
+14:53 2010/7/23
+Dirichlet边界条件如果是在每个结点的测量数据，以何种形式存储呢？Function是基于自变量坐标的，
+不太适合。最好的办法是以结点全局编号为索引的函数。
+
+14:37 2010/8/7
+这段时间考虑重新设计函数表达式，能够实现导数计算的同时还可以合并同类项。
+主要思想是利用“加法链”和“乘法链”表达函数项（Item），每项（Item）可以是自变量本身
+或者自定义的“原子”函数（不可拆分为“加法链”或“乘法链”）。
+“加法链”：每一项（Item）是代数相加（包括加法和减法）的关系，每一项前面可以有一个系数（double）。
+  例如：3.2*x + 1.8*x + y + 6
+“乘法链”：每一项（Item）是代数相乘（仅乘法，除法使用倒数表示）的关系，每一项前面可以有一个指数（默认1）。
+  例如：x^2*x*y^3
+
+任何一个数学函数，其表达式都是由“加法链”或“乘法链”构成。
+
+“加法链”和“乘法链”的合并同类项操作：
+3.2*x + 1.8*x + y + 6 => 5.0*x + y + 6
+x^2*x*y^3 => x^3*y^3
+
+
+23:45 2010/8/8
+“加法链”和“乘法链”的导数操作：
+函数的导数通过“加法链”和“乘法链”的导数实现，
+(c1*x1+c2*x2+...+cn*xn)' = c1*x1'+c2*x2'+...+cn*xn' = Sum(i=1:n)[ci*xi]
+(x1^c1*x2^c2*...*xn^cn)' = Sum(i=1:n)[ ci*xi^(ci-1)*Multi(j=1:n,j<>i)[xj^cj] ]
+
+
+15:38 2010/8/11
+导数操作需要精细化处理：例如： (3*x^3+x+1)'=3*3*x^2+1=(精细化)=9*x^2+1
+创建函数算子，包括：
+基本算子：加、减、乘、除（加减用线性组合，除用-1次幂统一为乘法链）
+常用算子：n次方、开方、绝对值、对数等
+导数算子：Delta、Nabla等
+
+
+12:36 2010/8/19
+两个加法链相乘的展开算法：创建COperator类，专门处理Chain之间的运算操作
+
+12:36 2010/8/25
+加法链中，如果存在两个相同的乘法链，如何合并？
+解决：增加symCompareTo()，使得Item，Chain之间可以互相进行
+符号比较，其中多项式的比较按照幂次从高到低比较，幂次相同的比较系数。
+
+14:49 2010/8/26
+函数Function与Chain的相同和区别：
+举例说明：
+f(x)=x^2+2*x+1
+*Function代表f(x)，可以进行函数求值，导数，复合函数等运算
+*Chain代表函数的具体表达式x^2+2*x+1，有可能是加法链或者乘法链(或者其他什么东西)，
+可以进行求值，导数，复合等操作，还可以展开、因式分解（比较复杂，待定）等。
+
+16:48 2010/8/26
+复合函数该如何处理？
+解决方案：使用名称（getName()）匹配，进行变量代换，代换后原来的Variable变为Function
+
+2010/9
+继续新函数框架的工作。
+
+2010/10/1-2010/10/5
+在旧的函数框架下，增加了形函数SFSerendipity2D
+新函数框架支持多自变量求导
+继续完成MeshWriter，可以输出tecplot格式的结果
+
+16:52 2010/10/6
+增加了系数反问题算例
+ * Solve: (U*u, v) = (f, v) - (k*grad(U),grad(v))
+ * where u is unknown
+ * U,f and k is known
+
+Solver.solve() 返回的解，下标统一改为从1开始。
+
+
+15:48 2010/10/11
+VectorBasedFunction是基于向量的函数，自变量有时候需要有向量的index，如何与Function统一处理？
+解决方案：
+方案1. Function增加接口函数，支持public double value(int index);
+方案2. 继承Function接口，创建包含public double value(int index);的Interface
+放案3. Variable增加setIndex()和getIndex()
+
+择优方案：3
+
+12:00 2010/10/12
+形函数的asignElement(Element e)如果在计算Jacobin前没被调用，需要抛出异常。
+
+目前asignElement(Element e)方法在用户自定义的弱形式中调用，可以考虑改在Assembler在处理每个单元前，
+为单元上的每个形函数调用。
+
+另外，若形式中的系数，通常也是用有限元近似的，可以在处理每个单元前计算一次，而不必在每个形函数计算是重复调用。
+
+23:39 2010/10/14
+坐标变换：
+
+f(x,y)=f(x(r,s),y(r,s))
+
+det(jac) = | x_r  x_s |       
+           | y_r  y_s |
+
+inv(jac) = | y_s  -y_r |       
+           | -x_s  x_r |
+
+r_x = y_s/jac
+r_y = -x_s/jac
+s_x = -y_r/jac
+s_y = x_r/jac
+
+几个意义：
+r_x 单位x的变化量引起的r变化量
+r_y 单位y的变化量引起的r变化量
+当四边形网格与坐标轴平行时，有: r_y=0, s_x=0
+
+16:25 2010/10/16
+Utils.interplateFunctionOnElement()
+一个函数在单元上的插值，与单元的结点数目和几个形状无关。
+
+
+20:38 2010/10/16
+使用SFQuadraticLocal2DFast元
+Solver info = 37
+Solver info = 47
+FOIntegrate.intOnTriangleRefElement(,,3)
+增加精度后
+FOIntegrate.intOnTriangleRefElement(,,5)
+Solver info = 0
+
+16:00 2010/10/19
+WeakFormDerivative
+计算u_x，如果使用SFQuadraticLocal2D(Fast)数值积分需要使用更高阶的（>=5），否则计算结果值会变小，很不光滑。
+
+22:57 2010/10/29
+单元refine一次后，如何判断哪个结点是hanging node？
+单元refine要增加新结点，hanging node肯定是新结点中的。
+假设单元e要细化，首先记录e的相邻单元，然后细化e，判断新增
+的结点是否在e的相邻单元的边上。
+
+23:12 2010/10/30
+自适应有限元需要考虑的问题：
+1.单元变换的Jacobin的计算只能使用单元定点计算；不能使用单元上的形函数；
+2.加密后，包含hanging node的单元上自由度的局部编号：二维情况，hanging node上会有两个自由度，总共自由度是5个
+3.局部自由度编号转全局自由度编号如何转换？
+
+20:21 2010/10/31
+加密一个单元需要执行以下步骤：
+(1). 增加子单元，设置子单元以及几点的全局编号
+(2). 计算hanging node
+
+如果加密两个单元e1,e2，那么可以有两种不同的方法：
+方法1： 对e1执行步骤(1)和(2)，再对e2执行步骤(1)和(2)
+方法2：对e1,e2执行步骤(1)，再对他们执行步骤(2)
+
+这两种方法的处理过程的步骤(2)截然不同。
+
+13:59 2010/11/2
+三角形单元加密，计算hanging node时，需要判断点是否在直线上，判断方法是
+通过计算改点与两个端点的夹角，如果是180度，则在直线上。但是精度
+Constant.eps=1e-12要求太高了，改为1e-6
+
+18:06 2010/11/8
+1.在梯度较大的地方加密：先用Gauss光滑，然后在单元上计算光滑前后插值的L2范数，
+最后按照范数，将单元排序，指定一个阈值，阈值以上的单元全部加密
+
+2.比较了不同阈值时，加密的情况
+
+3.Hanging node在Assamble的时候进行处理，将系数加入刚度矩阵，
+否则不处理会导致方程组求解错误。（在patch test的时候没有出现错误，
+原因是Hanging node都在最后，最后的行列矩阵系数都是0，求解器可以求解，
+求解完之后，在赋值hanging node只是临时办法）
+
+4.目前可以自适应求解正问题，但是代码需要重构，结构要清晰、简洁。
+
+5.边界条件在Assamble的时候需要修改DOF的循环结构，保证结点自由度
+个数不同时，也可以正常处理。
+
+6.需要考虑与自由度关联的实体（结点，边，体）的多样性，以保证足够灵活的处理各种问题。
+
+
+11:29 2010/11/9
+反问题自适应代码基本完成，但是结果不理想。
+
+计算TailUL出现Infinity(或NaN),原因是寻找边界的时候，在四边形区域定点
+会找到两条边界，造成插值错误
+
+网格自适应加密后，标记边界点算法出现问题。边界点的判断是看
+该点与所属的所有单元的夹角之和是不是360度，而hanging node
+不属于上层单元，造成夹角只和不是360度，解决办法：将hanging node
+设置为内点。边界上不存在hanging node，因此不会造成问题。
+
+
+12:29 2010/11/10
+自适应网格中加密结点NodeRefined不一定是Hanging node,
+1. 边界上的NodeRefined不是Hanging node，应该施加边界条件。如果当作Hanging node
+处理，也是可以的，不过该结点应算作内点，施加Hanging node的限制，即其值由同一边
+上的端点值确定。这么做带来的问题就是边界结点的结点类型（内点、边界点）处理起来不是统一的。
+
+2. 两个相邻单元同时加密，那么相邻边上的NodeRefined结点不是Hanging node
+
+* 由于Hanging node不属于相邻上层单元，其相邻结点的计算也是有问题的，
+相邻结点目前只用于“高斯光滑”，如果应用范围比较多的话，需要考虑如何计算相邻结点。
+
+
+
+17:34 2010/11/11
+fix 重复refine的bug
+
+做算例：密度不同的基础网格进行refine（refine两次）,比较结果：
+1.基础网格密度不能太大
+2.单元形状（三角形、四边形）对结果影响不大
+3.在网格密集的地方，重后出来的系数抖动比较大。
+
+
+10:12 2010/12/1
+1.完成GCM方法
+2.下一步工作：
+  1>优化整体合成的计算速度
+  2>完成反问题的Lagrange乘子法
+
+
+17:47 2010/12/3
+GCM方法计算出来的q_n依赖Tail的程度很高，当Tail中的inclusion位置任意设定后，
+q_n也会体现出来Tail的变化；而从边界来的（包含实际inclusion位置的）信息，不能
+体现在q_n上。
+
+15:38 2010/12/6
+1>优化整体合成的计算速度
+刚度矩阵需要“自由度双循环”，循环内的一些操作是重复计算的，可以提出“双循环”外面。
+同理，右端向量的“自由度单循环”, 循环内的一些操作可以提出到外面。
+提供可选解决方案给用户：
+1.Assembler只循环每个单元，其余操作有用户实现，返回局部矩阵和右端向量。该方案与deal.II相同。
+2.Assembler除了负责循环每个单元外，还进行刚度矩阵的“自由度双循环”和右端向量的“自由度单循环”
+用户只需要关心弱形式的积分值。
+3.考虑到速度优化和编程复杂度之间的折中，提供两个顺序接口，
+循环每个单元时，循环中先调用一次接口1，用户可以处理单元相关运算（不随自由度改变的量），
+然后进行刚度矩阵的“自由度双循环”和右端向量的“自由度单循环”，循环中调用接口2，计算弱形式的积分值。
+
+
+
+自由度：目前只能处理结点山的自由度，边、面和内部的自由度如何处理？
+边上的自由度：参考Nedelec element
+
+向量值函数的处理？ 例如速度、压强混合：
+\vec{u}+p=0
+-div{\vec{u}} = f
+
+
+12:00 2010/12/8
+问题：可不可以用同一个mesh,求解不同的问题？
+回答：可以使用Mesh.copy()，复制一个mesh。
+
+网格所需的元素：
+必须：
+   结点列表：给出每个结点的坐标；
+   单元列表：给出构成单元的结点编号；
+可选：
+   单元上的材料属性
+   边界信息，包括边界类型和材料属性
+
+2010/12/20
+--------------------------------------------------Release 0.1--------------------------------------
+
+23:07 2011/1/8
+自由度可以与结点（Node）、 边（Edge）、 面（Face）、 体（Volume）关联，而且每个几何对象都可以关联多个自由度（DOFList）。
+如何遍历自由度成为了一个问题？
+方法一：统一遍历，按照几何对象类型，排好顺序，一次循环遍历完毕
+方法二：按照几何对象类型，可选择性的遍历
+
+
+21:48 2011/1/10
+WeakFormMixLaplace 混合元求解Laplace方程，使用三角形上的RT0元，
+EdgeDOF=3
+FaceDOF=1
+计算单元T上的Local matrix时，
+B_T  = 3*3
+C_T  = 3*1
+C'_T = 1*3
+
+整体合成是需要将B_T,C_T,C'_T合成到
+( B  C )    (b0)
+( C' 0 ) =  (bf)
+整体矩阵和右端向量上，问题是如何将3个局部矩阵返回，并携带足够信息，
+合成的全局矩阵上？
+只靠下标位置没办法区分，如C_T(1,1)与C'_T(1,1)没办法区分，
+解决方法1：用返回List<PairElementMatrix> ret的下标不同来区分不同的矩阵
+ret[0]=B_T
+ret[1]=C_T
+ret[2]=C'_T
+
+解决方法2：
+将所有自由度排序，
+EdgeDOF=1,2,3
+FaceDOF=4
+使用一个4*4矩阵，这样的Local矩阵，可以根据局部元素下标确定全局元素编号
+
+解决方法3：
+使用Local分块矩阵BlockMatrix
+( B_T   C_T )
+( C'_T  0 )
+与方法2类似，但是减少并清晰了很多复制下表变换操作
+
+
+
+12:21 2011/1/11
+代码重构，
+Element内包含的是NodeLocal、EdgeLocal、FaceLocal
+Mesh内包含的是Node、Edge、Face
+
+Node -> NodeLocal
+Edge -> EdgeLocal
+Face -> FaceLocal
+
+
+21:31 2011/1/11
+ShapeFunction
+分为两类： 
+ScalarShapeFunction
+VectorShapeFunction
+
+
+
+2011/1/12-13
+Matrix、Vector改为接口，增加BlockMatrix、BlockVector接口。
+实现了：
+SpaceVector类，为空间向量优化存储
+SparseVector类，稀疏向量存储
+SparseMatrix，稀疏矩阵存储
+
+SparseBlockMatrix
+SparseBlockVector
+稀疏块矩阵和向量
+
+重构了所有使用旧Matrix和Vector的相关代码。
+
+
+混合元的弱形式WeakFormMixedLaplace
+SpaceVectorFunction和RaviartThomas类完善，能够处理向量值函数和向量值有限元
+实现了2*2快矩阵的SchurComplementSolver
+
+
+
+10:56 2011/1/14
+deal.II中的任何有限元都是采用所有自由度双循环的方法进行局部矩阵和向量计算的，
+例如2维RT元，边自由度为3，单元自由度为1,则有4*4次循环。实际上，
+4*4 = (3+1)*(3+1) = 3*3 + 2*3*1 + 1*1
+(a+b)^2 = a^2 + 2ab + b^2
+在由于是对称矩阵，可以简化为循环3*3 + 3*1 + 1*1次循环。
+
+
+是否考虑增加自由度枚举类型：“结点”、“边”、“面”、“体”，
+减少自由度存取函数个数。
+
+17:49 2011/1/16
+Utils.interplateFunctionOnElement(Function fun, Element e)
+利用坐标变换类实现
+
+15:29 2011/1/18
+向量值函数的有限元方法初步完成：利用Raviart Thomas元求解Mixed Laplace问题。
+遗留问题：
+密网格的时候求解出现错误
+Neumann边界条件还没有处理
+
+18:11 2011/2/17
+实现三维Laplace方程的计算，这是一个里程碑。
+
+
+增加package edu.uta.futureye.topology;
+用来描述单元结点、边和面的拓扑关系，根据这个描述可以很快
+计算出单元的边和面。
+
+
+15:13 2011/2/20
+edu.uta.futureye.core.geometry
+包中的几何信息类考虑是否改为接口？
+让用户有选择可以自己实现，以节省内存？
+
+*interface中的方法可以省略public修饰符
+
+
+14:47 2011/2/22
+    记录一下本次大改版。
+
+    前几天刚刚实现三维Laplace方程的计算，但只能处理Dirichlet边界条件，
+处理Neumann边界条件，需要找到单元外边界（进行面积分），由于Element
+的几何结构尚未明确建立，只是靠结点编号顺序，因此非常困难。
+    经过这几天的修改，代码基本稳定，主要增加了下面两个package：
+* package edu.uta.futureye.core.geometry;
+保存几何实体信息
+* package edu.uta.futureye.core.geometry.topology;
+保存拓扑信息
+
+假设我们处理的任何几何实体，都是由点、线、面构成，
+点分为普通的结点（Node,NodeLocal）和顶点（Vertex）
+*线是一维几何实体（GeoEntity1D），通常指边（Edge,EdgeLocal）
+*面是二维几何实体（GeoEntity2D），通常指面（Face,FaceLocal）
+*三维单元的几何实体（GeoEntity3D），通常指体（Volume）
+
+*全局结点与局部结点：
+    从网格角度来看，网格上的结点是全局的，有全局编号，用Node类对象表示；
+从单元角度来看，同一个结点，在不同的单元中，可能有不同的局部编号，用NodeLocal表示；
+有些结点，在单元中是几何实体的顶点，用Vertex表示，Vertex有对NodeLocal的引用。
+无论是全局还是局部结点，以及顶点，他们都实现了Ponit接口，Point实现抽象几何实体GeoEntity接口。
+
+*全局边与局部边：
+    从网格角度来看，网格上的边是全局的，有全局编号，用Edge类对象表示；
+从单元角度来看，同一个边，在不同的单元中，可能有不同的局部编号，用EdgeLocal表示；
+无论是全局边与局部边，他们都继承于
+GeoEntity1D<TNode extends Point>，提供法方，以便访问
+边上的端点（顶点）和边中的结点。
+
+
+*全局面与局部面（3维）：
+    从网格角度来看，网格上的面是全局的，有全局编号，用Face类对象表示；
+从单元角度来看，同一个面，在不同的单元中，可能有不同的局部编号，用FaceLocal表示；
+无论是全局面与局部面，他们都继承于
+GeoEntity2D<TEdge extends GeoEntity1D<TNode>,TNode extends Point>，提供法方，以便访问
+面上的顶点和面中的结点，以及通过边访问边上的端点和结点。
+
+*几何实体点、线、面和体的存储方式：
+**全局边：
+有两个端点，端点的局部编号为1，2；除端点外，其他边中的结点保存在列表中，有各自的局部编号，从3,4,5...往下编号
+**局部边：
+有两个端点，端点的局部编号与全局边不同，要按照边所在的单元的所有顶点的顺序进行编号，例如三角形单元，其局部边
+的端点编号应该是：第一边(1,2)，第二边(2,3)，第三边(3,1)。其他边中的结点保存在列表中，也要按照单元整体考虑局部编号。
+例如下面的三角形单元：
+3
+| \
+|  \
+6   8
+|    \
+9     5
+|      \
+|       \
+1--4--7--2 
+第一边(1,2; 4,7)，第二边(2,3; 5,8)，第三边(3,1; 6,9)其中;后面的表示边中的结点编号。
+
+**全局面与局部面编号类似，唯一区别是多出来一个顶点列表，该列表保存面的顶点，与面上边的顶点是重复的。
+这样做，避免了从边计算面顶点的麻烦。
+
+**体（Volume）只有全局体，其存储方式与面类似，多出来一个顶点列表。
+
+*本次修改之所以是大修改，是因为按照上面的方式，Element有了很大的变化，相应的访问接口也改了很多，
+几十个文件需要重构和修改。
+
+
+17:55 2011/2/23
+函数求导改为每次只能对一个变量求导一次，删除了DerivableIndicator类，
+多次求导使用多次调用方式：
+e.g.二次导数：
+FunctionDerivable fun = new ...
+fun.d("x").d("x")
+
+
+15:06 2011/2/28
+关于单元维度的说明：
+Element.eleDim()
+不等于结点的维度，例如一个三维单元，它的每个面形成的单元中，
+结点的维度是3，而单元的维度应该是2，是一个面单元。
+
+
+11:23 2011/3/1
+记录一下fixed过的问题：
+*serendipityTest()输出的网格tecplot不能读，原因是单元编号大于结点编号，fixed
+edge.addEdgeNode(new NodeLocal(++nNode,node));
+=>
+edge.addEdgeNode(new NodeLocal(++nNode,findNode));
+
+
+*3维Element构造的时候，忘记了在单元的面上添加顶点，只在体上添加顶点是不够的
+
+*CG求解错误，原因是AlgebraMatrix.add()与AlgebraMatrix.axpy()参数搞混了
+
+*顺时针排序的结点需要调整为逆时针顺序，之前有问题，fixed
+
+*复合函数求导数不正确，fixed
+
+*四边形和三角形混合网格测试结果不正确，经过分析，发现是四边形2阶数值积分的问题，
+已更正。LaplaceTest.mixedTest(); //OK 数值积分的问题fixed
+
+剩余问题：
+1.四边形的高阶数值积分
+2.自适应网格的测试
+3.WeakFormDerivative和WeakFormL22D的右端项优化
+4.FaceLocal.changeToElement()后自由度的设置问题
+5.测试二次SFQuadraticLocal2D形函数
+
+
+15:28 2011/3/3
+搞清楚了自然边界条件（Robin条件）d*u + k*u_n= q (自然边界：d==k, q=0)
+ * 1.正问题(Forward problem):
+ *   Laplace(u) - a*u = -\delta, in \Omega
+ *   u = u0,                     on \Gamma1
+ *   u + u_n = 0,                on \Gamma2
+ *=> Multiply by '-k'
+ *   -k*Laplace(u) + c*u = k*\delta
+ *=>
+ *   A(u, v) = (f, v)
+ * where
+ *   A(u, v) = ((k*u_x, v_x) + (k*u_y, v_y) ) - (k*u_n,v)_\Gamma2 + (c*u, v)
+ *=>
+ *   A(u, v) = ((k*u_x, v_x) + (k*u_y, v_y) ) + (k*u,v)_\Gamma2 + (c*u, v)
+ * where
+ *   \Gamma1: Dirichlet boundary of \Omega
+ *   \Gamma2: Neumann(Robin) boundary of \Omega
+ *   u_n: \frac{\pratial{u}}{\partial{n}}
+ *   n: unit norm vector of \Omega
+ * Parameters:
+ *   a(x,y) = 3*mu_a*mu_s'
+ *   k(x,y) = 1/(3*mu_s')
+ *   c(x,y) = mu_a
+ *   \delta(x,y) = delta function, light source
+
+WeakFormLaplace2D中q因为已经移到右端，不需要乘以-1:
+if(g_q != null) {
+	Element be = e;
+	Function fq = Utils.interplateFunctionOnElement(g_q, be);
+	Function borderIntegrand = FOBasic.Mult(fq, v);
+	return borderIntegrand;
+}
+
+
+
+bugfix: g_d应该在边界单元上插值
+Function fd = null;
+if(g_d != null) fd = Utils.interplateFunctionOnElement(g_d, be);
+
+
+
+bugfix 外法向
+public static Vector getNormVector(Point a,Point b) {
+	SpaceVector v1 = new SpaceVector(a.coords());
+	SpaceVector v2 = new SpaceVector(b.coords());
+	Vector v2mv1 = SpaceVector.axpy(-1.0, v1, v2);//v2 - v1
+	double len = v2mv1.norm2();
+	Vector rlt =  SpaceVector.ax(1.0/len, v2mv1);
+	return new SpaceVector(rlt.get(2),-rlt.get(1));//外法向
+}
+
+13:44 2011/3/4
+LagrangianMethod
+光源在区域外面的时候，自然边界条件求解不正确，需要一个大区域求解，
+然后在靠近光源的一边采用Dirichlet条件，其他边采用自然边界条件
+//uiSmall[i] = model.solveForwardNeumann(meshSmall);
+uiSmall[i] = model.solveForwardDirichlet(meshSmall,new Vector2Function(ui[i]));
+
+
+bugfix 整体合成的循环中形函数的顺序
+//注意顺序，内循环test函数不变，trial函数循环
+weakForm.setShapeFunction(sfI,nLocalRow, sfJ,nLocalCol);
+=>
+weakForm.setShapeFunction(sfJ,nLocalCol, sfI,nLocalRow);
+
+WeakFormGCM
+ *  (k*u_x, v_x) + (k*u_y, v_y) + (b1*u_x, v) + (b2*u_y, v) + (c*u, v)= (f, v)
+
+integrand = FOBasic.PlusAll(
+			FOBasic.Mult(fk, FOBasic.Plus(
+					FOBasic.Mult(u.d("x"), v.d("x")),
+					FOBasic.Mult(u.d("y"), v.d("y"))
+			)),
+			//FOBasic.Mult(u, v.d("x")) =>
+			FOBasic.Mult(fb1,FOBasic.Mult(u.d("x"), v)),
+			FOBasic.Mult(fb2,FOBasic.Mult(u.d("y"), v)),
+			FOBasic.Mult(fc, FOBasic.Mult(u, v))
+		);
+
+
+12:09 2011/3/6
+需要优化函数运算速度：
+常值函数之间运算直接返回计算结果
+在一步运算中判断运算对象是否是由上一次运算得来的，然后根据上次运算符号合并本次运算
+
+22:21 2011/3/10
+-------------------------------------------Release1.0--------------------------------------
+14:35 2011/3/11
+-------------------------------------------Release1.0(1.01)--------------------------------------
+bugfix
+	public static Variable createFrom(Function fun, Point point, int index) {
+...
+		Variable var = new Variable(index);
+		=>
+		Variable var = new Variable();
+		var.setIndex(index);
+...
+}
+add class ConvectionDiffusion
+
+
+23:16 2011/3/19
+增加向量值问题：Stokes问题的求解
+增加class WeakFormStokes
+ * Problem:
+ * -\Nabla{k*\Nabla{\mathbf{u}} + \Nabla{p} = \mathbf{f}
+ * div{\mathbf{u}} = 0
+
+ 分量形式：
+ * -k*(u1_xx+u1_yy) + p_x = f1
+ * -k*(u2_xx+u2_yy) + p_y = f2
+ * u1_x+u2_y              = 0
+
+ * Weak form:
+ *   find \mathbf{u} \in H_0^1(div;\Omega), p \in L_2(\Omega)
+ *   such that, for all \mathbf{v} \in H_0^1(div;\Omega), q \in L_2(\Omega)
+ *   
+ *   (\Nabla{\mathbf{v}},k*\Nabla{\mathbf{u}}) - (div{\mathbf{v}},p) 
+ *                   + (q,div{\mathbf{u}}) = (\mathbf{v},\mathbf{f})
+ *
+ *   (v1_x,k*u1_x) + (v1_y,k*u1_y) + (v2_x,k*u2_x) + (v2_y,k*u2_y) 
+ *                   - (v1_x+v2_y,p) + (q,u1_x+u2_y) = (v1*f1+v2*f2)      
+ * where
+ *   \mathbf{u}=(u1,u2): velocity vector field    
+ *   \mathbf{f}=(f1,f2): body force
+
+分量形式是3个方程组，弱形式是一个式子，但是采用向量值形函数，
+15个基函数向量（自由度）在单元上双循环：
+(Q1)  (Q2) ... (Q6)
+(0 )  (0 ) ... (0 )
+(0 )  (0 ) ... (0 )
+
+(0 )  (0 ) ... (0 )
+(Q1)  (Q2) ... (Q6)
+(0 )  (0 ) ... (0 )
+
+(0 )  (0 ) (0 )
+(0 )  (0 ) (0 )
+(L1)  (L2) (L3)
+可以得到个分量形式对应的分块矩阵。
+
+增加Schur ComplementStokesSolver进行分块矩阵求解
+  +CGS()
+ * A = (B1  0   C1)
+ *     (0   B2  C2)
+ *     (C1' C2' C )
+ *
+ * f = (f1)
+ *     (f2)
+ *     (f3)
+ *     
+ * x = (u1)
+ *     (u2)
+ *     (p )
+ *     
+ * C1' = - trans(C1)
+ * C2' = - trans(C2)
+ *
+ * 求 A*x=f, x=(u1 u2 p)'
+
+注意：Dirichlet边界条件在进行分块形式求解之前，
+在整个矩阵上进行约束：
+e.g. u1(1)=c
+做如下处理：
+A(1,1)=1.0
+f(1)=c
+A(1,2:N)=0.0
+f(2:N) -= A(2:N,1)
+A(2:N,1)=0.0
+最后两部不能颠倒
+
+增加class AssemblerVector：向量值问题整体合成
+增加二次速度+一次压强单元：
+  QuadraticV_LinearP
+  QuadraticV_LinearP1D
+  FS0
+
+增加class Stokes 算例
+增加class CompressedColMatrix 按列压缩存储的矩阵
+
+
+bugfix: 
+  SparseBlockMatrix.set(): rBase = rUpper; ==> rBase += rUpper;
+  SparseBlockMatrix.get()
+  SparseBlockVector.set(): base = upper; ==> base += upper;最后因为这个bug调试了很久！
+  SparseBlockVector.get()
+
+12:58 2011/3/22
+所有文件由GBK转为UTF-8（EditPlus的批量文件格式修改）
+
+20:30 2011/4/12
+
+整理类FMath，去掉FOBasic，FOVector类，漫长的过程。。。
+发现如下bug:
+四边形SFBilinearLocal2D单元计算出来的结果不正确，
+其他类型单元都正确，经排查，是复合函数链式求导错误导致。
+
+bigfix
+public abstract class AbstractFunction implements Function {
+	@Override
+	public Function compose(final Map<String,Function> fInners) {
+		...
+		/**
+		* 链式求导
+		* f( x(r,s),y(r,s) )_r = f_x * x_r + f_y * y_r
+		*/
+		@Override
+		public Function _d(String varName) {
+			...
+			if(!(rltOuter instanceof FC))
+			rltOuter = fOuter.compose(fInners);
+			=>
+			rltOuter = rltOuter.compose(fInners);
+		}
+		...
+	}
+	...
+}
+
+
+23:03 2011/4/27
+PlaneElastic 第一次测试结果不正确
+bugfix
+AssemblerVector
+if(e.isBorderElement()) {
+//所有自由度双循环
+for(int i=1;i<=nBeDOF;i++) {
+	for(int j=1;j<=nBeDOF;j++) {
+	...					
+	}
+	//Check node type  <--增加判断bugfix
+	NodeType nodeType = be.getBorderNodeType(vvfIndexI);
+	if(nodeType == NodeType.Neumann || nodeType == NodeType.Robin) {
+		...					
+	}
+}
+}
+
+
+12:21 2011/6/27
+WeakFormL22D
+Vector2Function g_U = null;
+改为：
+Function g_U = null;
+
+18:45 2011/8/5
+bugfix
+单元结点当需要调整为逆时针时，关联的其他信息需要跟着调整
+
+nodeDOFList: fixed
+edgeDOFList: ???
+faceDOFList: ???
+volumeDOFList: ???
+???
+
+	public void applyChange() {
+...
+		
+		//关联的自由度怎么办？  <= bufix
+		Map<Integer,DOFList> newNodeDOFList = new LinkedHashMap<Integer,DOFList>();
+		for(int i=1;i<=oldNodes.size();i++) {
+			Node node = oldNodes.at(i);
+			DOFList DOFs = this.nodeDOFList.get(i);
+			//新结点中查找
+			for(int j=1;j<=this.nodes.size();j++) {
+				if(node.globalIndex == this.nodes.at(j).globalIndex) {
+					newNodeDOFList.put(j, DOFs);
+					break;
+				}
+			}
+		}
+		this.nodeDOFList = newNodeDOFList;
+...		
+	}
+
+
+21:08 2011/8/5
+单元结点当需要调整为逆时针时，关联的其他信息需要跟着调整
+形函数赋予物理单元的顺序需要固定：下面出现了不一致，导致结果有小的偏差
+f(x,y)*N1 != f(x,y)*N4
+DOFList[{L1 G4 N1: (-0.5*r+0.5) * (-0.5*s+0.5) GN4( 0.0 3.0 )}, {L2 G67 N2: (0.5*r+0.5) * (-0.5*s+0.5) GN67( 0.0 3.25 )}, {L3 G301 N3: (0.5*r+0.5) * (0.5*s+0.5) GN301( 0.25 3.25 )}, {L4 G55 N4: (-0.5*r+0.5) * (0.5*s+0.5) GN55( 0.25 3.0 )}]
+DOFList[{L1 G55 N1: (-0.5*r+0.5) * (-0.5*s+0.5) GN55( 0.25 3.0 )}, {L2 G301 N2: (0.5*r+0.5) * (-0.5*s+0.5) GN301( 0.25 3.25 )}, {L3 G67 N3: (0.5*r+0.5) * (0.5*s+0.5) GN67( 0.0 3.25 )}, {L4 G4 N4: (-0.5*r+0.5) * (0.5*s+0.5) GN4( 0.0 3.0 )}]
+
+12:51 2011/9/3
+bugfix
+Refiner.directRefine
+//单元编号有问题，如果两次加密，会产生重复的单元编号
+//解决方案：整个单元列表重新编号
+//结点列表由于只有增加结点，因此保持原方案
+
+
+22:24 2011/10/18
+public class Constant {
+	public static double angleEps = 1.0e-2;
+增加angleEps，用来作为计算一个坐标点是否在单元内的最小阈值。
+该计算方法由于是用弧度判断，因此阈值不能太小，否则会出现误判，
+通常导致计算结果中出现单个节点突变
+
+20:31 2011/10/24
+name chage:
+AbstractVectorWeakform
+to
+AbstractVectorWeakForm
+
+
+23:14 2011/10/24
+add WeakFormBuilder
+
+
+13:30 2011/11/1
+bugfix 
+Vector normInf() <-- Math.abs()
+
+22:35 2011/11/16
+关于Collections.sort(list,new Comparator<Double>() {
+	@Override
+	public int compare(Double o1, Double o2) {
+		...
+	});
+升序排列：当o1>o2返回1，o1<o2返回-1，o1==o2返回0
+降序排列：当o1>o2返回-1，o1<o2返回1，o1==o2返回0
+
+
+15:04 2011/11/29
+关于自由度（DOF）的所有者（Owner）
+自由度可以赋予结点、边、面和体上，因此自由度的所有者（DOF.getOwner()）是：
+
+1D: 结点，                全局边
+2D: 结点，局部边，        全局面
+3D: 结点，局部边，局部面，全局体
+
+理论上“结点”应该是局部结点（NodeLocal），但是可以用全局结点（Node）来代替，是程序设计更加简洁
+注意到，对于1,2,3维问题，最后一项都是全局的，表示整个单元对应的几何对象
+
+其使用见
+AssemblerScalar.imposeDirichletCondition(Function diri)
+AssemblerVector.imposeDirichletCondition(VectorFunction diri)
+
+23:58 2011/12/20
+edu.uta.futureye.tutorial.Start
+使用import static 简化静态方法和变量的使用
+
+import static edu.uta.futureye.function.basic.FC.*;
+import static edu.uta.futureye.function.basic.FX.*;
+
+20:46 2011/12/24
+下一步工作：
+SparseBlockMatrix
+//块结构不是稀疏的，可以采用二维数组
+
+public Iterator<MatrixEntry> iterator() 
+迭代子需要实现
+
+Map<Integer,Map<Integer,Double>> getAll();
+该接口需要去掉，改用迭代子
+void setAll(int nRowBase, int nColBase, Map<Integer,Map<Integer,Double>> dataMap);
+是否需要去掉？
+
+18:14 2012/2/4
+bugfix
+3D Neumann boundary condition: Add calss Jacobin2DFrom3D
+
+19:30 2012/4/8
+Release 3.0
