@@ -24,7 +24,12 @@ import edu.uta.futureye.util.container.NodeList;
 import static edu.uta.futureye.function.operator.FMath.*;
 import edu.uta.futureye.algebra.intf.Matrix;
 
-public class Quadratic1D {
+public class Linear1D {
+
+	/**
+	 * This is a 1D steady state heat transfer code for a square geometry using
+	 * the Futureye3.0 FEM library.
+	 */
 
 	/**
 	 * One dimension mesh [0,L] Point spacing h=L/N
