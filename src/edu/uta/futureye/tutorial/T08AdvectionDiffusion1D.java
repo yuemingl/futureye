@@ -151,9 +151,9 @@ public class T08AdvectionDiffusion1D {
         //6.Solve linear system
         SolverJBLAS solver = new SolverJBLAS();
         Vector c = solver.solveDGESV(stiff, load);
-//        System.out.println("c=");
-//        for(int i=1;i<=c.getDim();i++)
-//            System.out.println(String.format("%.3f", c.get(i)));
+        System.out.println("c=");
+        for(int i=1;i<=c.getDim();i++)
+            System.out.println(String.format("%.3f", c.get(i)));
         System.out.println("Grid Peclet number="+(u*L/N)/(2*k));
         
         return c;
@@ -211,9 +211,9 @@ public class T08AdvectionDiffusion1D {
         //6.Solve linear system
         SolverJBLAS solver = new SolverJBLAS();
         Vector c = solver.solveDGESV(stiff, load);
-//        System.out.println("c=");
-//        for(int i=1;i<=c.getDim();i++)
-//            System.out.println(String.format("%.3f", c.get(i)));
+        System.out.println("c=");
+        for(int i=1;i<=c.getDim();i++)
+            System.out.println(String.format("%.3f", c.get(i)));
         System.out.println("Grid Peclet number="+(u*L/N)/(2*k));
         
         return c;
@@ -244,30 +244,30 @@ public class T08AdvectionDiffusion1D {
         
 		
         Vector c1 = solve(mesh,L,N,1.0,10);
-		Vector c2 = solve(mesh,L,N,1.0,20);
-		Vector c2upwind = solveUpwind(mesh,L,N,1.0,20);
-		Vector c3 = solve(mesh,L,N,1.0,50);
-		Vector c3upwind = solveUpwind(mesh,L,N,1.0,50);
-		
-		
-		Vector ce1 = exactSolution(meshExact,L,5*N,1.0,10);
-		Vector ce2 = exactSolution(meshExact,L,5*N,1.0,20);
-		Vector ce3 = exactSolution(meshExact,L,5*N,1.0,50);
-		
-		//Optimal upwind method
-        double k=1.0;
-        double u=50;
-		double h = L/N;
-		double alpha = u*h/(2*k);
-		double k_tidle = (u*h/2)*(MathEx.coth(alpha)-1/alpha);
-		System.out.println("k_tidle="+k_tidle);
-        Vector c31 = solve(mesh,L,N,k+k_tidle,u);
-        
-        //7.Output results to an Techplot format file
-        MeshWriter writer = new MeshWriter(mesh);
-        MeshWriter writerEx = new MeshWriter(meshExact);
-        writer.writeTechplot("./tutorial/AdvectionDiffusion1D.dat", c1,c2,c2upwind,c3,c3upwind,c31);
-        writerEx.writeTechplot("./tutorial/AdvectionDiffusion1Dexact.dat", ce1,ce2,ce3);
+//		Vector c2 = solve(mesh,L,N,1.0,20);
+//		Vector c2upwind = solveUpwind(mesh,L,N,1.0,20);
+//		Vector c3 = solve(mesh,L,N,1.0,50);
+//		Vector c3upwind = solveUpwind(mesh,L,N,1.0,50);
+//		
+//		
+//		Vector ce1 = exactSolution(meshExact,L,5*N,1.0,10);
+//		Vector ce2 = exactSolution(meshExact,L,5*N,1.0,20);
+//		Vector ce3 = exactSolution(meshExact,L,5*N,1.0,50);
+//		
+//		//Optimal upwind method
+//        double k=1.0;
+//        double u=50;
+//		double h = L/N;
+//		double alpha = u*h/(2*k);
+//		double k_tidle = (u*h/2)*(MathEx.coth(alpha)-1/alpha);
+//		System.out.println("k_tidle="+k_tidle);
+//        Vector c31 = solve(mesh,L,N,k+k_tidle,u);
+//        
+//        //7.Output results to an Techplot format file
+//        MeshWriter writer = new MeshWriter(mesh);
+//        MeshWriter writerEx = new MeshWriter(meshExact);
+//        writer.writeTechplot("./tutorial/AdvectionDiffusion1D.dat", c1,c2,c2upwind,c3,c3upwind,c31);
+//        writerEx.writeTechplot("./tutorial/AdvectionDiffusion1Dexact.dat", ce1,ce2,ce3);
 	}
 
 }

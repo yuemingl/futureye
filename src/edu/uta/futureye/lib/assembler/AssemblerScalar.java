@@ -76,6 +76,8 @@ public class AssemblerScalar implements Assembler {
 		ElementList eList = mesh.getElementList();
 		int nEle = eList.size();
 		int nProgress = 20;
+		if(nProgress > nEle)
+			nProgress = nEle;
 		System.out.print("Assemble[0%");
 		for(int i=0;i<nProgress-6;i++)
 			System.out.print("-");
